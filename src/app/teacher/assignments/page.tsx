@@ -25,7 +25,7 @@ export default function TeacherAssignmentsPage() {
 
         {subs.length === 0 ? (
           <div className="glass-card text-center text-sm text-slate-500 dark:text-slate-400">
-            Әзірге жіберілген тапсырма жоқ. Студент модуль ішіндегі «БӨЖ тапсырмасы» бөлімінен жіберген соң, осында пайда болады.
+            Әзірге жіберілген тапсырма жоқ. Студент сабақ ішіндегі «БӨЖ тапсырмасы» бөлімінен жіберген соң, осында пайда болады.
           </div>
         ) : (
           <div className="space-y-3">
@@ -34,7 +34,7 @@ export default function TeacherAssignmentsPage() {
               return (
                 <GlassCard key={s.id}>
                   <div className="flex items-center justify-between">
-                    <p className="font-semibold">{mod?.title ?? `Модуль ${s.moduleId}`}</p>
+                    <p className="font-semibold">{mod?.title ?? `Сабақ ${s.moduleId}`}</p>
                     <Badge variant={s.status === "reviewed" ? "success" : "warning"}>
                       {s.status === "reviewed" ? "Тексерілді" : "Күтуде"}
                     </Badge>

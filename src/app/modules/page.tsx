@@ -8,16 +8,16 @@ export default function ModulesPage() {
     <DashboardShell>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Оқу модульдері</h1>
+          <h1 className="text-2xl font-bold">Оқу сабақтары</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Механика курсының 10 модулі. Әр модульде дәріс, глоссарий, викторина, ойын, БӨЖ тапсырмасы, AI тьютор және құзыреттілік бағалау бар.
+            Механика курсының 10 сабағы. Әр сабақта дәріс, глоссарий, викторина, ойын, БӨЖ тапсырмасы, AI тьютор және құзыреттілік бағалау бар.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ALL_MODULES.map((m) => (
             <Link key={m.id} href={`/modules/${m.id}`} className="glass-card block">
               <div className={`mb-3 flex h-28 flex-col justify-between rounded-xl bg-gradient-to-br ${m.colorFrom} ${m.colorTo} p-3 text-white`}>
-                <p className="text-xs opacity-80">Модуль {m.id}</p>
+                <p className="text-xs opacity-80">Сабақ {m.id}</p>
                 <p className="text-lg font-bold">{m.title}</p>
               </div>
               <p className="line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{m.shortDescription}</p>

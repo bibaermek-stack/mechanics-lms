@@ -42,7 +42,7 @@ export default function StudentDashboard() {
           <GlassCard>
             <BookOpen className="mb-2 text-brand-500" />
             <p className="text-2xl font-bold">{completedModuleIds.length}/{ALL_MODULES.length}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Аяқталған модульдер</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Аяқталған сабақтар</p>
           </GlassCard>
           <GlassCard>
             <Target className="mb-2 text-emerald-500" />
@@ -63,18 +63,18 @@ export default function StudentDashboard() {
 
         <GlassCard>
           <p className="mb-2 font-semibold">Жалпы курс прогресі</p>
-          <ProgressBar value={progressPercent} label="Барлық модульдер бойынша" />
+          <ProgressBar value={progressPercent} label="Барлық сабақтар бойынша" />
         </GlassCard>
 
         <div>
-          <h2 className="mb-3 text-lg font-semibold">Оқу модульдері</h2>
+          <h2 className="mb-3 text-lg font-semibold">Оқу сабақтары</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {ALL_MODULES.map((m) => {
               const done = completedModuleIds.includes(m.id);
               return (
                 <Link key={m.id} href={`/modules/${m.id}`} className="glass-card block">
                   <div className={`mb-3 h-24 rounded-xl bg-gradient-to-br ${m.colorFrom} ${m.colorTo} p-3 text-white`}>
-                    <p className="text-xs opacity-80">Модуль {m.id}</p>
+                    <p className="text-xs opacity-80">Сабақ {m.id}</p>
                     <p className="font-semibold">{m.title}</p>
                   </div>
                   <p className="line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{m.shortDescription}</p>

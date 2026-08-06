@@ -7,7 +7,7 @@ import Link from "next/link";
 const STAT_CARDS = [
   { icon: Users, label: "Белсенді студенттер", value: "38" },
   { icon: ClipboardList, label: "Тексерілмеген тапсырмалар", value: "7" },
-  { icon: Video, label: "Жарияланған модульдер", value: `${ALL_MODULES.length}` },
+  { icon: Video, label: "Жарияланған сабақтар", value: `${ALL_MODULES.length}` },
   { icon: BarChart3, label: "Орташа құзыреттілік", value: "76%" },
 ];
 

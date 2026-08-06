@@ -12,7 +12,7 @@ import { ALL_MODULES } from "@/data/modules";
 
 const FEATURES = [
   { icon: Bot, title: "AI Тьютор", desc: "Механика бойынша 24/7 жеке көмекші, тек қазақ тілінде жауап береді." },
-  { icon: Gamepad2, title: "Интерактивті ойындар", desc: "Әр модульде сәйкестендіру, жады, флэш-карточка және басқа да ойындар." },
+  { icon: Gamepad2, title: "Интерактивті ойындар", desc: "Әр сабақта сәйкестендіру, жады, флэш-карточка және басқа да ойындар." },
   { icon: BarChart3, title: "Оқу аналитикасы", desc: "Прогресс, құзыреттілік өсуі және белсенділік графиктер арқылы көрінеді." },
   { icon: Award, title: "Сертификаттар", desc: "QR-код арқылы расталатын электронды сертификаттар." },
   { icon: Trophy, title: "Көшбасшылар кестесі", desc: "Ұпай жинап, топтастарыңмен жарысыңыз." },
@@ -41,7 +41,7 @@ export default function LandingPage() {
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-slate-600 dark:text-slate-300">
           Студенттердің ақпараттық-коммуникативтік құзыреттілігін қалыптастыруға арналған,
-          10 модульден тұратын, AI тьютор, интерактивті ойындар және құзыреттілікке негізделген
+          10 сабақтан тұратын, AI тьютор, интерактивті ойындар және құзыреттілікке негізделген
           бағалау жүйесі бар заманауи оқыту ортасы.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -67,7 +67,7 @@ export default function LandingPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-24">
-        <h2 className="mb-6 text-center text-2xl font-bold">10 оқу модулі</h2>
+        <h2 className="mb-6 text-center text-2xl font-bold">10 оқу сабағы</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {ALL_MODULES.map((m) => (
             <Link
@@ -75,7 +75,7 @@ export default function LandingPage() {
               href={`/modules/${m.id}`}
               className={`rounded-xl2 bg-gradient-to-br ${m.colorFrom} ${m.colorTo} p-4 text-white shadow-md transition hover:-translate-y-1`}
             >
-              <p className="text-xs opacity-80">Модуль {m.id}</p>
+              <p className="text-xs opacity-80">Сабақ {m.id}</p>
               <p className="mt-1 font-semibold">{m.title}</p>
             </Link>
           ))}

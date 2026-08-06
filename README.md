@@ -16,6 +16,7 @@
 - [Жоба құрылымы](#жоба-құрылымы)
 - [Деректер қоры](#деректер-қоры)
 - [Пайдалану нұсқаулықтары](#пайдалану-нұсқаулықтары)
+- [Авторлар мен Жобаға үлес қосушылар](#авторлар-мен-жобаға-үлес-қосушылар)
 
 ## Технологиялар
 
@@ -64,8 +65,8 @@ npm run start
 
 ## Педагогикалық негіз
 
-- **ADDIE моделі:** Analysis (қажеттілікті талдау) → Design (Блум таксономиясы бойынша нәтижелер, рубрика) → Development (10 модуль, AI, ойындар) → Implementation (Next.js платформа) → Evaluation (құзыреттілік бағалау, аналитика).
-- **Блум таксономиясы:** әр модульде алты деңгей де (`Есте сақтау → Түсіну → Қолдану → Талдау → Бағалау → Жасау`) `src/data/modules.ts` файлындағы `bloom` өрісінде беріледі және модуль бетінде көрсетіледі.
+- **ADDIE моделі:** Analysis (қажеттілікті талдау) → Design (Блум таксономиясы бойынша нәтижелер, рубрика) → Development (10 сабақ, AI, ойындар) → Implementation (Next.js платформа) → Evaluation (құзыреттілік бағалау, аналитика).
+- **Блум таксономиясы:** әр сабақта алты деңгей де (`Есте сақтау → Түсіну → Қолдану → Талдау → Бағалау → Жасау`) `src/data/modules.ts` файлындағы `bloom` өрісінде беріледі және сабақ бетінде көрсетіледі.
 - **Ақпараттық-коммуникативтік құзыреттілік моделі:** 10 критерийлі рубрика (`src/lib/competency.ts` → `RUBRIC_CRITERIA`), 5 деңгей (Бастапқы → Сарапшы).
 - **Қорытынды баға формуласы:** салмақталған 10 компонент (`src/lib/competency.ts` → `GRADE_WEIGHTS`): бейне 10%, викторина 20%, ойындар 10%, БӨЖ 20%, Google Forms 15%, AI белсенділігі 10%, форум 5%, портфолио 5%, жоба 5%, рефлексия 5%.
 
@@ -73,8 +74,8 @@ npm run start
 
 | Талап | Іске асырылған жері |
 |---|---|
-| 10 модуль (YouTube, глоссарий, викторина, ойын, БӨЖ, AI, бағалау) | `src/data/modules.ts`, `src/app/modules/[id]/page.tsx` |
-| Модуль 1–2 толық тереңдікте, 3–10 — жеңіл үлгі (оқытушы кеңейте алады) | `src/data/modules.ts` (`MODULES` vs `TEMPLATE_SEEDS`) |
+| 10 сабақ (YouTube, глоссарий, викторина, ойын, БӨЖ, AI, бағалау) | `src/data/modules.ts`, `src/app/modules/[id]/page.tsx` |
+| Сабақ 1–2 толық тереңдікте, 3–10 — жеңіл үлгі (оқытушы кеңейте алады) | `src/data/modules.ts` (`MODULES` vs `TEMPLATE_SEEDS`) |
 | Рандомизацияланған викторина, автобаға, түсіндірме | `src/components/quiz/QuizEngine.tsx`, `randomizeQuiz()` |
 | 5 интерактивті ойын түрі (сәйкестендіру, жады, флэш-карточка, сүйреп апару, дөңгелек) | `src/components/games/*` |
 | AI тьютор (14 тапсырма түрі, тек қазақша) | `src/lib/ai.ts`, `src/components/ai/AiTutorWidget.tsx` |
@@ -95,11 +96,11 @@ mechanics-lms/
 │   │   ├── api/ai/           # AI шлюзі (OpenAI/Gemini/mock)
 │   │   ├── api/google/       # Google Sheets оқу
 │   │   ├── api/auth/google/  # OAuth callback
-│   │   ├── modules/[id]/     # Модуль беті (7 табы бар)
+│   │   ├── modules/[id]/     # Сабақ беті (7 табы бар)
 │   │   ├── teacher/          # Оқытушы дашборды
 │   │   └── ...
 │   ├── components/           # Қайта пайдаланылатын UI компоненттер
-│   ├── data/modules.ts       # 10 модульдің толық контенті
+│   ├── data/modules.ts       # 10 сабақтың толық контенті
 │   └── lib/                  # Firebase, AI, Google, competency, dataStore
 ├── docs/firestore-schema.md
 ├── README.md / DEPLOYMENT.md
@@ -112,7 +113,20 @@ Firestore коллекциялары толық сипатталған: `docs/fi
 
 ## Пайдалану нұсқаулықтары
 
-- **Студент:** `/login` бетінен "Студент" рөлін таңдап кіріңіз → `/dashboard` → модульдерді оқыңыз → викторина/ойын/БӨЖ орындаңыз → `/analytics` пен `/certificates` арқылы нәтижені бақылаңыз.
+- **Студент:** `/login` бетінен "Студент" рөлін таңдап кіріңіз → `/dashboard` → сабақтарды оқыңыз → викторина/ойын/БӨЖ орындаңыз → `/analytics` пен `/certificates` арқылы нәтижені бақылаңыз.
 - **Оқытушы:** `/login` бетінен "Оқытушы" рөлін таңдаңыз → `/teacher` → студенттер тізімі, YouTube сілтемелерін өзгерту, тапсырмаларды тексеру, топ аналитикасы.
 
 Демо режимде екі рөл де нақты тіркелгісіз, бір батырма басу арқылы қолжетімді.
+
+## Авторлар мен Жобаға үлес қосушылар
+
+- 👨‍💻 **Ержан Едилбаев** ([@yerzhanyedilbayev-prog](https://github.com/yerzhanyedilbayev-prog)) — *Жоба авторы & Негізгі әзірлеуші*
+- 👨‍💻 **bibaermek-stack** ([@bibaermek-stack](https://github.com/bibaermek-stack)) — *Негізгі әзірлеуші & Үлес қосушы*
+
+[![Contributors](https://img.shields.io/github/contributors/yerzhanyedilbayev-prog/mechanics-lms?style=for-the-badge&color=blue)](CONTRIBUTORS.md)
+[![Contributing Guide](https://img.shields.io/badge/Contributing-Guide-green?style=for-the-badge)](CONTRIBUTING.md)
+
+Жобаға үлес қосқыңыз келсе немесе барлық үлес қосушылар тізімін көргіңіз келсе, төмендегі құжаттарды қараңыз:
+- 📜 **[CONTRIBUTORS.md](CONTRIBUTORS.md)** — Авторлар мен үлес қосушылардың толық тізімі.
+- 🤝 **[CONTRIBUTING.md](CONTRIBUTING.md)** — Жобаға үлес қосу және PR жіберу нұсқаулығы.
+

@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
           </GlassCard>
           <GlassCard>
             <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">Курс прогресі</p>
-            <ProgressBar value={68} label="10 модульдің 6.8-і аяқталды" />
+            <ProgressBar value={68} label="10 сабақтың 6.8-і аяқталды" />
           </GlassCard>
           <GlassCard>
             <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">Жалпы оқу уақыты</p>

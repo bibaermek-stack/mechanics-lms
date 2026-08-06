@@ -31,7 +31,7 @@ export default function TeacherLessonsPage() {
         <div>
           <h1 className="text-2xl font-bold">Сабақтарды басқару</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Әр модульдің YouTube бейнесін кодты өзгертпей-ақ ауыстыруға болады. (Демо режимде өзгеріс браузерде сақталады;
+            Әр сабақтың YouTube бейнесін кодты өзгертпей-ақ ауыстыруға болады. (Демо режимде өзгеріс браузерде сақталады;
             өндірістік нұсқада Firestore-дың <code>videos</code> коллекциясына жазылады.)
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function TeacherLessonsPage() {
                 <div className="flex items-center gap-3">
                   <Youtube className="text-rose-500" />
                   <div>
-                    <p className="font-semibold">Модуль {m.id}: {m.title}</p>
+                    <p className="font-semibold">Сабақ {m.id}: {m.title}</p>
                     <p className="text-xs text-slate-400">Ағымдағы ID: {current}</p>
                   </div>
                 </div>

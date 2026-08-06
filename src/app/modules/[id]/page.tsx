@@ -46,7 +46,7 @@ export default function ModuleDetailPage() {
     <DashboardShell>
       <div className="space-y-6">
         <div className={`rounded-xl2 bg-gradient-to-br ${mod.colorFrom} ${mod.colorTo} p-6 text-white`}>
-          <p className="text-xs uppercase opacity-80">Модуль {mod.id} / 10</p>
+          <p className="text-xs uppercase opacity-80">Сабақ {mod.id} / 10</p>
           <h1 className="mt-1 text-2xl font-bold">{mod.title}</h1>
           <p className="mt-2 max-w-2xl text-sm opacity-90">{mod.shortDescription}</p>
         </div>

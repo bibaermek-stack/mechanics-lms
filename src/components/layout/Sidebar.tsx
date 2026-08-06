@@ -20,7 +20,7 @@ import {
 
 const STUDENT_LINKS = [
   { href: "/dashboard", label: "Басты бет", icon: LayoutDashboard },
-  { href: "/modules", label: "Модульдер", icon: BookOpen },
+  { href: "/modules", label: "Сабақтар", icon: BookOpen },
   { href: "/ai-tutor", label: "AI Тьютор", icon: Bot },
   { href: "/analytics", label: "Аналитика", icon: BarChart3 },
   { href: "/certificates", label: "Сертификаттар", icon: Award },
