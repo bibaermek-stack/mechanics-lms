@@ -149,21 +149,32 @@ export async function signIn(email: string, password: string): Promise<AuthResul
  */
 export async function signInWithGoogle(role?: Exclude<UserRole, "admin">): Promise<void> {
   if (!isSupabaseConfigured || !supabase) {
-    throw new Error("Google арқылы кіру үшін Supabase кілттері қажет.");
+    throw new Error(
+      "Supabase кілттері жүктелмеген. .env.local тексеріп, dev серверді қайта қосыңыз."
+    );
   }
   const callback = new URL("/auth/callback", window.location.origin);
   if (role) callback.searchParams.set("role", role);
 
-  const { error } = await supabase.auth.signInWithOAuth({
+  // skipBrowserRedirect and an explicit assign, rather than letting the library
+  // navigate for us. Its implicit redirect fails silently when the page cannot
+  // leave the origin — no error, no navigation, a button that does nothing.
+  // Doing it here means an unusable URL surfaces as a message instead.
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
       redirectTo: callback.toString(),
+      skipBrowserRedirect: true,
       // Force the account chooser: on a shared university machine the silent
       // re-use of the last Google session is the wrong default.
       queryParams: { prompt: "select_account" },
     },
   });
   if (error) throw new Error(translateAuthError(error.message));
+  if (!data?.url) {
+    throw new Error("Google сілтемесі алынбады. Supabase-те Google провайдері қосулы ма?");
+  }
+  window.location.assign(data.url);
 }
 
 /**

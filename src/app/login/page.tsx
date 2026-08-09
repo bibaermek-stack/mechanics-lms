@@ -343,9 +343,15 @@ function LoginForm() {
 
         {!isSupabaseConfigured && (
           <div className="mt-7 border-t border-slate-200/60 pt-5 dark:border-white/10">
+            {/* Why Google is missing, stated plainly. An absent button with no
+                explanation reads as a broken feature rather than a config gap. */}
             <p className="text-micro text-slate-500 dark:text-slate-400">
-              Дерекқор қосылмаған — демо режим. Рөлді сынап көру үшін дайын тіркелгіні
-              таңдаңыз.
+              Дерекқор қосылмаған — демо режим, сондықтан Google арқылы кіру де жоқ.
+              <code className="mx-1 rounded bg-slate-200/60 px-1 dark:bg-white/10">
+                .env.local
+              </code>
+              файлында Supabase кілттерін тексеріп, dev серверді қайта қосыңыз. Әзірге
+              рөлді дайын тіркелгімен сынап көріңіз.
             </p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button onClick={() => handleDemo("student")} className="btn-secondary text-sm">
