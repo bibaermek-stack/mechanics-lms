@@ -69,6 +69,49 @@ export function computeFinalGrade(userId: string, breakdown: FinalGradeBreakdown
   };
 }
 
+/**
+ * Grade from the components a student has actually produced.
+ *
+ * computeFinalGrade treats a missing component as a zero, which is right at the
+ * end of the course and wrong at the start: a student who has aced two
+ * quizzes and not yet reached the final project would be shown a failing mark.
+ * This renormalises over the weights that are covered and reports how much of
+ * the total that is, so the page can say "85% — бағаның 30%-ы есептелді"
+ * instead of quietly inventing the rest.
+ *
+ * Returns null when nothing has been produced at all.
+ */
+export function computePartialGrade(
+  userId: string,
+  partial: Partial<FinalGradeBreakdown>
+): (FinalGradeResult & { coveredWeight: number }) | null {
+  const keys = (Object.keys(GRADE_WEIGHTS) as (keyof FinalGradeBreakdown)[]).filter(
+    (k) => typeof partial[k] === "number"
+  );
+  if (keys.length === 0) return null;
+
+  const coveredWeight = keys.reduce((sum, k) => sum + GRADE_WEIGHTS[k], 0);
+  const earned = keys.reduce((sum, k) => sum + (partial[k]! / 100) * GRADE_WEIGHTS[k], 0);
+  const rounded = Math.round((earned / coveredWeight) * 100 * 100) / 100;
+
+  // The stored breakdown keeps zeros for the untouched components so the shape
+  // still matches FinalGradeBreakdown; `coveredWeight` is what says which of
+  // those zeros are real.
+  const breakdown = {} as FinalGradeBreakdown;
+  for (const k of Object.keys(GRADE_WEIGHTS) as (keyof FinalGradeBreakdown)[]) {
+    breakdown[k] = partial[k] ?? 0;
+  }
+
+  return {
+    userId,
+    breakdown,
+    weightedTotal: rounded,
+    competencyLevel: gradeToCompetencyLevel(rounded),
+    updatedAt: new Date().toISOString(),
+    coveredWeight,
+  };
+}
+
 export function gradeToCompetencyLevel(percent: number): FinalGradeResult["competencyLevel"] {
   if (percent >= 90) return "Сарапшы";
   if (percent >= 75) return "Жетік";

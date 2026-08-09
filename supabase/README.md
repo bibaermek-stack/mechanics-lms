@@ -46,6 +46,10 @@ Supabase Dashboard → **SQL Editor** → `migrations/0001_accounts_and_links.sq
 `role_locked` бағанына жазылмайтын (NOT NULL). 0003 соны түзейді әрі профильсіз
 қалып қойған тіркелгілерге профиль жасап береді.
 
+`0004_classmates.sql` — көшбасшылар кестесі үшін. Студент бір оқытушыға
+қосылған топтастарын ғана көреді (RLS бөтен студенттің профилін ашпайды,
+сондықтан бұл да `search_people` сияқты тар SECURITY DEFINER терезесі).
+
 ## 3. Google арқылы кіру
 
 Dashboard → **Authentication → Providers → Google**: қосулы болуы керек

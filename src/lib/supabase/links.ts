@@ -7,7 +7,14 @@
 // `requested_by`. Whoever did *not* send it is the one who may accept, which is
 // what `awaitingMe` encodes for the UI.
 
-import type { AppUser, LinkStatus, PersonSummary, TeacherLink, UserRole } from "@/lib/types";
+import type {
+  AppUser,
+  LeaderboardEntry,
+  LinkStatus,
+  PersonSummary,
+  TeacherLink,
+  UserRole,
+} from "@/lib/types";
 import { isSupabaseConfigured, supabase } from "./client";
 import { mockLinks, mockPerson, mockSaveLinks, mockDirectory, type MockLinkRow } from "./mock";
 
@@ -274,6 +281,53 @@ export function partitionLinks(links: TeacherLink[]) {
     outgoing: links.filter((l) => l.status === "pending" && !l.awaitingMe),
     declined: links.filter((l) => l.status === "declined"),
   };
+}
+
+/**
+ * Students who share a teacher with the current user, plus the user, ranked by
+ * XP. Empty until the student is accepted by a teacher — at which point the
+ * list is their actual group rather than five invented names.
+ */
+export async function listClassmates(me: AppUser): Promise<LeaderboardEntry[]> {
+  const rank = (rows: { userId: string; fullName: string; xp: number; competencyScore: number }[]) =>
+    rows
+      .sort((a, b) => b.xp - a.xp || a.fullName.localeCompare(b.fullName, "kk"))
+      .map((r, i) => ({ ...r, rank: i + 1 }));
+
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.rpc("classmates");
+    if (error) throw new Error(error.message);
+    return rank(
+      (data ?? []).map((r: any) => ({
+        userId: r.id,
+        fullName: r.full_name,
+        avatarUrl: r.avatar_url ?? undefined,
+        xp: r.xp ?? 0,
+        competencyScore: r.competency_score ?? 0,
+      }))
+    );
+  }
+
+  // Mock: same rule, walked over the local link store.
+  const links = mockLinks();
+  const myTeachers = links
+    .filter((l) => l.studentId === me.uid && l.status === "accepted")
+    .map((l) => l.teacherId);
+  const peerIds = new Set<string>([me.uid]);
+  for (const l of links) {
+    if (l.status === "accepted" && myTeachers.includes(l.teacherId)) peerIds.add(l.studentId);
+  }
+  return rank(
+    [...peerIds]
+      .map((id) => mockDirectory().find((p) => p.id === id))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p) && p!.role === "student")
+      .map((p) => ({
+        userId: p.id,
+        fullName: p.fullName,
+        xp: p.id === me.uid ? me.xp ?? 0 : 0,
+        competencyScore: 0,
+      }))
+  );
 }
 
 // ---------------------------------------------------------------------------

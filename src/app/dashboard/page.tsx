@@ -15,6 +15,7 @@ import { LessonScoreChart } from "@/components/charts/LessonScoreChart";
 import { ALL_MODULES } from "@/data/modules";
 import { useAuthStore } from "@/lib/authStore";
 import { buildStudentPlan, studentLessonScores } from "@/lib/studentPlan";
+import { loadStudentStats, type StudentStats } from "@/lib/studentStats";
 import type { ActionItem } from "@/lib/types";
 import { ArrowRight } from "lucide-react";
 
@@ -23,6 +24,7 @@ export default function StudentDashboard() {
   const [completedModuleIds, setCompletedModuleIds] = useState<number[]>([]);
   const [scores, setScores] = useState<(number | null)[] | null>(null);
   const [plan, setPlan] = useState<ActionItem[] | null>(null);
+  const [stats, setStats] = useState<StudentStats | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -33,6 +35,7 @@ export default function StudentDashboard() {
       );
     });
     buildStudentPlan(user.uid).then(setPlan);
+    loadStudentStats(user.uid).then(setStats);
   }, [user]);
 
   const progressPercent = Math.round((completedModuleIds.length / ALL_MODULES.length) * 100);
@@ -60,9 +63,13 @@ export default function StudentDashboard() {
           />
           <StatCard
             label="Құзыреттілік деңгейі"
-            value={user?.competencyScore ?? 0}
-            unit="%"
-            context="10 критерий бойынша рубрика"
+            value={stats?.competencyPercent ?? "—"}
+            unit={stats?.competencyPercent != null ? "%" : undefined}
+            context={
+              stats?.competencyPercent != null
+                ? "10 критерий бойынша рубрика"
+                : "Өзін-өзі бағалаудан өтпегенсіз"
+            }
             tone="emerald"
           />
           <StatCard
@@ -72,7 +79,19 @@ export default function StudentDashboard() {
             context="Викторина, ойын және БӨЖ үшін"
             tone="amber"
           />
-          <StatCard label="Оқу сериясы" value={5} unit="күн" context="Қатарынан белсенді күн" />
+          {/* Was a hardcoded "5 күн" streak with nothing behind it. Sessions are
+              not logged anywhere, so this shows a figure that is actually
+              recorded instead. */}
+          <StatCard
+            label="Орташа ұпай"
+            value={stats?.quizAverage ?? "—"}
+            unit={stats?.quizAverage != null ? "%" : undefined}
+            context={
+              stats?.attempted
+                ? `${stats.attempted} тапсырылған викторина бойынша`
+                : "Әлі викторина тапсырылмаған"
+            }
+          />
         </div>
 
         <Card>
