@@ -1,9 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { ALL_MODULES } from "@/data/modules";
+import { useLessons } from "@/components/providers/LessonsProvider";
 
 export default function ModulesPage() {
+  const { modules } = useLessons();
+
   return (
     <DashboardShell>
       <div className="space-y-6">
@@ -14,7 +18,7 @@ export default function ModulesPage() {
         />
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {ALL_MODULES.map((m) => (
+          {modules.map((m) => (
             <Link
               key={m.id}
               href={`/modules/${m.id}`}

@@ -13,6 +13,7 @@ import { ActionList } from "@/components/ui/ActionList";
 import { LoadingBlock } from "@/components/ui/Skeleton";
 import { LessonScoreChart } from "@/components/charts/LessonScoreChart";
 import { ALL_MODULES } from "@/data/modules";
+import { useLessons } from "@/components/providers/LessonsProvider";
 import { useAuthStore } from "@/lib/authStore";
 import { buildStudentPlan, studentLessonScores } from "@/lib/studentPlan";
 import { loadStudentStats, type StudentStats } from "@/lib/studentStats";
@@ -21,6 +22,7 @@ import { ArrowRight } from "lucide-react";
 
 export default function StudentDashboard() {
   const user = useAuthStore((s) => s.user);
+  const { modules } = useLessons();
   const [completedModuleIds, setCompletedModuleIds] = useState<number[]>([]);
   const [scores, setScores] = useState<(number | null)[] | null>(null);
   const [plan, setPlan] = useState<ActionItem[] | null>(null);
@@ -137,7 +139,7 @@ export default function StudentDashboard() {
         <div>
           <SectionHeader title="Оқу сабақтары" />
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {ALL_MODULES.map((m) => (
+            {modules.map((m) => (
               <LessonCard
                 key={m.id}
                 id={m.id}

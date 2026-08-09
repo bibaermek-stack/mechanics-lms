@@ -64,6 +64,21 @@ const SCENES: Record<number, React.ComponentType> = {
     ssr: false,
     loading: Skeleton,
   }),
+  // 11–13 are the prescribed lab works that no lesson-numbered scene covered.
+  // They are keyed past the ten lessons because a lab does not have to belong
+  // to a lesson of the same number — see src/data/labWorks.ts.
+  11: dynamic(() => import("./scenes/Sim11Friction").then((m) => m.Sim11Friction), {
+    ssr: false,
+    loading: Skeleton,
+  }),
+  12: dynamic(() => import("./scenes/Sim12FreeFall").then((m) => m.Sim12FreeFall), {
+    ssr: false,
+    loading: Skeleton,
+  }),
+  13: dynamic(
+    () => import("./scenes/Sim13RotaryKinematics").then((m) => m.Sim13RotaryKinematics),
+    { ssr: false, loading: Skeleton }
+  ),
 };
 
 export function SimulationPanel({ moduleId }: { moduleId: number }) {

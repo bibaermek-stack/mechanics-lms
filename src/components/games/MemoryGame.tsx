@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { shuffle } from "@/data/modules";
+import { seededRandom, seededShuffle } from "@/lib/rng";
 import type { GamePair } from "@/lib/types";
 
 interface Card {
@@ -13,17 +13,20 @@ interface Card {
 export function MemoryGame({
   pairs,
   onComplete,
+  seed = 1,
 }: {
   pairs: GamePair[];
   onComplete: (score: number) => void;
+  /** Fixes the card layout; the router passes the lesson or duel seed. */
+  seed?: number;
 }) {
   const cards = useMemo<Card[]>(() => {
     const raw = pairs.flatMap((p, i) => [
       { key: `${i}-l`, pairId: i, label: p.left },
       { key: `${i}-r`, pairId: i, label: p.right },
     ]);
-    return shuffle(raw);
-  }, [pairs]);
+    return seededShuffle(raw, seededRandom(seed));
+  }, [pairs, seed]);
 
   const [flipped, setFlipped] = useState<string[]>([]);
   const [matchedPairIds, setMatchedPairIds] = useState<number[]>([]);

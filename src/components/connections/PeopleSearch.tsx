@@ -11,6 +11,7 @@ import { useState } from "react";
 import { Search, Send, Check, Clock } from "lucide-react";
 import type { AppUser, PersonSummary, UserRole } from "@/lib/types";
 import { searchPeople, sendLinkRequest } from "@/lib/supabase/links";
+import { sendFriendRequest } from "@/lib/supabase/friends";
 import { PersonRow } from "./PersonRow";
 import { Badge } from "@/components/ui/Badge";
 
@@ -18,12 +19,22 @@ export function PeopleSearch({
   me,
   wantRole,
   onChanged,
+  /**
+   * "teacher" opens a teaching link, "friend" opens a friendship. Both search
+   * the same directory; only the edge that gets written differs.
+   */
+  kind = "teacher",
+  title,
+  hint,
 }: {
   me: AppUser;
-  /** Which side you are looking for — the opposite of your own role. */
+  /** Which side you are looking for. */
   wantRole: UserRole;
   /** Called after a request is sent so the parent can refresh its lists. */
   onChanged: () => void;
+  kind?: "teacher" | "friend";
+  title?: string;
+  hint?: string;
 }) {
   const [term, setTerm] = useState("");
   const [results, setResults] = useState<PersonSummary[] | null>(null);
@@ -52,7 +63,8 @@ export function PeopleSearch({
     setSending(person.id);
     setError(null);
     try {
-      await sendLinkRequest(me, person);
+      if (kind === "friend") await sendFriendRequest(me, person);
+      else await sendLinkRequest(me, person);
       // Reflect it locally so the button changes without a second round trip.
       setResults((rs) =>
         rs?.map((r) =>
@@ -72,11 +84,13 @@ export function PeopleSearch({
   return (
     <section className="glass glass-lit rounded-3xl2 p-5 sm:p-6">
       <h2 className="text-h3 text-slate-900 dark:text-white">
-        {wantRole === "teacher" ? "Оқытушы табу" : "Студент табу"}
+        {title ?? (wantRole === "teacher" ? "Оқытушы табу" : "Студент табу")}
       </h2>
       <p className="mt-1 text-label text-slate-600 dark:text-slate-400">
-        Коды бойынша (мыс. {wantRole === "teacher" ? "TCH-A7K2M9" : "STU-A7K2M9"}), аты-жөні
-        немесе толық email арқылы іздеңіз.
+        {hint ??
+          `Коды бойынша (мыс. ${
+            wantRole === "teacher" ? "TCH-A7K2M9" : "STU-A7K2M9"
+          }), аты-жөні немесе толық email арқылы іздеңіз.`}
       </p>
 
       <form onSubmit={run} className="mt-4 flex gap-2">
@@ -116,7 +130,7 @@ export function PeopleSearch({
                 <PersonRow key={p.id} person={p}>
                   {p.linkStatus === "accepted" ? (
                     <Badge variant="success">
-                      <Check size={13} /> Қосылған
+                      <Check size={13} /> {kind === "friend" ? "Дос" : "Қосылған"}
                     </Badge>
                   ) : p.linkStatus === "pending" ? (
                     <Badge variant="warning">
@@ -130,7 +144,11 @@ export function PeopleSearch({
                       className="btn-secondary px-3 py-1.5 text-sm disabled:opacity-60"
                     >
                       <Send size={14} />
-                      {sending === p.id ? "Жіберілуде…" : "Сұраныс жіберу"}
+                      {sending === p.id
+                        ? "Жіберілуде…"
+                        : kind === "friend"
+                          ? "Дос ретінде қосу"
+                          : "Сұраныс жіберу"}
                     </button>
                   )}
                 </PersonRow>

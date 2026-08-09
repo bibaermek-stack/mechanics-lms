@@ -93,6 +93,32 @@ export const SIMULATIONS: SimulationMeta[] = [
     devices: ["Smart Cart"],
     minutes: 15,
   },
+  // 11–13 belong to prescribed lab works whose lesson already had a scene of
+  // its own, so they are numbered past the ten lessons. See src/data/labWorks.ts.
+  {
+    moduleId: 11,
+    title: "Үйкеліс коэффициентін анықтау",
+    subtitle:
+      "Тартушы күшті баяу арттырып, күш датчигінің қисығынан μₛ мен μₖ-ны оқы. Төрт бетті салыстыр.",
+    devices: ["Smart Cart"],
+    minutes: 12,
+  },
+  {
+    moduleId: 12,
+    title: "Еркін түсу үдеуін анықтау",
+    subtitle:
+      "Екі фотоқақпа арқылы шардың екі нүктедегі жылдамдығын өлшеп, g = (v₂²−v₁²)/2d есепте.",
+    devices: ["Smart Gate"],
+    minutes: 10,
+  },
+  {
+    moduleId: 13,
+    title: "Айналмалы қозғалысты зерттеу",
+    subtitle:
+      "Rotary Motion Sensor θ, ω, α шамаларын бір мезгілде тіркейді. Үш графиктің байланысын аш.",
+    devices: ["Rotary Motion Sensor"],
+    minutes: 12,
+  },
 ];
 
 export function getSimulation(moduleId: number): SimulationMeta | undefined {

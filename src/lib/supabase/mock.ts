@@ -15,6 +15,8 @@ import { COHORT } from "@/data/cohort";
 import { DEMO_STUDENT, DEMO_TEACHER } from "@/lib/authStore";
 
 const LS = "mechanics-lms:links";
+const LS_FRIENDS = "mechanics-lms:friendLinks";
+const LS_DUELS = "mechanics-lms:duels";
 const LS_DIR = "mechanics-lms:directory";
 
 export interface MockLinkRow {
@@ -178,4 +180,50 @@ export function mockLinks(): MockLinkRow[] {
 
 export function mockSaveLinks(rows: MockLinkRow[]) {
   write(LS, rows);
+}
+
+// --- Friendships ------------------------------------------------------------
+
+export interface MockFriendRow {
+  id: string;
+  requesterId: string;
+  addresseeId: string;
+  status: LinkStatus;
+  createdAt: string;
+  respondedAt?: string | null;
+}
+
+/**
+ * Unlike teacher links these start empty: seeding a demo account with friends
+ * it never made is exactly the kind of borrowed data this app has been getting
+ * rid of. The list fills as soon as somebody sends a request.
+ */
+export function mockFriendLinks(): MockFriendRow[] {
+  return read<MockFriendRow[]>(LS_FRIENDS, []);
+}
+
+export function mockSaveFriendLinks(rows: MockFriendRow[]) {
+  write(LS_FRIENDS, rows);
+}
+
+// --- Duels ------------------------------------------------------------------
+
+export interface MockDuelRow {
+  id: string;
+  challengerId: string;
+  opponentId: string;
+  moduleId: number;
+  gameMode: string;
+  seed: number;
+  challengerScore: number | null;
+  opponentScore: number | null;
+  createdAt: string;
+}
+
+export function mockDuels(): MockDuelRow[] {
+  return read<MockDuelRow[]>(LS_DUELS, []);
+}
+
+export function mockSaveDuels(rows: MockDuelRow[]) {
+  write(LS_DUELS, rows);
 }

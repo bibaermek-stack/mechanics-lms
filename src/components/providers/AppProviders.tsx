@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useAuthStore } from "@/lib/authStore";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase/client";
 import { fetchProfile, readMockSession } from "@/lib/supabase/accounts";
+import { LessonsProvider } from "./LessonsProvider";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser);
@@ -56,5 +57,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     setUser(readMockSession());
   }, [setUser]);
 
-  return <>{children}</>;
+  // Nested inside, not beside: the lesson overrides that apply depend on who
+  // is signed in, so this provider needs the auth state to have settled first.
+  return <LessonsProvider>{children}</LessonsProvider>;
 }

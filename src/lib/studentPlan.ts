@@ -7,7 +7,8 @@
 // student must never be shown numbers that do not match their own dashboard.
 
 import { ALL_MODULES, getModuleById } from "@/data/modules";
-import { getAssignmentSubmissions, getQuizAttempts } from "./dataStore";
+import { getSimulation } from "@/data/simulations";
+import { getAssignmentSubmissions, getGameResults, getQuizAttempts } from "./dataStore";
 import type { ActionItem } from "./types";
 
 /** Below this a lesson is flagged for review. */
@@ -33,9 +34,10 @@ export async function studentLessonScores(userId: string): Promise<(number | nul
 }
 
 export async function buildStudentPlan(userId: string): Promise<ActionItem[]> {
-  const [scores, submissions] = await Promise.all([
+  const [scores, submissions, games] = await Promise.all([
     studentLessonScores(userId),
     getAssignmentSubmissions(userId),
+    getGameResults(userId),
   ]);
 
   const items: ActionItem[] = [];
@@ -73,7 +75,45 @@ export async function buildStudentPlan(userId: string): Promise<ActionItem[]> {
     });
   }
 
-  // 3. Submitted work waiting on the teacher — informational, not a task.
+  // 3. The lesson's 3D experiment. This one is always present, for whichever
+  //    lesson the student is on: the simulations are the point of the course
+  //    and the part nobody can edit away, so the plan should never be a list
+  //    that quietly omits them. It points at the weakest attempted lesson
+  //    first — running the experiment is the fastest way to fix a bad score —
+  //    and otherwise at wherever the student currently is.
+  const simTarget = weak[0]?.id ?? ALL_MODULES[Math.max(0, nextIndex)]?.id ?? ALL_MODULES[0].id;
+  const sim = getSimulation(simTarget);
+  if (sim) {
+    const mod = getModuleById(simTarget);
+    items.push({
+      id: `simulation-${simTarget}`,
+      severity: "info",
+      kind: "3D тәжірибе",
+      title: `«${sim.title}» симуляциясын жаса`,
+      evidence: weak[0]
+        ? `«${mod?.title ?? ""}» бойынша ұпайың ${weak[0].pct}% — тәжірибе ұғымды бекітеді.`
+        : `${sim.devices.join(", ")} қолданылады, шамамен ${sim.minutes} минут.`,
+      action: sim.subtitle,
+      href: `/modules/${simTarget}?tab=simulation`,
+    });
+  }
+
+  // 4. Games the student has not tried on their current lesson.
+  const playedModules = new Set(games.map((g) => g.moduleId));
+  const gameTarget = nextIndex !== -1 ? ALL_MODULES[Math.max(0, nextIndex - 1)]?.id : undefined;
+  if (gameTarget && attemptedCount > 0 && !playedModules.has(gameTarget)) {
+    items.push({
+      id: `games-${gameTarget}`,
+      severity: "info",
+      kind: "Ойын",
+      title: "Терминдерді ойынмен бекіт",
+      evidence: "Бұл сабақтың ойындарын әлі ойнамағансың.",
+      action: "Кроссворд, сөз табу немесе жылдам жауап — глоссарийді жаттауға көмектеседі.",
+      href: `/modules/${gameTarget}?tab=game`,
+    });
+  }
+
+  // 5. Submitted work waiting on the teacher — informational, not a task.
   const pending = submissions.filter((s) => s.status === "pending");
   if (pending.length > 0) {
     items.push({
@@ -86,7 +126,7 @@ export async function buildStudentPlan(userId: string): Promise<ActionItem[]> {
     });
   }
 
-  // 4. Graded work with a low mark — done, but worth revisiting.
+  // 6. Graded work with a low mark — done, but worth revisiting.
   const lowGraded = submissions.filter(
     (s) => s.status === "reviewed" && typeof s.grade === "number" && s.grade < WEAK_THRESHOLD
   );
@@ -103,7 +143,7 @@ export async function buildStudentPlan(userId: string): Promise<ActionItem[]> {
     });
   }
 
-  // 5. Nothing flagged and the student has actually started — encouragement,
+  // 7. Nothing flagged and the student has actually started — encouragement,
   //    not silence, and a concrete next step rather than just praise.
   const hasRisk = items.some((i) => i.severity !== "info");
   if (!hasRisk && attemptedCount > 0) {

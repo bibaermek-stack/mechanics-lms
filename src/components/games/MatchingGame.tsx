@@ -2,18 +2,26 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { shuffle } from "@/data/modules";
+import { seededRandom, seededShuffle } from "@/lib/rng";
 import type { GamePair } from "@/lib/types";
 
 export function MatchingGame({
   pairs,
   onComplete,
+  seed = 1,
 }: {
   pairs: GamePair[];
   onComplete: (score: number) => void;
+  /** Fixes the column order; the router passes the lesson or duel seed. */
+  seed?: number;
 }) {
   const leftItems = useMemo(() => pairs.map((p) => p.left), [pairs]);
-  const rightItems = useMemo(() => shuffle(pairs.map((p) => p.right)), [pairs]);
+  // Seeded, not random: this runs during SSR too, and Math.random() there
+  // produces a different order than the client, which is a hydration error.
+  const rightItems = useMemo(
+    () => seededShuffle(pairs.map((p) => p.right), seededRandom(seed)),
+    [pairs, seed]
+  );
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
   const [matched, setMatched] = useState<Record<string, string>>({});
   const [wrongFlash, setWrongFlash] = useState<string | null>(null);

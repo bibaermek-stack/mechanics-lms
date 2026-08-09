@@ -34,8 +34,6 @@ const FLAG_OUT = 0.05;
 const PULLEY_X = 1.0;
 const PULLEY_R = 0.025;
 /** Height of the scanned gate and of its clear opening, at its catalogue size. */
-const GATE_H = 0.0867;
-const GATE_GAP = 0.0578;
 /**
  * Bearing friction, modelled as a constant *torque* rather than a constant
  * angular deceleration: a light wheel then slows quickly and a heavy one keeps
@@ -124,7 +122,7 @@ export function Sim07Rotation() {
         "τ = T·R = Iα",
         "Eₖ = Iω²/2",
       ]}
-      pasco={[PASCO.smartGate]}
+      pasco={[PASCO.rotarySensor]}
       built={[
         "мойынтіректі штатив",
         "ауыспалы маховик (диск / сақина / айқас өзек)",
@@ -205,7 +203,7 @@ export function Sim07Rotation() {
       }
       data={
         <div className="grid gap-4 lg:grid-cols-2">
-          <Panel title="Smart Gate өлшемдері">
+          <Panel title="Rotary Motion Sensor өлшемдері">
             <Readout
               items={[
                 { label: "Уақыт t", value: fmt(engine.timeRef.current, 2), unit: "с" },
@@ -286,8 +284,6 @@ function Scene({
 
   // The gate is turned upside down so its opening faces the descending flag;
   // the other way round its crossbar sits in the flag's path.
-  const gateTop = AXLE_Y - radius + 0.004;
-  const postH = gateTop - GATE_H - BENCH_H;
 
   useFrame(() => {
     const s = engine.stateRef.current;
@@ -323,20 +319,14 @@ function Scene({
         {SHAPES[kind].label}
       </Tag>
 
-      {/* photogate under the wheel, straddling the index flag's path */}
-      <mesh position={[CX, BENCH_H + postH / 2, BODY_Z]} castShadow receiveShadow>
-        <boxGeometry args={[0.03, Math.max(postH, 0.01), 0.03]} />
-        <meshStandardMaterial color="#64748b" metalness={0.55} roughness={0.4} />
-      </mesh>
-      <mesh position={[CX, BENCH_H + 0.007, BODY_Z]} castShadow receiveShadow>
-        <boxGeometry args={[0.11, 0.014, 0.11]} />
-        <meshStandardMaterial color="#334155" roughness={0.7} />
-      </mesh>
-      <group position={[CX, gateTop, BODY_Z]} rotation={[0, 0, Math.PI]}>
-        <PascoModel spec={PASCO.smartGate} />
+      {/* The Rotary Motion Sensor rides on the axle itself. A photogate would
+          only see the index flag once per turn; the sensor reads the shaft
+          continuously, which is what makes α measurable rather than inferred. */}
+      <group position={[CX, AXLE_Y, BODY_Z - 0.09]} rotation={[0, Math.PI / 2, 0]}>
+        <PascoModel spec={PASCO.rotarySensor} />
       </group>
-      <Tag position={[CX - 0.15, gateTop - GATE_GAP / 2, BODY_Z]} tone="brand">
-        Smart Gate · период
+      <Tag position={[CX - 0.17, AXLE_Y + 0.05, BODY_Z - 0.09]} tone="brand">
+        Rotary Motion Sensor · θ, ω, α
       </Tag>
 
       {/* drive string over the edge pulley to the falling mass */}

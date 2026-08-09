@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { shuffle } from "@/data/modules";
+import { seededRandom, seededShuffle } from "@/lib/rng";
 import type { GamePair } from "@/lib/types";
 
 // HTML5 drag-and-drop matching game: drag each "right" label onto its
@@ -9,11 +9,17 @@ import type { GamePair } from "@/lib/types";
 export function DragDropGame({
   pairs,
   onComplete,
+  seed = 1,
 }: {
   pairs: GamePair[];
   onComplete: (score: number) => void;
+  /** Fixes the draggable order; the router passes the lesson or duel seed. */
+  seed?: number;
 }) {
-  const draggables = useMemo(() => shuffle(pairs.map((p) => p.right)), [pairs]);
+  const draggables = useMemo(
+    () => seededShuffle(pairs.map((p) => p.right), seededRandom(seed)),
+    [pairs, seed]
+  );
   const [placed, setPlaced] = useState<Record<string, string>>({});
   const [dragging, setDragging] = useState<string | null>(null);
   const [wrongTarget, setWrongTarget] = useState<string | null>(null);

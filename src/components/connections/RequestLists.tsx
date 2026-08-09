@@ -5,6 +5,10 @@
 // A request is only actionable by the side that did not send it, so the two
 // lists take different buttons: accept/decline on the way in, withdraw on the
 // way out. Both are driven by the same `awaitingMe` flag the data layer sets.
+//
+// The teacher graph and the friend graph have the same shape but different
+// tables, so the two write actions are injectable and default to the teacher
+// ones. That is the whole difference — everything visual is shared.
 
 import { useState } from "react";
 import { Check, X, Undo2 } from "lucide-react";
@@ -23,17 +27,20 @@ export function IncomingRequests({
   links,
   onChanged,
   emptyText,
+  onRespond = respondToRequest,
 }: {
   links: TeacherLink[];
   onChanged: () => void;
   emptyText: string;
+  /** Swap in the friend-graph writer; defaults to the teacher graph. */
+  onRespond?: (id: string, accept: boolean) => Promise<void>;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
 
   async function respond(id: string, accept: boolean) {
     setBusy(id);
     try {
-      await respondToRequest(id, accept);
+      await onRespond(id, accept);
       onChanged();
     } finally {
       setBusy(null);
@@ -87,17 +94,19 @@ export function OutgoingRequests({
   links,
   onChanged,
   emptyText,
+  onRemove = removeLink,
 }: {
   links: TeacherLink[];
   onChanged: () => void;
   emptyText: string;
+  onRemove?: (id: string) => Promise<void>;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
 
   async function withdraw(id: string) {
     setBusy(id);
     try {
-      await removeLink(id);
+      await onRemove(id);
       onChanged();
     } finally {
       setBusy(null);

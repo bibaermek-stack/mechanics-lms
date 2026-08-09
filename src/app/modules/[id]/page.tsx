@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { notFound, useParams } from "next/navigation";
+import { notFound, useParams, useSearchParams } from "next/navigation";
 import {
   BookOpen,
   ListChecks,
@@ -22,7 +22,10 @@ import { GameRouter } from "@/components/games/GameRouter";
 import { RubricAssessment } from "@/components/assessment/RubricAssessment";
 import { BOZhSubmissionForm } from "@/components/assignment/BOZhSubmissionForm";
 import { AiTutorWidget } from "@/components/ai/AiTutorWidget";
-import { ALL_MODULES, getModuleById } from "@/data/modules";
+import { ALL_MODULES } from "@/data/modules";
+import { useLessons } from "@/components/providers/LessonsProvider";
+import { getSimulation } from "@/data/simulations";
+import { LAB_WORKS, labsForLesson } from "@/data/labWorks";
 
 // three.js only ships to the browser, and only when this tab is opened.
 const SimulationPanel = dynamic(
@@ -43,11 +46,70 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]["key"];
 
+/**
+ * A lesson can carry more than one experiment: lesson 2 owns three of the
+ * prescribed lab works, lesson 7 owns two. When it does, the scenes are picked
+ * from a list rather than assumed to be the one that shares the lesson number.
+ */
+function LessonSimulations({ lessonId }: { lessonId: number }) {
+  // The lesson's own scene first, then any lab work attached to this lesson
+  // that runs a different one.
+  const sceneIds = Array.from(
+    new Set([
+      ...(getSimulation(lessonId) ? [lessonId] : []),
+      ...labsForLesson(lessonId)
+        .map((l) => l.sceneModuleId)
+        .filter((id): id is number => id !== null),
+    ])
+  );
+  const [active, setActive] = useState(sceneIds[0]);
+
+  if (sceneIds.length === 0) return <SimulationPanel moduleId={lessonId} />;
+
+  return (
+    <div className="space-y-4">
+      {sceneIds.length > 1 && (
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Осы сабақтың тәжірибелері">
+          {sceneIds.map((id) => {
+            const meta = getSimulation(id);
+            const lab = LAB_WORKS.find((l) => l.sceneModuleId === id && l.lessonId === lessonId);
+            return (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={active === id}
+                onClick={() => setActive(id)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  active === id
+                    ? "bg-brand-500 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-brand-50 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+                }`}
+              >
+                {lab ? `${lab.id}-жұмыс · ` : ""}
+                {meta?.title ?? `Сахна ${id}`}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <SimulationPanel key={active} moduleId={active} />
+    </div>
+  );
+}
+
 export default function ModuleDetailPage() {
   const params = useParams();
+  const search = useSearchParams();
   const id = Number(params.id);
-  const mod = getModuleById(id);
-  const [tab, setTab] = useState<TabKey>("lecture");
+  // The teacher's edits, if any, are already merged in here.
+  const mod = useLessons().byId(id);
+  // The plan links straight at a tab (…?tab=simulation), so a recommendation
+  // lands on the experiment rather than on the lecture with the real target
+  // one click away.
+  const [tab, setTab] = useState<TabKey>(() => {
+    const wanted = search?.get("tab");
+    return TABS.some((t) => t.key === wanted) ? (wanted as TabKey) : "lecture";
+  });
 
   if (!mod) return notFound();
 
@@ -159,7 +221,7 @@ export default function ModuleDetailPage() {
           </div>
         )}
 
-        {tab === "simulation" && <SimulationPanel moduleId={mod.id} />}
+        {tab === "simulation" && <LessonSimulations lessonId={mod.id} />}
 
         {tab === "quiz" && <QuizEngine moduleId={mod.id} />}
 
