@@ -10,10 +10,56 @@ export interface AppUser {
   role: UserRole;
   avatarUrl?: string;
   group?: string; // student group / cohort
+  /** Short shareable handle, e.g. STU-7K3M2A. Assigned at signup, immutable. */
+  userCode?: string;
+  /**
+   * False only between an OAuth signup and the moment its owner picks a role.
+   * A Google sign-in has no form to carry the choice, so the profile starts
+   * provisional and `/auth/callback` asks. Everything else is born locked.
+   */
+  roleLocked?: boolean;
   createdAt: string;
   competencyScore?: number; // 0-100 aggregate
   badges?: string[];
   xp?: number;
+}
+
+// --- Teacher ↔ student graph ------------------------------------------------
+
+/** A request is pending until the *other* party answers it. */
+export type LinkStatus = "pending" | "accepted" | "declined";
+
+/**
+ * The public face of a person: what a search result or a request card shows.
+ * Deliberately excludes the email — see the search_people RPC.
+ */
+export interface PersonSummary {
+  id: string;
+  fullName: string;
+  userCode: string;
+  role: UserRole;
+  studyGroup?: string | null;
+  avatarUrl?: string | null;
+  /** Set when an edge with the current user already exists. */
+  linkStatus?: LinkStatus | null;
+  /** Who opened that edge — tells the UI whose turn it is. */
+  requestedBy?: string | null;
+}
+
+/** One edge, as seen from the current user's side. */
+export interface TeacherLink {
+  id: string;
+  teacherId: string;
+  studentId: string;
+  status: LinkStatus;
+  requestedBy: string;
+  message?: string | null;
+  createdAt: string;
+  respondedAt?: string | null;
+  /** The other party. */
+  person: PersonSummary;
+  /** True when the current user must accept or decline. */
+  awaitingMe: boolean;
 }
 
 export interface BloomOutcomes {

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Moon, Sun, Search, Menu } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bell, LogOut, Moon, Sun, Search, Menu } from "lucide-react";
 import { useAuthStore } from "@/lib/authStore";
 import { Badge } from "@/components/ui/Badge";
+import { signOut } from "@/lib/supabase/accounts";
 
 // Notification kinds are labelled in words, so the meaning does not depend on
 // an emoji rendering the same way on every device.
@@ -13,10 +15,19 @@ const NOTIFICATIONS: { tag: string; variant: "default" | "success"; text: string
 ];
 
 export function Navbar() {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
   const darkMode = useAuthStore((s) => s.darkMode);
   const toggleDarkMode = useAuthStore((s) => s.toggleDarkMode);
   const [notifOpen, setNotifOpen] = useState(false);
+
+  async function handleSignOut() {
+    await signOut();
+    // Clear locally too: in mock mode there is no auth event to react to.
+    setUser(null);
+    router.push("/login");
+  }
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-white/10 dark:bg-slate-900 md:px-6">
@@ -74,10 +85,16 @@ export function Navbar() {
           <div className="hidden text-left sm:block">
             <p className="text-xs font-semibold leading-tight">{user?.fullName ?? "Қонақ"}</p>
             <p className="text-micro text-slate-500 dark:text-slate-400">
+              {/* The shareable code sits next to the role because this is where
+                  people look when somebody asks "коды қандай?". */}
               {user?.role === "teacher" ? "Оқытушы" : "Студент"}
+              {user?.userCode ? ` · ${user.userCode}` : ""}
             </p>
           </div>
         </div>
+        <button onClick={handleSignOut} className="btn-ghost" aria-label="Шығу" title="Шығу">
+          <LogOut size={18} />
+        </button>
       </div>
     </header>
   );

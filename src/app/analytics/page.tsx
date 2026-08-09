@@ -69,7 +69,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <DashboardShell>
+    <DashboardShell role="student">
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

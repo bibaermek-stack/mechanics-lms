@@ -99,7 +99,7 @@ export default function TeacherAnalyticsPage() {
   ];
 
   return (
-    <DashboardShell>
+    <DashboardShell role="teacher">
       <div className="space-y-6">
         <SectionHeader
           as="h1"

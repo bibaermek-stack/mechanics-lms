@@ -38,7 +38,7 @@ export default function StudentDashboard() {
   const progressPercent = Math.round((completedModuleIds.length / ALL_MODULES.length) * 100);
 
   return (
-    <DashboardShell>
+    <DashboardShell role="student">
       <div className="space-y-6">
         <SectionHeader
           as="h1"

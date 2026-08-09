@@ -16,7 +16,7 @@ export default function TeacherAssignmentsPage() {
   }, []);
 
   return (
-    <DashboardShell>
+    <DashboardShell role="teacher">
       <div className="space-y-6">
         <div>
           <h1 className="text-h1">Тапсырмаларды тексеру</h1>

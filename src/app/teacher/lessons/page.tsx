@@ -26,7 +26,7 @@ export default function TeacherLessonsPage() {
   }
 
   return (
-    <DashboardShell>
+    <DashboardShell role="teacher">
       <div className="space-y-6">
         <div>
           <h1 className="text-h1">Сабақтарды басқару</h1>

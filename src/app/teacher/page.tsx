@@ -13,7 +13,7 @@ const STAT_CARDS = [
 
 export default function TeacherDashboard() {
   return (
-    <DashboardShell>
+    <DashboardShell role="teacher">
       <div className="space-y-6">
         <div>
           <h1 className="text-h1">Оқытушы дашборды</h1>

@@ -39,7 +39,7 @@ export default function CertificatesPage() {
   const studentName = user?.fullName ?? "Ермек Әлібек";
 
   return (
-    <DashboardShell>
+    <DashboardShell role="student">
       <div className="space-y-6">
         {/* Page Header Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-white/10 dark:bg-slate-900">
