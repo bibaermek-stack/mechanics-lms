@@ -13,7 +13,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { GraduationCap, Users } from "lucide-react";
 import { useAuthStore } from "@/lib/authStore";
 import { supabase } from "@/lib/supabase/client";
-import { claimRole, fetchProfile } from "@/lib/supabase/accounts";
+import { claimRole, fetchProfile, translateAuthError } from "@/lib/supabase/accounts";
 import type { AppUser } from "@/lib/types";
 
 type Role = "student" | "teacher";
@@ -74,9 +74,10 @@ function Callback() {
     const sb = supabase;
     let cancelled = false;
 
-    // Google's failure comes back on the URL, not as a thrown exception.
+    // Google's failure comes back on the URL, not as a thrown exception, and
+    // arrives in English straight from GoTrue.
     if (oauthError.current) {
-      setError(oauthError.current);
+      setError(translateAuthError(oauthError.current));
       return;
     }
 

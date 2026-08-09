@@ -40,6 +40,12 @@ Supabase Dashboard → **SQL Editor** → `migrations/0001_accounts_and_links.sq
 `0002_google_oauth.sql` — Google арқылы кіру үшін. Оны да SQL Editor-де іске
 қосыңыз (0001-ден кейін).
 
+`0003_fix_oauth_signup.sql` — **міндетті**. 0002-дегі триггер Google арқылы
+тіркелгенде құлайтын (`Database error saving new user`): рөл метадеректе
+болмағанда `meta_role in (...)` өрнегі `false` емес, `NULL` қайтаратын, ал ол
+`role_locked` бағанына жазылмайтын (NOT NULL). 0003 соны түзейді әрі профильсіз
+қалып қойған тіркелгілерге профиль жасап береді.
+
 ## 3. Google арқылы кіру
 
 Dashboard → **Authentication → Providers → Google**: қосулы болуы керек

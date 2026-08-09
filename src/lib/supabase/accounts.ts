@@ -252,7 +252,7 @@ export async function updateProfile(
  * Supabase returns English auth errors; the whole UI is in Kazakh, and these
  * four cover everything a signup/login form can realistically hit.
  */
-function translateAuthError(message: string): string {
+export function translateAuthError(message: string): string {
   const m = message.toLowerCase();
   if (m.includes("invalid login credentials")) return "Email немесе құпия сөз қате.";
   if (m.includes("already registered") || m.includes("already been registered"))
@@ -263,6 +263,10 @@ function translateAuthError(message: string): string {
     return "Email әлі расталмаған. Поштаңыздағы сілтемені ашыңыз.";
   if (m.includes("unable to validate email")) return "Email форматы қате.";
   if (m.includes("role has already been chosen")) return "Рөл бұрын таңдалған, оны өзгерту мүмкін емес.";
+  // GoTrue's blanket message for any exception raised by the signup trigger.
+  // Naming the likely cause turns it from a dead end into a next step.
+  if (m.includes("database error saving new user"))
+    return "Дерекқор жаңа қолданушыны сақтай алмады. Supabase-те 0003 көшірмесі (migration) қолданылған ба?";
   if (m.includes("provider is not enabled"))
     return "Google провайдері Supabase-те қосылмаған.";
   if (m.includes("redirect")) return "Қайтару сілтемесі Supabase-те рұқсат етілмеген.";
