@@ -91,6 +91,39 @@ GOOGLE_DRIVE_FOLDER_ID=<shared drive folder id>
 4. Add all variables from `.env.local` under Project Settings → Environment Variables.
 5. Deploy. Vercel builds with `next build` automatically.
 
+### If the deployed site says "Дерекқор қосылмаған — демо режим"
+
+`.env.local` is gitignored, so the keys never travel with the repository — the
+host needs its own copy. Two things trip people up:
+
+- **`NEXT_PUBLIC_*` is inlined at build time, not read at runtime.** Adding the
+  variables to an existing deployment changes nothing until you trigger a new
+  build (Vercel → Deployments → ⋯ → Redeploy, with the build cache off).
+- **Set them for the right environment.** Vercel keeps Production, Preview and
+  Development separate; a variable added only to Development leaves the live
+  site in demo mode.
+
+The variables the accounts system needs:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
+
+A production build without them prints a warning in the Vercel build log (see
+`next.config.js`), so you can catch this before opening the site.
+
+### Auth settings for the deployed domain
+
+In Supabase → Authentication → URL Configuration:
+
+- **Site URL** → `https://<your-domain>`
+- **Redirect URLs** → add `https://<your-domain>/auth/callback`
+  (keep `http://localhost:3000/auth/callback` for local work)
+
+Google Cloud Console needs **no** per-domain change: the only redirect URI Google
+ever sees is Supabase's own `https://<project>.supabase.co/auth/v1/callback`.
+
 ## 6. Deploying to Firebase Hosting (alternative)
 
 ```bash

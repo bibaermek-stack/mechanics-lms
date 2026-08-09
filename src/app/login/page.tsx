@@ -344,14 +344,32 @@ function LoginForm() {
         {!isSupabaseConfigured && (
           <div className="mt-7 border-t border-slate-200/60 pt-5 dark:border-white/10">
             {/* Why Google is missing, stated plainly. An absent button with no
-                explanation reads as a broken feature rather than a config gap. */}
+                explanation reads as a broken feature rather than a config gap.
+                The fix differs by environment, and telling a deployed site to
+                "restart the dev server" would send the reader down a dead end:
+                NEXT_PUBLIC_* is inlined at build time, so a live site needs a
+                rebuild, not a restart. */}
             <p className="text-micro text-slate-500 dark:text-slate-400">
-              Дерекқор қосылмаған — демо режим, сондықтан Google арқылы кіру де жоқ.
-              <code className="mx-1 rounded bg-slate-200/60 px-1 dark:bg-white/10">
-                .env.local
-              </code>
-              файлында Supabase кілттерін тексеріп, dev серверді қайта қосыңыз. Әзірге
-              рөлді дайын тіркелгімен сынап көріңіз.
+              Дерекқор қосылмаған — демо режим, сондықтан Google арқылы кіру де жоқ.{" "}
+              {process.env.NODE_ENV === "production" ? (
+                <>
+                  Хостингтің Environment Variables бөлімінде{" "}
+                  <code className="rounded bg-slate-200/60 px-1 dark:bg-white/10">
+                    NEXT_PUBLIC_SUPABASE_URL
+                  </code>{" "}
+                  мен кілтті қосып, жобаны{" "}
+                  <strong className="text-slate-700 dark:text-slate-300">қайта build</strong>{" "}
+                  жасаңыз — бұл айнымалылар build кезінде кодқа жазылады.
+                </>
+              ) : (
+                <>
+                  <code className="rounded bg-slate-200/60 px-1 dark:bg-white/10">
+                    .env.local
+                  </code>{" "}
+                  файлында Supabase кілттерін тексеріп, dev серверді қайта қосыңыз.
+                </>
+              )}{" "}
+              Әзірге рөлді дайын тіркелгімен сынап көріңіз.
             </p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button onClick={() => handleDemo("student")} className="btn-secondary text-sm">
