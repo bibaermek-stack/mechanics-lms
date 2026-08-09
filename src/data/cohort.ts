@@ -1,8 +1,8 @@
 // Cohort dataset behind the teacher analytics page.
 //
-// The platform runs in mock mode by default (see src/lib/firebase.ts), so the
-// numbers here stand in for what a Firestore aggregation would return. They are
-// generated from an explicit ability-per-student and difficulty-per-lesson
+// This dataset predates real accounts: the numbers stand in for a cohort-wide
+// aggregation that now has real records behind it (see migration 0008). They
+// are generated from an explicit ability-per-student and difficulty-per-lesson
 // model rather than typed out at random, which means the charts tell a
 // consistent story: the same students are weak everywhere, and the same lessons
 // are hard for everyone. Swap `buildCohort()` for a real query and every chart

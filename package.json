@@ -15,7 +15,6 @@
     "@supabase/supabase-js": "^2.112.2",
     "chart.js": "4.4.3",
     "clsx": "2.1.1",
-    "firebase": "10.12.4",
     "framer-motion": "^11.18.2",
     "lenis": "^1.1.18",
     "lucide-react": "0.427.0",
