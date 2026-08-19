@@ -4,8 +4,10 @@
 // page only downloads the three.js bundle and the GLB scans it actually needs.
 
 import dynamic from "next/dynamic";
-import { Boxes, Clock } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Boxes, Clock, Headset } from "lucide-react";
 import { getSimulation } from "@/data/simulations";
+import { vrExperimentForLesson } from "@/lib/vr/experiments";
 
 function Skeleton() {
   return (
@@ -84,6 +86,9 @@ const SCENES: Record<number, React.ComponentType> = {
 export function SimulationPanel({ moduleId }: { moduleId: number }) {
   const meta = getSimulation(moduleId);
   const Scene = SCENES[moduleId];
+  // Some lessons have an immersive version of the same apparatus. Offer it here
+  // rather than only from /vr-lab, where a student mid-lesson will not look.
+  const vr = vrExperimentForLesson(moduleId);
 
   if (!meta || !Scene) {
     return (
@@ -126,6 +131,27 @@ export function SimulationPanel({ moduleId }: { moduleId: number }) {
           </div>
         </div>
       </div>
+
+      {vr && (
+        <Link
+          href={`/vr-lab/${vr.id}`}
+          className="surface flex items-center gap-3.5 p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-400/30"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600 dark:bg-brand-400/15 dark:text-brand-300">
+            <Headset size={17} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-label font-semibold text-slate-900 dark:text-white">
+              Осы тәжірибенің VR/AR нұсқасы бар
+            </p>
+            <p className="mt-0.5 text-micro text-slate-600 dark:text-slate-400">
+              «{vr.title}» — зертхананың ішіне кіріп, жабдықтың қасында тұрып орындаңыз.
+            </p>
+          </div>
+          <ArrowRight size={16} className="shrink-0 text-slate-400" />
+        </Link>
+      )}
+
       <Scene />
     </div>
   );
