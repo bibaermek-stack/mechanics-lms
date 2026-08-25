@@ -68,8 +68,13 @@ export function Sim07Rotation() {
   const Rd = DRUMS[drum];
   const I = SHAPES[kind].factor * mass * radius * radius;
   // Falling mass and flywheel are coupled through the string: a = mg/(m + I/R²).
-  const aLin = (mHang * G) / (mHang + I / (Rd * Rd));
-  const alpha = aLin / Rd;
+  // Bearing friction acts the whole time, not only after the weight lands:
+  //   mg − T = ma,  T·Rd − τ_fr = Iα,  a = αRd
+  //   ⇒ α = (mg·Rd − τ_fr) / (I + m·Rd²)
+  // Leaving τ_fr out of the driven phase and then applying it afterwards made
+  // τ = Iα disagree with itself between the two halves of the same run.
+  const alpha = Math.max((mHang * G * Rd - FRICTION_TORQUE) / (I + mHang * Rd * Rd), 0);
+  const aLin = alpha * Rd;
   const tension = mHang * (G - aLin);
   const torque = tension * Rd;
 
@@ -185,14 +190,21 @@ export function Sim07Rotation() {
             </p>
             <p
               className={`mt-2 rounded-lg px-2 py-1 text-[11px] font-semibold ${
-                phase === "drive"
+                alpha === 0
+                  ? "bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
+                  : phase === "drive"
                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
                   : phase === "coast"
                   ? "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
                   : "bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300"
               }`}
             >
-              {phase === "drive"
+              {alpha === 0
+                ? `Жүктің моменті m·g·R_б = ${fmt(mHang * G * Rd * 1000, 2)}·10⁻³ Н·м мойынтірек үйкелісінен (${fmt(
+                    FRICTION_TORQUE * 1000,
+                    2
+                  )}·10⁻³ Н·м) кіші — маховик орнынан қозғалмайды. Жүкті ауырлат немесе барабанды үлкейт.`
+                : phase === "drive"
                 ? "Жүк түсіп жатыр — момент тұрақты, α тұрақты. Өлшеу осы кезеңде жүреді."
                 : phase === "coast"
                 ? "Жүк жерге жетті, жіп босады — өлшеу аяқталды, симуляция кідірді. «Бастау» бассаң, маховиктің инерциямен қалай баяулайтынын көресің."

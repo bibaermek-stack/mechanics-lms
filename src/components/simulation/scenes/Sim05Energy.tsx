@@ -34,6 +34,13 @@ interface S {
   s: number; // position measured along the ramp from its lower end
   v: number; // positive = moving up the ramp
   heat: number;
+  /**
+   * Kinetic energy taken by the end stop when the cart runs into it. Without
+   * this the "Толық E" line falls off a cliff at the end of every run — the
+   * energy is simply deleted — and the scene ends up demonstrating the
+   * opposite of the law it is about.
+   */
+  absorbed: number;
   path: number;
   stopped: boolean;
 }
@@ -49,7 +56,7 @@ export function Sim05Energy() {
   const cosT = Math.cos(theta);
 
   const engine = useSimEngine<S>({
-    init: () => ({ s: s0, v: 0, heat: 0, path: 0, stopped: false }),
+    init: () => ({ s: s0, v: 0, heat: 0, absorbed: 0, path: 0, stopped: false }),
     step: (st, h) => {
       if (st.stopped) return;
       const gravAlong = -G * sinT; // always pulls toward the foot of the ramp
@@ -70,11 +77,15 @@ export function Sim05Energy() {
       st.heat += mu * mass * G * cosT * Math.abs(ds);
       if (st.s <= S_MIN) {
         st.s = S_MIN;
+        // The bumper takes whatever kinetic energy is left, so the books still
+        // balance once the cart has stopped.
+        st.absorbed += 0.5 * mass * st.v * st.v;
         st.v = 0;
-        st.stopped = true; // absorbed by the end stop
+        st.stopped = true;
       }
       if (st.s >= S_MAX) {
         st.s = S_MAX;
+        st.absorbed += 0.5 * mass * st.v * st.v;
         st.v = 0;
       }
     },
@@ -89,12 +100,16 @@ export function Sim05Energy() {
         Ep: ep,
         Ek: ek,
         Q: st.heat,
-        E: ep + ek + st.heat,
+        W: st.absorbed,
+        E: ep + ek + st.heat + st.absorbed,
         path: st.path,
       };
     },
     resetKey: [angleDeg, mass, mu, s0],
     duration: 20,
+    // The cart is at the foot of the ramp in about eight tenths of a second,
+    // so the scene opens at half speed rather than already finished.
+    initialSpeed: 0.5,
   });
 
   const r = engine.readings;
@@ -152,6 +167,7 @@ export function Sim05Energy() {
                 { label: "Eₚ", value: fmt(r.Ep, 4), unit: "Дж" },
                 { label: "Eₖ", value: fmt(r.Ek, 4), unit: "Дж" },
                 { label: "Q (жылу)", value: fmt(r.Q, 4), unit: "Дж", tone: "rose" },
+                { label: "Тірекке берілді", value: fmt(r.W, 4), unit: "Дж", tone: "slate" },
                 { label: "Толық E", value: fmt(r.E, 4), unit: "Дж", tone: "amber" },
                 {
                   label: "Идеал v = √(2gh₀)",
@@ -179,6 +195,7 @@ export function Sim05Energy() {
                 { key: "Ep", label: "Eₚ", color: COLORS.e1 },
                 { key: "Ek", label: "Eₖ", color: COLORS.v },
                 { key: "Q", label: "Q", color: COLORS.f },
+                { key: "W", label: "Тірек", color: COLORS.e2 },
                 { key: "E", label: "Толық E", color: COLORS.x },
               ]}
               yLabel="E, Дж"
@@ -190,6 +207,7 @@ export function Sim05Energy() {
       tasks={[
         "μ = 0 кезінде арба төменгі нүктеде қандай жылдамдыққа жетеді? Оны v = √(2gh₀) формуласымен салыстыр.",
         "μ-ді 0,15-ке қой. Толық механикалық энергия (Eₚ + Eₖ) неге кемиді, ал Eₚ + Eₖ + Q неге тұрақты қалады?",
+        "Арба төменгі тірекке соғылғанда кинетикалық энергия қайда кетті? «Тірекке берілді» бағанын бақыла — «Толық E» сызығы неге түзу қалады?",
         "Бұрышты өзгертіп, арба қозғалмай тұрып қалатын шартты тап. Ол tg θ ≤ μ шартына сәйкес келе ме?",
       ]}
     />

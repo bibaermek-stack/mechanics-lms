@@ -49,6 +49,16 @@ interface S {
   g2: number;
   g1b: number;
   g2b: number;
+  /**
+   * Total momentum and kinetic energy the instant the collision was resolved.
+   *
+   * These are latched rather than read live because an end stop is an outside
+   * force: once a cart has bounced off one, the live totals no longer describe
+   * the collision, and a student reading them concludes that momentum is not
+   * conserved when the simulation has in fact conserved it exactly.
+   */
+  pAfter: number;
+  ekAfter: number;
 }
 
 export function Sim06Momentum() {
@@ -69,6 +79,8 @@ export function Sim06Momentum() {
       g2: 0,
       g1b: 0,
       g2b: 0,
+      pAfter: m1 * v1 + m2 * v2,
+      ekAfter: 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2,
     }),
     step: (s, h) => {
       const p1 = s.x1;
@@ -96,6 +108,10 @@ export function Sim06Momentum() {
         const u2 = s.v2;
         s.v1 = ((m1 - e * m2) * u1 + (1 + e) * m2 * u2) / M;
         s.v2 = ((m2 - e * m1) * u2 + (1 + e) * m1 * u1) / M;
+        if (!s.hit) {
+          s.pAfter = m1 * s.v1 + m2 * s.v2;
+          s.ekAfter = 0.5 * m1 * s.v1 * s.v1 + 0.5 * m2 * s.v2 * s.v2;
+        }
         s.hit = true;
         // Separate them so they do not re-trigger on the following step.
         const overlap = -gap;
@@ -108,13 +124,16 @@ export function Sim06Momentum() {
         s.x2 = s.x1 + CONTACT;
       }
 
+      // The end stops absorb rather than rebound. A bouncing cart re-enters the
+      // measurement with momentum an outside force has changed, which is not
+      // what this experiment is about.
       if (s.x1 <= X_MIN) {
         s.x1 = X_MIN;
-        s.v1 = Math.abs(s.v1) * 0.5;
+        s.v1 = 0;
       }
       if (s.x2 >= X_MAX) {
         s.x2 = X_MAX;
-        s.v2 = -Math.abs(s.v2) * 0.5;
+        s.v2 = 0;
       }
     },
     read: (s) => ({
@@ -124,6 +143,8 @@ export function Sim06Momentum() {
       v2: s.v2,
       p: m1 * s.v1 + m2 * s.v2,
       Ek: 0.5 * m1 * s.v1 * s.v1 + 0.5 * m2 * s.v2 * s.v2,
+      pAfter: s.pAfter,
+      ekAfter: s.ekAfter,
       hit: s.hit ? 1 : 0,
     }),
     resetKey: [m1, m2, v1, v2, e],
@@ -179,9 +200,9 @@ export function Sim06Momentum() {
               max={Math.max(Math.abs(pBefore), ekBefore, 1e-4)}
               items={[
                 { label: "p дейін, кг·м/с", value: Math.abs(pBefore), color: "#3366ff" },
-                { label: "p кейін, кг·м/с", value: Math.abs(r.p ?? 0), color: "#60a5fa" },
+                { label: "p кейін, кг·м/с", value: Math.abs(r.pAfter ?? 0), color: "#60a5fa" },
                 { label: "Eₖ дейін, Дж", value: ekBefore, color: "#10b981" },
-                { label: "Eₖ кейін, Дж", value: r.Ek ?? 0, color: "#34d399" },
+                { label: "Eₖ кейін, Дж", value: r.ekAfter ?? 0, color: "#34d399" },
               ]}
             />
           </Panel>
@@ -195,13 +216,13 @@ export function Sim06Momentum() {
                 { label: "Уақыт t", value: fmt(engine.timeRef.current, 2), unit: "с" },
                 { label: "v₁ ағымдағы", value: fmt(r.v1, 3), unit: "м/с", tone: "brand" },
                 { label: "v₂ ағымдағы", value: fmt(r.v2, 3), unit: "м/с", tone: "emerald" },
-                { label: "p жалпы", value: fmt(r.p, 4), unit: "кг·м/с", tone: "amber" },
                 { label: "p дейін", value: fmt(pBefore, 4), unit: "кг·м/с" },
-                { label: "Δp", value: fmt((r.p ?? 0) - pBefore, 5), unit: "кг·м/с" },
-                { label: "Eₖ кейін", value: fmt(r.Ek, 4), unit: "Дж" },
+                { label: "p кейін", value: fmt(r.pAfter, 4), unit: "кг·м/с", tone: "amber" },
+                { label: "Δp", value: fmt((r.pAfter ?? pBefore) - pBefore, 5), unit: "кг·м/с" },
+                { label: "Eₖ кейін", value: fmt(r.ekAfter, 4), unit: "Дж" },
                 {
                   label: "Энергия жоғалуы",
-                  value: fmt(ekBefore - (r.Ek ?? 0), 4),
+                  value: fmt(ekBefore - (r.ekAfter ?? ekBefore), 4),
                   unit: "Дж",
                   tone: "rose",
                 },

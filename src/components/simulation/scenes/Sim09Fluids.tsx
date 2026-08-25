@@ -57,11 +57,14 @@ interface S {
 }
 
 export function Sim09Fluids() {
-  const [mode, setMode] = useState<Mode>("manual");
+  // Opens on "release" rather than "manual": in manual mode the block starts
+  // above the surface with every reading at zero and nothing happening until a
+  // slider is touched, which is a poor first impression of Archimedes' law.
+  const [mode, setMode] = useState<Mode>("release");
   const [liquid, setLiquid] = useState<keyof typeof LIQUIDS>("Су");
   const [solid, setSolid] = useState<keyof typeof SOLIDS>("Ағаш");
   const [side, setSide] = useState(0.05); // cube edge
-  const [handY, setHandY] = useState(0.18); // manual bottom height above tank floor
+  const [handY, setHandY] = useState(0.09); // manual bottom height above tank floor
 
   const rhoL = LIQUIDS[liquid].rho;
   const rhoS = SOLIDS[solid];

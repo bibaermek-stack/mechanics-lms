@@ -36,6 +36,13 @@ export interface SimEngineConfig<S> {
    */
   stopWhen?: (state: S, t: number) => boolean;
   autoPlay?: boolean;
+  /**
+   * Playback rate the scene opens at. Runs that are over in under a second of
+   * real time — a ball dropped 70 cm, a cart released down a short ramp — are
+   * unwatchable at 1×, so those scenes start slowed down and the student can
+   * speed them up from the transport bar.
+   */
+  initialSpeed?: number;
 }
 
 export interface SimEngine<S> {
@@ -62,6 +69,7 @@ export function useSimEngine<S>(config: SimEngineConfig<S>): SimEngine<S> {
     maxSamples = 900,
     duration = 0,
     autoPlay = true,
+    initialSpeed = 1,
     resetKey = [],
   } = config;
 
@@ -85,7 +93,7 @@ export function useSimEngine<S>(config: SimEngineConfig<S>): SimEngine<S> {
   const seriesRef = useRef<Sample[]>([]);
 
   const [playing, setPlaying] = useState(autoPlay);
-  const [speed, setSpeed] = useState(1);
+  const [speed, setSpeed] = useState(initialSpeed);
   const [readings, setReadings] = useState<Record<string, number>>(() =>
     config.read(stateRef.current, 0)
   );

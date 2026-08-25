@@ -85,8 +85,12 @@ export function Sim03Dynamics() {
       x: s.x,
       v: s.v,
       a: s.a,
-      T: tension,
-      fric: Math.min(drive, fricMax),
+      // Once the hanging mass is on the floor the string is slack, so there is
+      // no tension left to report — and with the cart stopped, no friction
+      // either. While the system is held still by friction the string is taut
+      // and carries the full weight, which `tension` already gives (a = 0).
+      T: s.moving || aTheory === 0 ? tension : 0,
+      fric: s.moving ? fricMax : aTheory === 0 ? Math.min(drive, fricMax) : 0,
     }),
     resetKey: [m1, m2, mu],
     duration: 20,
