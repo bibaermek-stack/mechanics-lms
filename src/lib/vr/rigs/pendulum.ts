@@ -21,8 +21,16 @@ import type { LabRig, RigContext, RigParams } from "../types";
 import type * as THREE_NS from "three";
 
 const G = 9.81;
-/** How far above the bench the bob hangs at rest — inside the photogate beam. */
-const BOB_CLEARANCE = 0.12;
+/**
+ * How far above the bench the bob hangs at rest.
+ *
+ * The scanned Smart Gate is an inverted U — a solid bridge across the top — so
+ * a bob hung at bridge height would sit inside it and the string would pass
+ * straight through it. The gate is therefore turned over to open upwards, the
+ * way a photogate is set under a swinging bob, and the bob rides low enough to
+ * cross the beam between the legs with the string clear above them.
+ */
+const BOB_CLEARANCE = 0.062;
 /** The stand's rod. The clamp slides on it as the string length changes. */
 const ROD_H = 1.16;
 
@@ -89,11 +97,17 @@ export function createPendulumRig({ THREE, params }: RigContext): LabRig {
   const bob = buildPendulumBob(THREE, { radius: 0.024 });
   content.add(bob);
 
-  // Photogate at the bottom of the swing, timing every crossing.
+  // Photogate at the bottom of the swing, timing every crossing. Turned over so
+  // its opening faces up: the bob drops into it and the string stays clear.
   const gate = new THREE.Group();
+  gate.rotation.z = Math.PI;
   gate.position.set(0, BENCH_H, 0);
-  gate.add(loadPascoDevice(THREE, "smartGate").object);
+  const gateScan = loadPascoDevice(THREE, "smartGate");
+  gate.add(gateScan.object);
   content.add(gate);
+  // Flipping puts the model below its own origin, so it is lifted by its own
+  // height once the scan has been measured.
+  void gateScan.ready.then((size) => gate.position.set(0, BENCH_H + size.y, 0));
 
   const sensor = new THREE.Group();
   sensor.position.set(-0.6, BENCH_H, 0);
@@ -145,8 +159,9 @@ export function createPendulumRig({ THREE, params }: RigContext): LabRig {
     bobPos.set(Math.sin(state.theta) * L, pivot.y - Math.cos(state.theta) * L, 0);
     bob.position.copy(bobPos);
     // A heavier bob is drawn bigger — the only visible difference mass makes,
-    // which is the answer the first task is fishing for.
-    const s = 0.75 + p.mass * 1.2;
+    // which is the answer the first task is fishing for. Capped so the largest
+    // bob still clears the sides of the photogate opening.
+    const s = 0.72 + p.mass * 0.9;
     bob.scale.setScalar(s);
     spanCylinder(THREE, string, pivot, bobPos);
   }

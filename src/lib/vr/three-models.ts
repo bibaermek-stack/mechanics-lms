@@ -378,6 +378,51 @@ export function buildPulley(THREE: ThreeNS, { radius = 0.026 } = {}): THREE_NS.G
   return g;
 }
 
+/**
+ * C-clamp that grips the edge of a bench top, with a post on which a pulley
+ * rides. A table pulley has to be clamped to something: without this the pulley
+ * floats, and the weight it carries ends up hanging inside the tabletop.
+ *
+ * The origin sits on the bench's top edge — the corner where the top surface
+ * meets the outer face — with the jaws reaching back over the top in −X.
+ */
+export function buildBenchClamp(
+  THREE: ThreeNS,
+  {
+    topThickness = 0.05,
+    jaw = 0.085,
+    postUp = 0.075,
+  }: { topThickness?: number; jaw?: number; postUp?: number } = {}
+): THREE_NS.Group {
+  const g = new THREE.Group();
+  g.name = "bench-clamp";
+  const steel = std(THREE, "#4b5563", 0.5, 0.4);
+  const bright = std(THREE, MAT.steel, 0.35, 0.85);
+
+  // Upper jaw resting on the bench top, and the spine wrapping the edge.
+  g.add(mesh(THREE, new THREE.BoxGeometry(jaw, 0.012, 0.05), steel, [-jaw / 2 + 0.012, 0.006, 0]));
+  const spineH = topThickness + 0.055;
+  g.add(
+    mesh(THREE, new THREE.BoxGeometry(0.014, spineH, 0.05), steel, [0.007, 0.012 - spineH / 2, 0])
+  );
+  // Lower jaw and the thumbscrew that pinches the top between the two.
+  const lowerY = 0.012 - spineH + 0.006;
+  g.add(mesh(THREE, new THREE.BoxGeometry(jaw, 0.012, 0.05), steel, [-jaw / 2 + 0.012, lowerY, 0]));
+  const screwLen = spineH - topThickness - 0.024;
+  g.add(
+    mesh(
+      THREE,
+      new THREE.CylinderGeometry(0.006, 0.006, screwLen, 12),
+      bright,
+      [-0.035, lowerY + 0.006 + screwLen / 2, 0]
+    )
+  );
+  // Post carrying the pulley above the bench.
+  g.add(mesh(THREE, new THREE.BoxGeometry(0.016, postUp, 0.03), steel, [-0.02, 0.012 + postUp / 2, 0]));
+
+  return g;
+}
+
 /** Slotted mass hanger. `mass` only changes how many discs are stacked on it. */
 export function buildHangingMass(THREE: ThreeNS, { mass = 0.1 } = {}): THREE_NS.Group {
   const g = new THREE.Group();
@@ -478,6 +523,8 @@ export function buildArrow(
   const material = std(THREE, color, 0.5, 0.1, { emissive: new THREE.Color(color), emissiveIntensity: 0.25 });
   const shaft = mesh(THREE, new THREE.CylinderGeometry(radius, radius, 1, 10), material);
   const head = mesh(THREE, new THREE.ConeGeometry(radius * 2.6, radius * 6, 14), material);
+  shaft.scale.set(1, 1e-5, 1);
+  head.scale.set(1, 1e-5, 1);
   g.add(shaft, head);
   g.visible = false;
 
@@ -490,7 +537,14 @@ export function buildArrow(
     set(origin, dir, length) {
       const visible = length > 1e-4 && dir.lengthSq() > 1e-12;
       g.visible = visible;
-      if (!visible) return;
+      if (!visible) {
+        // Collapse rather than just hide: the shaft is a 1 m cylinder at unit
+        // scale, and leaving it that size keeps it inside every bounding box
+        // the scene computes — which is what sizes the shadow camera.
+        shaft.scale.set(1, 1e-5, 1);
+        head.scale.set(1, 1e-5, 1);
+        return;
+      }
       g.position.copy(origin);
       dirN.copy(dir).normalize();
       quat.setFromUnitVectors(up, dirN);

@@ -24,6 +24,10 @@ import type * as THREE_NS from "three";
 const X_MIN = 0.13;
 const X_MAX = TRACK_L - 0.13;
 const CART_Y = BENCH_H + TRACK_H;
+/** Height of the ultrasound beam: the middle of the cart's reflector. */
+const PING_Y = BENCH_H + 0.075;
+/** Largest ring that still clears the running surface of the track. */
+const PING_MAX_SCALE = (PING_Y - CART_Y - 0.002) / 0.026;
 
 interface State {
   x: number;
@@ -151,8 +155,11 @@ export function createKinematicsRig({ THREE, params }: RigContext): LabRig {
           continue;
         }
         ring.visible = true;
-        ring.position.set(travel, BENCH_H + 0.045, 0);
-        const s = 1 + travel * 3;
+        // Centred on the sensor's beam, at the height of the cart's flag. The
+        // scale is capped so an expanding ring never grows large enough to sink
+        // through the track and the bench top.
+        ring.position.set(travel, PING_Y, 0);
+        const s = Math.min(1 + travel * 3, PING_MAX_SCALE);
         ring.scale.set(s, s, 1);
         (ring.material as THREE_NS.MeshBasicMaterial).opacity = 0.42 * (1 - travel / Math.max(state.x, 0.2));
       }

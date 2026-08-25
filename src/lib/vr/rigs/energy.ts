@@ -23,6 +23,8 @@ const RAMP_L = 1.0;
 const D_START = 0.86;
 /** The end stop at the foot of the ramp. */
 const D_MIN = 0.13;
+/** Height of the ramp's pivot above the bench: the hinge block. */
+const HINGE_Y = BENCH_H + 0.024;
 
 interface State {
   /** Distance from the hinge along the ramp surface. */
@@ -47,10 +49,21 @@ export function createEnergyRig({ THREE, params }: RigContext): LabRig {
 
   content.add(buildBench(THREE, { width: 1.7, depth: 0.7 }).translateX(RAMP_L / 2));
 
+  // The ramp pivots on a hinge block rather than on the bench top itself: a
+  // surface hinged exactly at the top would swing its lower corner down through
+  // the wood as soon as the angle came off zero.
   const ramp = buildRamp(THREE, { length: RAMP_L, width: 0.15 });
-  ramp.position.set(0, BENCH_H, 0);
+  ramp.position.set(0, HINGE_Y, 0);
   content.add(ramp);
   const surface = ramp.userData.surface as THREE_NS.Group;
+
+  const hinge = new THREE.Mesh(
+    new THREE.BoxGeometry(0.06, HINGE_Y - BENCH_H, 0.16),
+    new THREE.MeshStandardMaterial({ color: "#4b5563", roughness: 0.55, metalness: 0.3 })
+  );
+  hinge.castShadow = true;
+  hinge.position.set(0.012, (BENCH_H + HINGE_Y) / 2, 0);
+  content.add(hinge);
 
   // Jack holding the high end up. A unit-height box that is simply scaled, so
   // changing the angle costs nothing.
@@ -63,7 +76,7 @@ export function createEnergyRig({ THREE, params }: RigContext): LabRig {
 
   // The cart rides inside the ramp's rotating group, so it tilts with the slope.
   const cart = new THREE.Group();
-  cart.position.set(D_START, 0.014, 0);
+  cart.position.set(D_START, 0.003, 0);
   cart.add(loadPascoDevice(THREE, "smartCart").object);
   surface.add(cart);
 
@@ -136,7 +149,9 @@ export function createEnergyRig({ THREE, params }: RigContext): LabRig {
   function sync(p: RigParams) {
     const rad = (p.angle * Math.PI) / 180;
     surface.rotation.z = rad;
-    const rise = RAMP_L * Math.sin(rad);
+    // The jack stands on the bench and reaches the underside of the raised end.
+    const topY = HINGE_Y + RAMP_L * Math.sin(rad);
+    const rise = topY - BENCH_H;
     jack.scale.y = Math.max(rise, 0.001);
     jack.position.set(RAMP_L * Math.cos(rad), BENCH_H + rise / 2, 0);
 
