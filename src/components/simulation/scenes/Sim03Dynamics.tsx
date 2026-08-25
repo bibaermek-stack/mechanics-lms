@@ -40,18 +40,21 @@ const PULLEY_R = 0.025;
 const HANGER_Y0 = PULLEY_Y - 0.18;
 /** Height of the hanger below its own origin, down to the lowest disc. */
 const HANGER_DROP = 0.08;
-/**
- * The run ends when the hanging mass touches the floor, or when the cart
- * reaches the pulley end of the track — whichever comes first.
- */
+/** How far the hanging mass can fall before its lowest disc meets the floor. */
 const FLOOR_DROP = HANGER_Y0 - HANGER_DROP;
-const X_END = Math.min(TRACK_L - 0.2, X_START + FLOOR_DROP);
+/** Where the cart is when the weight lands and the string goes slack. */
+const X_LAND = X_START + FLOOR_DROP;
+/** The cart's centre when its nose meets the far end stop. */
+const X_MAX = TRACK_L - 0.105;
 
 interface S {
   x: number;
   v: number;
   a: number;
-  moving: boolean;
+  /** The hanging mass is on the floor: the string is slack from here on. */
+  landed: boolean;
+  /** The cart has come to rest — at the end stop, or through friction. */
+  stopped: boolean;
 }
 
 export function Sim03Dynamics() {
@@ -68,35 +71,66 @@ export function Sim03Dynamics() {
   const normal = m1 * G;
 
   const engine = useSimEngine<S>({
-    init: () => ({ x: X_START, v: 0, a: aTheory, moving: aTheory > 0 }),
+    init: () => ({ x: X_START, v: 0, a: aTheory, landed: false, stopped: aTheory === 0 }),
     step: (s, h) => {
-      if (!s.moving) {
+      if (s.stopped) {
         s.a = 0;
         return;
       }
-      s.a = aTheory;
-      s.v += s.a * h;
-      s.x += s.v * h;
-      if (s.x >= X_END) {
-        s.x = X_END;
+
+      if (!s.landed) {
+        // Phase 1 — the weight is falling and the string is taut, so the cart
+        // and the weight accelerate together.
+        s.a = aTheory;
+        s.v += s.a * h;
+        s.x += s.v * h;
+        if (s.x >= X_LAND) {
+          s.x = X_LAND;
+          s.landed = true;
+        }
+      } else {
+        // Phase 2 — the weight is on the floor and the string is slack. The
+        // cart does not stop dead here: it carries on, slowing under friction
+        // alone, until it runs out of speed or reaches the end stop. Ending the
+        // run at the landing left the cart stranded two thirds of the way down
+        // a track it never finished.
+        const decel = mu * G;
+        s.a = s.v > 0 ? -decel : 0;
+        s.v = Math.max(0, s.v - decel * h);
+        s.x += s.v * h;
+        if (s.v <= 0) {
+          s.a = 0;
+          s.stopped = true;
+        }
+      }
+
+      if (s.x >= X_MAX) {
+        s.x = X_MAX;
         s.v = 0;
         s.a = 0;
-        s.moving = false; // the hanging mass has reached the floor
+        s.stopped = true;
       }
     },
     read: (s) => ({
       x: s.x,
       v: s.v,
       a: s.a,
-      // Once the hanging mass is on the floor the string is slack, so there is
-      // no tension left to report — and with the cart stopped, no friction
-      // either. While the system is held still by friction the string is taut
-      // and carries the full weight, which `tension` already gives (a = 0).
-      T: s.moving || aTheory === 0 ? tension : 0,
-      fric: s.moving ? fricMax : aTheory === 0 ? Math.min(drive, fricMax) : 0,
+      // A slack string carries nothing. While the system is held still by
+      // friction instead, the string is taut and carries the full weight —
+      // which `tension` already gives, since a = 0 there.
+      T: aTheory === 0 ? tension : s.landed ? 0 : tension,
+      // Kinetic while the cart is running, static and matching the pull while
+      // friction is what is holding the system still, nothing once at rest.
+      fric:
+        aTheory === 0
+          ? Math.min(drive, fricMax)
+          : s.v > 1e-6 || !s.landed
+            ? fricMax
+            : 0,
     }),
     resetKey: [m1, m2, mu],
     duration: 20,
+    stopWhen: (s) => s.stopped,
   });
 
   const r = engine.readings;
@@ -225,15 +259,20 @@ function Scene({
     const s = engine.stateRef.current;
     if (cart.current) cart.current.position.x = s.x;
 
-    const drop = s.x - X_START;
+    // The weight rests on the floor once it gets there, however much further
+    // the cart runs.
+    const drop = Math.min(s.x - X_START, FLOOR_DROP);
     if (hanger.current) hanger.current.position.y = HANGER_Y0 - drop;
 
-    pulley.current?.spin((s.x - lastX.current) / PULLEY_R);
+    // Nothing runs over the pulley once the string is slack.
+    if (!s.landed) pulley.current?.spin((s.x - lastX.current) / PULLEY_R);
     lastX.current = s.x;
 
-    // rope: cart hook → pulley rim → hanger
+    // rope: cart hook → pulley rim → hanger. After the landing the cart side
+    // has slack in it, so it hangs off the bottom of the sheave instead of
+    // running taut over the top.
     a.current.set(s.x + 0.1, CART_Y + 0.03, 0);
-    b.current.set(PULLEY_X - PULLEY_R, PULLEY_Y, 0);
+    b.current.set(PULLEY_X - PULLEY_R, s.landed ? PULLEY_Y - PULLEY_R : PULLEY_Y, 0);
     ropeTop.current?.set(a.current, b.current);
     a.current.set(PULLEY_X + PULLEY_R, PULLEY_Y, 0);
     b.current.set(PULLEY_X + PULLEY_R, HANGER_Y0 - drop + 0.02, 0);
