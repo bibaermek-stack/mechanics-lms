@@ -285,7 +285,16 @@ function Scene({
   const a = useRef(new THREE.Vector3());
   const b = useRef(new THREE.Vector3());
 
-  const S_F = 0.35; // metres of arrow per newton
+  /**
+   * Longest force arrow, in metres. The forces in this scene run from about a
+   * tenth of a newton (a small foam cube) to forty (a large steel one), so a
+   * fixed metres-per-newton scale cannot serve both: at 0,35 m/N the weight of
+   * an ordinary wooden block was drawn a quarter of a metre long and ran down
+   * through the tank floor and the bench. Both arrows are scaled together
+   * instead, so their ratio — which is what the experiment is about — stays
+   * readable while neither leaves the space above the bench.
+   */
+  const ARROW_MAX = 0.11;
 
   useFrame(() => {
     const s = engine.stateRef.current;
@@ -302,10 +311,16 @@ function Scene({
     b.current.set(TANK_X, yCentre + side / 2, 0);
     rope.current?.set(a.current, b.current);
 
+    // Room between the block's centre and the bench top, so the downward arrow
+    // stops short of the worktop however heavy the block is.
+    const room = Math.max(yCentre - BENCH_H - 0.008, 0.015);
+    const maxF = Math.max(weight, r.buoy ?? 0, 1e-6);
+    const arrowScale = Math.min(ARROW_MAX, room) / maxF;
+
     a.current.set(TANK_X + side * 0.7, yCentre, 0);
-    arrowB.current?.set(a.current, b.current.set(0, 1, 0), (r.buoy ?? 0) * S_F);
+    arrowB.current?.set(a.current, b.current.set(0, 1, 0), (r.buoy ?? 0) * arrowScale);
     a.current.set(TANK_X - side * 0.7, yCentre, 0);
-    arrowW.current?.set(a.current, b.current.set(0, -1, 0), weight * S_F);
+    arrowW.current?.set(a.current, b.current.set(0, -1, 0), weight * arrowScale);
   });
 
   return (

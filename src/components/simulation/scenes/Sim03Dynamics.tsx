@@ -23,6 +23,7 @@ import {
   LabBench,
   MassHanger,
   PhotogateMount,
+  BenchClamp,
   PulleyHandle,
   SuperPulley,
   TRACK_H,
@@ -32,6 +33,8 @@ import {
 const X_START = 0.15;
 const CART_Y = BENCH_H + TRACK_H;
 const PULLEY_X = TRACK_L + 0.06;
+/** Outer face of the bench top — where the pulley's clamp bites. */
+const BENCH_EDGE = TRACK_L + 0.02;
 const PULLEY_Y = CART_Y + 0.055;
 const PULLEY_R = 0.025;
 const HANGER_Y0 = PULLEY_Y - 0.18;
@@ -262,7 +265,7 @@ function Scene({
 
   return (
     <group>
-      <LabBench to={TRACK_L + 0.02} />
+      <LabBench to={BENCH_EDGE} />
       <DynamicsTrack />
 
       <PhotogateMount x={0.5} />
@@ -273,6 +276,9 @@ function Scene({
         Smart Gate
       </Tag>
 
+      {/* The pulley hangs past the edge so the weight can fall clear of the
+          worktop, which means it has to be clamped to that edge. */}
+      <BenchClamp x={BENCH_EDGE} reach={PULLEY_X - BENCH_EDGE} />
       <SuperPulley ref={pulley} position={[PULLEY_X, PULLEY_Y, 0]} radius={PULLEY_R} />
       <Tag position={[PULLEY_X + 0.05, PULLEY_Y + 0.06, 0]} tone="slate">
         Super Pulley
