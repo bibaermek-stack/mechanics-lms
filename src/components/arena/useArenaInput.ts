@@ -5,25 +5,18 @@
 // The current input lives in a ref rather than in state: the match loop reads it
 // sixty times a second, and re-rendering React on every key press would cost far
 // more than the game itself.
+//
+// Which key does what comes from the player's own map — see keybindings.ts — so
+// everything here is written against actions, never against particular keys.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ArenaAction, Keymap } from "@/lib/arena/keybindings";
+import { DEFAULT_KEYMAP, toLookup } from "@/lib/arena/keybindings";
 import type { Input } from "@/lib/arena/types";
 
-const KEYS: Record<string, keyof typeof MOVES | "kick"> = {
-  ArrowUp: "up",
-  ArrowDown: "down",
-  ArrowLeft: "left",
-  ArrowRight: "right",
-  KeyW: "up",
-  KeyS: "down",
-  KeyA: "left",
-  KeyD: "right",
-  Space: "kick",
-  KeyX: "kick",
-  Enter: "kick",
-};
+type Held = Record<ArenaAction, 0 | 1>;
 
-const MOVES = { up: 0, down: 0, left: 0, right: 0 };
+const NONE: Held = { up: 0, left: 0, down: 0, right: 0, kick: 0, sprint: 0 };
 
 export interface ArenaInput {
   /** Read by the match loop every step. */
@@ -31,13 +24,19 @@ export interface ArenaInput {
   /** True once a touch control has been used, so the pad can stay visible. */
   touch: boolean;
   /** Handlers for the on-screen pad. */
-  press: (dir: "up" | "down" | "left" | "right" | "kick", down: boolean) => void;
+  press: (action: ArenaAction, down: boolean) => void;
+  /** Which controls are held right now — for lighting up the on-screen hints. */
+  active: Held;
 }
 
-export function useArenaInput(enabled = true): ArenaInput {
-  const ref = useRef<Input>({ dx: 0, dy: 0, kick: false });
-  const held = useRef({ ...MOVES, kick: 0 });
+export function useArenaInput(enabled = true, keymap: Keymap = DEFAULT_KEYMAP): ArenaInput {
+  const ref = useRef<Input>({ dx: 0, dy: 0, kick: false, sprint: false });
+  const held = useRef<Held>({ ...NONE });
   const [touch, setTouch] = useState(false);
+  // Mirrored into state only so the legend can highlight; the loop never reads it.
+  const [active, setActive] = useState<Held>({ ...NONE });
+
+  const lookup = useMemo(() => toLookup(keymap), [keymap]);
 
   const apply = useCallback(() => {
     const h = held.current;
@@ -45,12 +44,14 @@ export function useArenaInput(enabled = true): ArenaInput {
       dx: (h.right ? 1 : 0) - (h.left ? 1 : 0),
       dy: (h.down ? 1 : 0) - (h.up ? 1 : 0),
       kick: h.kick > 0,
+      sprint: h.sprint > 0,
     };
+    setActive({ ...h });
   }, []);
 
   const press = useCallback(
-    (dir: "up" | "down" | "left" | "right" | "kick", down: boolean) => {
-      held.current[dir] = down ? 1 : 0;
+    (action: ArenaAction, down: boolean) => {
+      held.current[action] = down ? 1 : 0;
       setTouch(true);
       apply();
     },
@@ -60,7 +61,7 @@ export function useArenaInput(enabled = true): ArenaInput {
   useEffect(() => {
     if (!enabled) return;
     const onKey = (e: KeyboardEvent, down: boolean) => {
-      const action = KEYS[e.code];
+      const action = lookup.get(e.code);
       if (!action) return;
       // The arrows and space scroll the page otherwise, which throws the
       // canvas off screen mid-match.
@@ -72,7 +73,7 @@ export function useArenaInput(enabled = true): ArenaInput {
     const onUp = (e: KeyboardEvent) => onKey(e, false);
     // A window that loses focus mid-press would otherwise hold that key for ever.
     const onBlur = () => {
-      held.current = { ...MOVES, kick: 0 };
+      held.current = { ...NONE };
       apply();
     };
     window.addEventListener("keydown", onDown);
@@ -82,8 +83,11 @@ export function useArenaInput(enabled = true): ArenaInput {
       window.removeEventListener("keydown", onDown);
       window.removeEventListener("keyup", onUp);
       window.removeEventListener("blur", onBlur);
+      // Rebinding mid-match must not leave the old key stuck down.
+      held.current = { ...NONE };
+      apply();
     };
-  }, [enabled, apply]);
+  }, [enabled, apply, lookup]);
 
-  return { ref, touch, press };
+  return { ref, touch, press, active };
 }

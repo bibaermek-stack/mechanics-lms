@@ -36,6 +36,14 @@ export interface Disc {
   local?: boolean;
   /** Set while the kick animation plays out. */
   kickFlash?: number;
+  /**
+   * Sprint reserve, 0…1. Full is a couple of seconds of extra force; it drains
+   * while the sprint key is held and comes back at rest, so the stronger drive
+   * is a choice with a cost rather than a permanently better setting.
+   */
+  stamina?: number;
+  /** Drive force applied on the last step, N. Read only by the readout. */
+  drive?: number;
 }
 
 /** One player's controls for a single step. */
@@ -45,9 +53,11 @@ export interface Input {
   dy: number;
   /** Kick held down. */
   kick: boolean;
+  /** Sprint held down: the same drive, with a larger force behind it. */
+  sprint: boolean;
 }
 
-export const NO_INPUT: Input = { dx: 0, dy: 0, kick: false };
+export const NO_INPUT: Input = { dx: 0, dy: 0, kick: false, sprint: false };
 
 /**
  * What the last disc-to-disc collision did, latched at the moment it happened.

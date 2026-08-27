@@ -46,6 +46,19 @@ export const KICK_REACH = 0.28;
 /** Seconds between kicks. */
 export const KICK_COOLDOWN = 0.35;
 
+/**
+ * What sprinting multiplies the drive force by.
+ *
+ * It is a force, not a speed: a = F/m rises with it and so does the top speed
+ * F/(m·b), but the player still takes time to get there. That is the second law
+ * doing the work, and it is why a sprint is worth starting early.
+ */
+export const SPRINT_FACTOR = 1.9;
+/** A full reserve is this many seconds of sprint. */
+export const SPRINT_SECONDS = 2.6;
+/** And this many seconds at rest to fill it again. */
+export const SPRINT_RECOVERY = 5.5;
+
 export const TEAM_NAMES: Record<Team, string> = { 0: "Қызыл", 1: "Көк" };
 export const TEAM_COLORS: Record<Team, string> = { 0: "#ef4444", 1: "#3366ff" };
 
@@ -97,6 +110,8 @@ export function makePlayer(
     team,
     name,
     local,
+    stamina: 1,
+    drive: 0,
   };
 }
 
@@ -115,5 +130,11 @@ export function resetPositions(discs: Disc[], perSide: number) {
     }
     d.vx = 0;
     d.vy = 0;
+    // A restart gives everyone their legs back; otherwise the side that had
+    // just been chasing would kick off a goal down on stamina as well.
+    if (d.kind === "player") {
+      d.stamina = 1;
+      d.drive = 0;
+    }
   }
 }
