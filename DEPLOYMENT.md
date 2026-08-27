@@ -136,7 +136,57 @@ firebase deploy
 
 For full SSR support on Firebase, use **Firebase App Hosting** (supports Next.js natively) instead of static Hosting.
 
-## 7. Post-deploy checklist
+## 7. Arena game server (Railway)
+
+The arena — the two-dimensional physics football at `/arena` — plays against bots
+with no backend at all. Playing **with other people** needs one of two things.
+
+### Option A — a game server (recommended)
+
+A real server is one authority that outlives any single player: the match does
+not restart when whoever arrived first closes their laptop, and nobody sees the
+ball a frame before anyone else. It cannot live on Vercel, whose functions do not
+stay resident, so it goes somewhere that keeps a process running. Railway is the
+cheapest way to do that.
+
+1. Push this repository to GitHub.
+2. In Railway: **New Project → Deploy from GitHub repo**, pick this repository.
+3. In the service's **Settings**:
+   - **Build Command:** `npm ci && npm run build:server`
+   - **Start Command:** `npm run start:server`
+4. Deploy. Railway assigns a public domain such as
+   `arena-server-production.up.railway.app` and passes the port in `PORT`, which
+   the server already reads — nothing to configure.
+5. Check it: `https://<your-domain>/health` should answer
+   `{"ok":true,"rooms":0}`.
+6. Back on the **web** deployment (Vercel), add the environment variable and
+   **redeploy** — `NEXT_PUBLIC_*` values are baked in at build time:
+
+```
+NEXT_PUBLIC_ARENA_SERVER=wss://arena-server-production.up.railway.app
+```
+
+`https://` works too; the client rewrites the scheme. Leave it unset and the
+platform quietly falls back to Option B.
+
+The server needs no database, no Supabase keys and no secrets of its own. It
+holds rooms in memory, sweeps them a minute after the last player leaves, and
+imports its physics from `src/lib/arena` so it cannot drift from what the
+browsers draw.
+
+### Option B — Supabase Realtime rooms
+
+With no game server but Supabase keys configured, rooms run over Realtime
+channels and one of the players referees: the first to arrive integrates the
+physics and publishes it, the rest send input. It needs no second deployment and
+no extra cost, at the price of the host advantage above and a restart if the host
+leaves. Nothing to configure — it turns on with the Supabase keys.
+
+### Neither
+
+Practice against bots still works everywhere, including the demo build.
+
+## 8. Post-deploy checklist
 
 - [ ] Firebase Auth sign-in works (Google + Email)
 - [ ] Firestore rules deployed and tested

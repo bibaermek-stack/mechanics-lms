@@ -96,7 +96,8 @@ export type GameType =
   | "puzzle"
   | "spinwheel"
   | "sorting"
-  | "conceptmap";
+  | "conceptmap"
+  | "arena";
 
 export interface GamePair {
   left: string;

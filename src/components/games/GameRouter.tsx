@@ -33,6 +33,7 @@ import { WordSearchGame } from "./WordSearchGame";
 import { FillBlankGame } from "./FillBlankGame";
 import { SortingGame } from "./SortingGame";
 import { SpeedQuizGame } from "./SpeedQuizGame";
+import { ARENA_LESSONS, ArenaGame } from "@/components/arena/ArenaGame";
 
 export type GameMode =
   | "matching"
@@ -44,7 +45,8 @@ export type GameMode =
   | "wordsearch"
   | "fillblank"
   | "sorting"
-  | "speedquiz";
+  | "speedquiz"
+  | "arena";
 
 export const GAME_LABELS: Record<GameMode, string> = {
   matching: "Сәйкестендіру",
@@ -57,6 +59,7 @@ export const GAME_LABELS: Record<GameMode, string> = {
   fillblank: "Бос орынды толтыр",
   sorting: "Сұрыптау",
   speedquiz: "Жылдам жауап",
+  arena: "Арена — физикалық футбол",
 };
 
 /** Short "what am I doing here" line, shown above the board. */
@@ -71,6 +74,7 @@ const GAME_HINTS: Record<GameMode, string> = {
   fillblank: "Анықтамадағы жетіспейтін терминді таңда.",
   sorting: "Әр терминді өз санатына орналастыр.",
   speedquiz: "Уақыт біткенше жауап бер — жылдамдық та ұпай әкеледі.",
+  arena: "Боттарға қарсы ойна: әр соқтығыстың импульсі мен энергиясы экранда есептеледі.",
 };
 
 export function GameRouter({
@@ -116,6 +120,8 @@ export function GameRouter({
     if (boards.fillblank) list.push("fillblank");
     if (boards.sorting) list.push("sorting");
     if (boards.speedquiz) list.push("speedquiz");
+    // Only where the collisions are the lesson — see ARENA_LESSONS.
+    if (ARENA_LESSONS.includes(mod.id)) list.push("arena");
     return only ? list.filter((m) => m === only) : list;
   }, [mod, boards, only]);
 
@@ -196,6 +202,7 @@ export function GameRouter({
       {mode === "speedquiz" && boards.speedquiz && (
         <SpeedQuizGame key={key} board={boards.speedquiz} onComplete={handleComplete} />
       )}
+      {mode === "arena" && <ArenaGame key={key} moduleId={mod.id} onComplete={handleComplete} />}
 
       {lastScore !== null && (
         <div className="surface-card flex items-center gap-3">

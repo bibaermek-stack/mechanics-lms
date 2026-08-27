@@ -90,10 +90,21 @@ export function Sim04NewtonLaws() {
       }
 
       const applied = law === "second" ? force : 0;
-      const fricForce = mu * m1 * G * Math.sign(s.v1);
-      let net = applied - (Math.abs(s.v1) > 1e-4 ? fricForce : 0);
-      // Static friction must not push the cart backwards.
-      if (Math.abs(s.v1) <= 1e-4 && Math.abs(applied) <= mu * m1 * G) net = 0;
+      const fricMax = mu * m1 * G;
+      let net: number;
+      if (Math.abs(s.v1) > 1e-4) {
+        // Moving: kinetic friction opposes the motion.
+        net = applied - fricMax * Math.sign(s.v1);
+      } else if (Math.abs(applied) <= fricMax) {
+        // At rest and the pull cannot break it loose: static friction matches
+        // the pull exactly and nothing moves.
+        net = 0;
+      } else {
+        // Breaking away from rest. Friction still acts on this first step —
+        // dropping it here reported a net force μm₁g too large at the very
+        // moment the student is reading F = ma off the screen.
+        net = applied - fricMax * Math.sign(applied);
+      }
       s.f = net;
       const a = net / m1;
       const vNext = s.v1 + a * h;
@@ -127,6 +138,15 @@ export function Sim04NewtonLaws() {
 
   const r = engine.readings;
 
+  const fricMax = mu * m1 * G;
+  const appliedNow = law === "second" ? force : 0;
+  // What friction is actually doing right now, rather than the most it could
+  // do: at rest it only matches the pull, and it never exceeds μN.
+  const fricNow =
+    Math.abs(r.v1 ?? 0) > 1e-4 ? fricMax : Math.min(Math.abs(appliedNow), fricMax);
+  /** The pull is too small to break the cart loose from rest. */
+  const heldStill = mu > 0 && Math.abs(r.v1 ?? 0) <= 1e-4 && Math.abs(appliedNow) <= fricMax;
+
   const readouts =
     law === "third"
       ? [
@@ -146,7 +166,7 @@ export function Sim04NewtonLaws() {
           { label: "Жылдамдық v", value: fmt(r.v1, 3), unit: "м/с", tone: "emerald" as const },
           { label: "Координата x", value: fmt(r.x1, 3), unit: "м", tone: "brand" as const },
           { label: "Импульс p", value: fmt(r.p1, 3), unit: "кг·м/с" },
-          { label: "Үйкеліс күші", value: fmt(mu * m1 * G, 3), unit: "Н" },
+          { label: "Үйкеліс күші", value: fmt(fricNow, 3), unit: "Н" },
           { label: "μ", value: fmt(mu, 2) },
         ];
 
@@ -190,11 +210,22 @@ export function Sim04NewtonLaws() {
             </div>
           </Panel>
           <Panel title="Не байқау керек">
-            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+            <p
+              className={
+                heldStill && law === "second"
+                  ? "rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:bg-amber-900/25 dark:text-amber-200"
+                  : "text-xs leading-relaxed text-slate-600 dark:text-slate-300"
+              }
+            >
               {law === "first" &&
                 "Үйкеліс өшірулі кезде арбаға ешбір тең әсерлі күш әсер етпейді — ол бірқалыпты қозғала береді. Үйкелісті қоссаң, қозғалыс тоқтайды: демек денені тоқтататын — «табиғи» қасиет емес, күш."}
               {law === "second" &&
-                "Күшті екі есе арттыр — үдеу де екі есе артады. Массаны екі есе арттыр — үдеу екі есе кемиді. a графигінің көлбеуін бақыла."}
+                (heldStill
+                  ? `Тарту күші ${fmt(force, 2)} Н тыныштық үйкелісінің шегінен (μm₁g = ${fmt(
+                      fricMax,
+                      2
+                    )} Н) аспайды — арба орнынан қозғалмайды. Күшті арттыр немесе үйкелісті өшір.`
+                  : "Күшті екі есе арттыр — үдеу де екі есе артады. Массаны екі есе арттыр — үдеу екі есе кемиді. a графигінің көлбеуін бақыла.")}
               {law === "third" &&
                 "Бамперлер жанасқан сәтте екі арбаға шамасы тең, бағыты қарама-қарсы күштер әсер етеді. Жалпы импульс нөл күйінде қалады, ал жеңіл арба жылдамырақ ұшып кетеді."}
             </p>

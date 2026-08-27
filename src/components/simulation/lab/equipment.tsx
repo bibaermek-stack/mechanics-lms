@@ -193,6 +193,68 @@ export interface PulleyHandle {
   spin: (deltaAngle: number) => void;
 }
 
+/**
+ * C-clamp gripping the edge of the bench, carrying a pulley out past the top.
+ *
+ * A table pulley has to be clamped to something. Without this the pulley's own
+ * mounting rod ends in mid air, and anything modelled as standing under it has
+ * its base hanging off the edge of the worktop — which is what both the second
+ * law and the flywheel scenes were doing.
+ *
+ * `x` is the outer face of the bench top, `reach` how far past it the load
+ * sits, and `postTop` the height the post has to climb to meet that load
+ * (omit it when the load's own rod already comes down to the arm).
+ */
+export function BenchClamp({
+  x,
+  z = 0,
+  reach = 0.04,
+  postTop,
+}: {
+  x: number;
+  z?: number;
+  reach?: number;
+  postTop?: number;
+}) {
+  const spineH = 0.105;
+  const armY = 0.028;
+  const postH = postTop === undefined ? 0 : Math.max(postTop - BENCH_H - armY, 0);
+
+  return (
+    <group position={[x, BENCH_H, z]}>
+      {/* jaws either side of the worktop, and the spine wrapping its edge */}
+      <mesh position={[-0.04, 0.006, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.09, 0.012, 0.05]} />
+        <meshStandardMaterial color="#4b5563" roughness={0.5} metalness={0.4} />
+      </mesh>
+      <mesh position={[0.007, 0.012 - spineH / 2, 0]} castShadow>
+        <boxGeometry args={[0.014, spineH, 0.05]} />
+        <meshStandardMaterial color="#4b5563" roughness={0.5} metalness={0.4} />
+      </mesh>
+      <mesh position={[-0.04, 0.018 - spineH, 0]} castShadow>
+        <boxGeometry args={[0.09, 0.012, 0.05]} />
+        <meshStandardMaterial color="#4b5563" roughness={0.5} metalness={0.4} />
+      </mesh>
+      {/* thumbscrew pinching the top between the jaws */}
+      <mesh position={[-0.035, 0.024 - spineH + 0.02, 0]} castShadow>
+        <cylinderGeometry args={[0.006, 0.006, 0.04, 12]} />
+        <meshStandardMaterial color={STEEL} metalness={0.75} roughness={0.3} />
+      </mesh>
+      {/* arm carrying the load out past the edge */}
+      <mesh position={[reach / 2 + 0.005, armY, 0]} castShadow>
+        <boxGeometry args={[reach + 0.024, 0.016, 0.03]} />
+        <meshStandardMaterial color="#64748b" roughness={0.45} metalness={0.45} />
+      </mesh>
+      {postH > 0 && (
+        <mesh position={[reach, armY + postH / 2, 0]} castShadow>
+          <boxGeometry args={[0.016, postH, 0.024]} />
+          <meshStandardMaterial color="#64748b" roughness={0.45} metalness={0.45} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
 export const SuperPulley = forwardRef<
   PulleyHandle,
   { position: [number, number, number]; radius?: number }

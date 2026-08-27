@@ -33,15 +33,32 @@ const STAND_X = 0.35;
 interface S {
   y: number;
   v: number;
+  /** Simulated time, needed to timestamp the beam crossings. */
+  t: number;
   /** Transit time through each gate, seconds. 0 = not yet measured. */
   dt1: number;
   dt2: number;
-  /** Accumulating while the ball is inside a beam. */
-  in1: number;
-  in2: number;
+  /** Absolute time the ball first broke each beam. −1 = not yet. */
+  tIn1: number;
+  tIn2: number;
   done1: boolean;
   done2: boolean;
   landed: boolean;
+}
+
+/**
+ * The instant, inside one step, at which the falling ball passed `threshold`.
+ *
+ * Counting whole steps instead — which is what this scene used to do — pins
+ * every transit time to a multiple of the 2 ms integration step. The lower gate
+ * is only open for about 8,8 ms, so a 2 ms rounding is a 25 % error in v₂, and
+ * g comes out near 13,5 m/s² instead of 9,8. Interpolating between the two
+ * positions either side of the beam removes that quantisation entirely.
+ */
+function crossingTime(tStart: number, h: number, yFrom: number, yTo: number, threshold: number) {
+  const travelled = yFrom - yTo;
+  if (travelled <= 0) return tStart;
+  return tStart + h * ((yFrom - threshold) / travelled);
 }
 
 export function Sim12FreeFall() {
@@ -62,10 +79,11 @@ export function Sim12FreeFall() {
     init: () => ({
       y: startY,
       v: 0,
+      t: 0,
       dt1: 0,
       dt2: 0,
-      in1: 0,
-      in2: 0,
+      tIn1: -1,
+      tIn2: -1,
       done1: false,
       done2: false,
       landed: false,
@@ -73,28 +91,44 @@ export function Sim12FreeFall() {
     step: (s, hStep) => {
       if (s.landed) return;
 
+      const yPrev = s.y;
       // v is downward-positive, so drag opposes it with the same sign rule.
       const aNow = G - (k * s.v * s.v) / mass;
       s.v += aNow * hStep;
       s.y -= s.v * hStep;
 
-      // A gate is "broken" while any part of the ball is level with the beam.
-      const cross = (beamY: number) => s.y + D / 2 > beamY && s.y - D / 2 < beamY;
+      // The beam is broken from the moment the bottom of the ball reaches it
+      // until its top clears it — a transit of exactly one ball diameter.
+      const time = (threshold: number) => crossingTime(s.t, hStep, yPrev, s.y, threshold);
+      const measure = (beamY: number, tIn: number) => {
+        const enter = beamY + D / 2;
+        const exit = beamY - D / 2;
+        let start = tIn;
+        if (start < 0 && yPrev > enter && s.y <= enter) start = time(enter);
+        if (start >= 0 && yPrev > exit && s.y <= exit) {
+          return { tIn: start, dt: time(exit) - start };
+        }
+        return { tIn: start, dt: 0 };
+      };
 
       if (!s.done1) {
-        if (cross(gate1Y)) s.in1 += hStep;
-        else if (s.in1 > 0) {
-          s.dt1 = s.in1;
+        const m = measure(gate1Y, s.tIn1);
+        s.tIn1 = m.tIn;
+        if (m.dt > 0) {
+          s.dt1 = m.dt;
           s.done1 = true;
         }
       }
       if (!s.done2) {
-        if (cross(GATE2_Y)) s.in2 += hStep;
-        else if (s.in2 > 0) {
-          s.dt2 = s.in2;
+        const m = measure(GATE2_Y, s.tIn2);
+        s.tIn2 = m.tIn;
+        if (m.dt > 0) {
+          s.dt2 = m.dt;
           s.done2 = true;
         }
       }
+
+      s.t += hStep;
 
       if (s.y - D / 2 <= BENCH_H) {
         s.y = BENCH_H + D / 2;
@@ -105,6 +139,9 @@ export function Sim12FreeFall() {
     read: (s) => ({ y: s.y, v: s.v }),
     resetKey: [h, d, D, drag],
     duration: 6,
+    // The whole fall lasts about four tenths of a second; at 1× there is
+    // nothing to watch, so the scene opens slowed right down.
+    initialSpeed: 0.25,
     stopWhen: (s) => s.landed,
   });
 

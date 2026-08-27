@@ -28,7 +28,8 @@ import { BENCH_H, DynamicsTrack, LabBench, TRACK_H, TRACK_L } from "../lab/equip
 
 const CART_Y = BENCH_H + TRACK_H;
 const X_START = 0.12;
-const X_END = TRACK_L - 0.22;
+/** The cart's centre when its nose meets the far end stop. */
+const X_END = TRACK_L - 0.105;
 
 /**
  * Coefficients are the textbook ranges for these pairings. μ_s > μ_k in every

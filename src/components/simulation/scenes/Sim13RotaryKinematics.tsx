@@ -58,7 +58,7 @@ interface S {
 export function Sim13RotaryKinematics() {
   const [step, setStep] = useState<Step>("mid");
   const [hangMass, setHangMass] = useState(0.05);
-  const [extraI, setExtraI] = useState(0); // an added disc, ×10⁻⁵ kg·m²
+  const [extraI, setExtraI] = useState(0); // an added disc, ×10⁻⁴ kg·m²
 
   const r = STEP_R[step].r;
   const I = I_SENSOR + extraI * 1e-4;

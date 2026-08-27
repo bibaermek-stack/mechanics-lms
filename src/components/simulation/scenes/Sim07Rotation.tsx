@@ -20,6 +20,7 @@ import { Panel, PlayBar, Readout, Segmented, Slider, fmt } from "../core/ui";
 import { Segment, SegmentHandle, Tag } from "../core/primitives";
 import {
   BENCH_H,
+  BenchClamp,
   LabBench,
   MassHanger,
   PulleyHandle,
@@ -32,6 +33,8 @@ const AXLE_Y = BENCH_H + 0.3;
 const BODY_Z = 0.1;
 const FLAG_OUT = 0.05;
 const PULLEY_X = 1.0;
+/** Outer face of the bench top — where the pulley's clamp bites. */
+const BENCH_EDGE = 0.98;
 const PULLEY_R = 0.025;
 /** Height of the scanned gate and of its clear opening, at its catalogue size. */
 /**
@@ -68,8 +71,13 @@ export function Sim07Rotation() {
   const Rd = DRUMS[drum];
   const I = SHAPES[kind].factor * mass * radius * radius;
   // Falling mass and flywheel are coupled through the string: a = mg/(m + I/R²).
-  const aLin = (mHang * G) / (mHang + I / (Rd * Rd));
-  const alpha = aLin / Rd;
+  // Bearing friction acts the whole time, not only after the weight lands:
+  //   mg − T = ma,  T·Rd − τ_fr = Iα,  a = αRd
+  //   ⇒ α = (mg·Rd − τ_fr) / (I + m·Rd²)
+  // Leaving τ_fr out of the driven phase and then applying it afterwards made
+  // τ = Iα disagree with itself between the two halves of the same run.
+  const alpha = Math.max((mHang * G * Rd - FRICTION_TORQUE) / (I + mHang * Rd * Rd), 0);
+  const aLin = alpha * Rd;
   const tension = mHang * (G - aLin);
   const torque = tension * Rd;
 
@@ -185,14 +193,21 @@ export function Sim07Rotation() {
             </p>
             <p
               className={`mt-2 rounded-lg px-2 py-1 text-[11px] font-semibold ${
-                phase === "drive"
+                alpha === 0
+                  ? "bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
+                  : phase === "drive"
                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
                   : phase === "coast"
                   ? "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
                   : "bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300"
               }`}
             >
-              {phase === "drive"
+              {alpha === 0
+                ? `Жүктің моменті m·g·R_б = ${fmt(mHang * G * Rd * 1000, 2)}·10⁻³ Н·м мойынтірек үйкелісінен (${fmt(
+                    FRICTION_TORQUE * 1000,
+                    2
+                  )}·10⁻³ Н·м) кіші — маховик орнынан қозғалмайды. Жүкті ауырлат немесе барабанды үлкейт.`
+                : phase === "drive"
                 ? "Жүк түсіп жатыр — момент тұрақты, α тұрақты. Өлшеу осы кезеңде жүреді."
                 : phase === "coast"
                 ? "Жүк жерге жетті, жіп босады — өлшеу аяқталды, симуляция кідірді. «Бастау» бассаң, маховиктің инерциямен қалай баяулайтынын көресің."
@@ -236,27 +251,6 @@ export function Sim07Rotation() {
         "Барабан радиусын 10 мм-ден 30 мм-ге ауыстыр. Момент τ = T·R_б өсті, бірақ α неге дәл үш есе өспеді? (α = a/R_б екенін еске ал.)",
       ]}
     />
-  );
-}
-
-/** Rod stand that holds the edge pulley up over the bench. */
-function PulleyPost({ x, z, top }: { x: number; z: number; top: number }) {
-  const h = top - BENCH_H;
-  return (
-    <group position={[x, BENCH_H, z]}>
-      <mesh position={[0, 0.01, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.11, 0.02, 0.11]} />
-        <meshStandardMaterial color="#334155" roughness={0.7} />
-      </mesh>
-      <mesh position={[0, h / 2, 0]} castShadow>
-        <cylinderGeometry args={[0.007, 0.007, Math.max(h, 0.02), 14]} />
-        <meshStandardMaterial color="#cbd5e1" metalness={0.65} roughness={0.3} />
-      </mesh>
-      <mesh position={[0.015, h, 0]} castShadow>
-        <boxGeometry args={[0.04, 0.022, 0.022]} />
-        <meshStandardMaterial color="#475569" roughness={0.55} metalness={0.4} />
-      </mesh>
-    </group>
   );
 }
 
@@ -304,7 +298,7 @@ function Scene({
 
   return (
     <group>
-      <LabBench from={0.02} to={0.98} depth={0.62} />
+      <LabBench from={0.02} to={BENCH_EDGE} depth={0.62} />
 
       <FlywheelStand x={CX} baseY={BENCH_H} axleY={AXLE_Y} />
       <Flywheel
@@ -332,7 +326,14 @@ function Scene({
       {/* drive string over the edge pulley to the falling mass */}
       <Segment ref={ropeAcross} color="#f1f5f9" radius={0.0013} />
       <Segment ref={ropeDown} color="#f1f5f9" radius={0.0013} />
-      <PulleyPost x={PULLEY_X - 0.03} z={BODY_Z - 0.03} top={ropeTopY - PULLEY_R - 0.05} />
+      {/* Clamped to the bench edge rather than standing on a base plate that
+          was hanging half off the worktop. */}
+      <BenchClamp
+        x={BENCH_EDGE}
+        z={BODY_Z - 0.03}
+        reach={PULLEY_X - BENCH_EDGE}
+        postTop={ropeTopY - PULLEY_R - 0.09}
+      />
       <SuperPulley ref={pulley} position={[PULLEY_X, ropeTopY - PULLEY_R, BODY_Z - 0.03]} radius={PULLEY_R} />
       <group ref={hanger} position={[PULLEY_X + PULLEY_R, ropeTopY - 0.05, BODY_Z - 0.03]}>
         <MassHanger discs={3} />

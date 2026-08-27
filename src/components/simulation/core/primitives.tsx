@@ -35,7 +35,14 @@ export const VectorArrow = forwardRef<
       if (!g) return;
       const visible = length > 1e-4 && dir.lengthSq() > 1e-12;
       g.visible = visible;
-      if (!visible) return;
+      if (!visible) {
+        // Collapse rather than only hide. The shaft is a 1 m unit cylinder, and
+        // leaving it at full scale keeps a metre-long box inside every bounding
+        // volume the scene computes — which is what sizes the shadow camera.
+        shaft.current?.scale.set(1, 1e-5, 1);
+        head.current?.scale.set(1, 1e-5, 1);
+        return;
+      }
       g.position.copy(origin);
       dirN.copy(dir).normalize();
       quat.setFromUnitVectors(UP, dirN);
@@ -51,11 +58,11 @@ export const VectorArrow = forwardRef<
 
   return (
     <group ref={group}>
-      <mesh ref={shaft}>
+      <mesh ref={shaft} scale={[1, 1e-5, 1]}>
         <cylinderGeometry args={[radius, radius, 1, 10]} />
         <meshStandardMaterial color={color} transparent={opacity < 1} opacity={opacity} />
       </mesh>
-      <mesh ref={head}>
+      <mesh ref={head} scale={[1, 1e-5, 1]}>
         <coneGeometry args={[radius * 2.6, radius * 6, 14]} />
         <meshStandardMaterial color={color} transparent={opacity < 1} opacity={opacity} />
       </mesh>
