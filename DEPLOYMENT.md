@@ -152,13 +152,23 @@ cheapest way to do that.
 1. Push this repository to GitHub.
 2. In Railway: **New Project → Deploy from GitHub repo**, pick this repository.
 3. In the service's **Settings**:
-   - **Build Command:** `npm ci && npm run build:server`
+   - **Build Command:** `npm ci --include=dev && npm run build:server`
+     (`--include=dev` matters: TypeScript is a dev dependency, and Railway sets
+     `NODE_ENV=production`, which makes a plain `npm ci` skip it — the compile
+     then fails with `tsc: not found`.)
    - **Start Command:** `npm run start:server`
 4. Deploy. Railway assigns a public domain such as
    `arena-server-production.up.railway.app` and passes the port in `PORT`, which
    the server already reads — nothing to configure.
 5. Check it: `https://<your-domain>/health` should answer
    `{"ok":true,"rooms":0}`.
+
+> **Railway blocks the build over `next`?** Railway scans `package-lock.json`
+> for advisories and refuses to deploy on a HIGH finding — including ones in
+> packages the server never loads, since the lockfile covers the whole
+> repository. Keep `next` on the current 14.2.x patch (`npm install
+> next@^14.2.35`) and commit the lockfile; that clears the two DoS advisories
+> it stops on.
 6. Back on the **web** deployment (Vercel), add the environment variable and
    **redeploy** — `NEXT_PUBLIC_*` values are baked in at build time:
 
