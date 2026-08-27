@@ -151,16 +151,29 @@ cheapest way to do that.
 
 1. Push this repository to GitHub.
 2. In Railway: **New Project → Deploy from GitHub repo**, pick this repository.
-3. In the service's **Settings**:
-   - **Build Command:** `npm ci --include=dev && npm run build:server`
-     (`--include=dev` matters: TypeScript is a dev dependency, and Railway sets
-     `NODE_ENV=production`, which makes a plain `npm ci` skip it — the compile
-     then fails with `tsc: not found`.)
-   - **Start Command:** `npm run start:server`
-4. Deploy. Railway assigns a public domain such as
-   `arena-server-production.up.railway.app` and passes the port in `PORT`, which
-   the server already reads — nothing to configure.
-5. Check it: `https://<your-domain>/health` should answer
+3. Nothing to type: `railway.json` at the repository root already sets the
+   build and start commands, the health check and the restart policy.
+
+   ```json
+   "buildCommand": "npm ci --include=dev && npm run build:server",
+   "startCommand": "npm run start:server",
+   "healthcheckPath": "/health"
+   ```
+
+   Left to guess, Railway finds a `build` script in `package.json`, builds the
+   **Next site** and starts that instead — a working deployment of the wrong
+   half of the repository. And `--include=dev` matters: TypeScript is a dev
+   dependency and Railway sets `NODE_ENV=production`, which makes a plain
+   `npm ci` skip it and the compile fail with `tsc: not found`.
+
+   Anything typed into the service's **Settings** overrides this file, so leave
+   those fields empty unless you mean to.
+4. **Networking → Generate Domain.** A fresh service is marked *Unexposed*: it
+   builds and runs, but nothing outside Railway can reach it, and the browser
+   needs a public host to open a socket to.
+5. Deploy. Railway passes the port in `PORT`, which the server already reads,
+   and binds on every interface — nothing else to configure.
+6. Check it: `https://<your-domain>/health` should answer
    `{"ok":true,"rooms":0}`.
 
 > **Railway blocks the build over `next`?** Railway scans `package-lock.json`
@@ -169,7 +182,7 @@ cheapest way to do that.
 > repository. Keep `next` on the current 14.2.x patch (`npm install
 > next@^14.2.35`) and commit the lockfile; that clears the two DoS advisories
 > it stops on.
-6. Back on the **web** deployment (Vercel), add the environment variable and
+7. Back on the **web** deployment (Vercel), add the environment variable and
    **redeploy** — `NEXT_PUBLIC_*` values are baked in at build time:
 
 ```
