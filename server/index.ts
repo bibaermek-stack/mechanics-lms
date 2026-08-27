@@ -155,7 +155,7 @@ wss.on("connection", (socket, req) => {
   room.players.set(id, {
     member: { id, name, team: 0, joinedAt: Date.now() },
     socket,
-    input: { dx: 0, dy: 0, kick: false },
+    input: { dx: 0, dy: 0, kick: false, sprint: false },
   });
 
   send(socket, { type: "welcome", id, room: code });
@@ -177,6 +177,7 @@ wss.on("connection", (socket, req) => {
         dx: clamp(Number(msg.dx) || 0),
         dy: clamp(Number(msg.dy) || 0),
         kick: Boolean(msg.kick),
+        sprint: Boolean(msg.sprint),
       };
       return;
     }

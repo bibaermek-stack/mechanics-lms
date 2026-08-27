@@ -52,7 +52,7 @@ export function botInput(
     // Kick when close and the ball is on the goal side, so the bot does not
     // hammer it back toward its own net.
     const facing = (ball.x - bot.x) * sign > -0.1;
-    return { ...dir, kick: dist < bot.r + ball.r + 0.24 && facing };
+    return { ...dir, kick: dist < bot.r + ball.r + 0.24 && facing, sprint: false };
   }
 
   // Holding players keep their formation depth but track the ball across.
@@ -60,7 +60,9 @@ export function botInput(
   const targetY = spot.y * 0.5 + ball.y * 0.45;
   const targetX = spot.x + (ball.x - spot.x) * 0.25 * difficulty;
   const dir = steer(bot, targetX, Math.max(-PITCH.hy + 1, Math.min(PITCH.hy - 1, targetY)));
-  return { ...dir, kick: false };
+  // Bots never sprint: the reserve is the human's edge, and a chasing bot that
+  // could always run them down would make the game unwinnable rather than hard.
+  return { ...dir, kick: false, sprint: false };
 }
 
 /** Inputs for every bot on the pitch, keyed by disc id. */

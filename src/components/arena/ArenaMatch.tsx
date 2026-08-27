@@ -15,6 +15,9 @@ import { FIXED_H, createMatch, extrapolated, isOver, readings, step } from "@/li
 import { TEAM_COLORS, TEAM_NAMES, resetPositions } from "@/lib/arena/pitch";
 import type { ArenaTransport } from "@/lib/arena/transport";
 import type { Disc, Input, MatchConfig, MatchState, Team } from "@/lib/arena/types";
+import { useKeymap } from "@/lib/arena/keybindings";
+import type { ArenaAction } from "@/lib/arena/keybindings";
+import { ArenaControls } from "./ArenaControls";
 import { drawMatch } from "./render";
 import { useArenaInput } from "./useArenaInput";
 import { useFullscreen } from "./useFullscreen";
@@ -62,7 +65,8 @@ export function ArenaMatch({
   const fullscreen = useFullscreen(shellRef);
   const [playing, setPlaying] = useState(true);
   const [hud, setHud] = useState(() => snapshotHud(stateRef.current));
-  const input = useArenaInput(localId !== null);
+  const { keymap, bind, reset: resetKeys } = useKeymap();
+  const input = useArenaInput(localId !== null, keymap);
 
   const playingRef = useRef(playing);
   playingRef.current = playing;
@@ -244,7 +248,11 @@ export function ArenaMatch({
       </div>
 
       {/* Touch pad, shown once a touch control has been used or on coarse pointers */}
-      <TouchPad input={input} visible={input.touch || localId !== null} />
+      <TouchPad
+        input={input}
+        visible={input.touch || localId !== null}
+        stamina={hud.myStamina}
+      />
 
       {!compact && !guest && (
         <div className="flex items-center gap-2">
@@ -268,39 +276,69 @@ export function ArenaMatch({
       )}
 
       <PhysicsPanel hud={hud} compact={fullscreen.active} />
+
+      {/* Not in full screen: there the pitch is the point, and the legend is
+          already burned into the player's hands by the time they open it. */}
+      {!fullscreen.active && localId !== null && (
+        <ArenaControls keymap={keymap} bind={bind} reset={resetKeys} active={input.active} />
+      )}
     </div>
   );
 }
 
-function TouchPad({ input, visible }: { input: ReturnType<typeof useArenaInput>; visible: boolean }) {
+function TouchPad({
+  input,
+  visible,
+  stamina,
+}: {
+  input: ReturnType<typeof useArenaInput>;
+  visible: boolean;
+  stamina: number;
+}) {
   if (!visible) return null;
   const btn =
     "select-none rounded-xl bg-slate-800/90 px-4 py-3 text-white active:bg-brand-500 dark:bg-white/10";
-  const bind = (dir: "up" | "down" | "left" | "right" | "kick") => ({
+  const hold = (action: ArenaAction) => ({
     onPointerDown: (e: React.PointerEvent) => {
       e.preventDefault();
-      input.press(dir, true);
+      input.press(action, true);
     },
-    onPointerUp: () => input.press(dir, false),
-    onPointerLeave: () => input.press(dir, false),
-    onPointerCancel: () => input.press(dir, false),
+    onPointerUp: () => input.press(action, false),
+    onPointerLeave: () => input.press(action, false),
+    onPointerCancel: () => input.press(action, false),
   });
   return (
     <div className="flex items-center justify-between gap-3 md:hidden">
       <div className="grid grid-cols-3 gap-1.5">
         <span />
-        <button className={btn} {...bind("up")} aria-label="Жоғары">↑</button>
+        <button className={btn} {...hold("up")} aria-label="Жоғары">↑</button>
         <span />
-        <button className={btn} {...bind("left")} aria-label="Солға">←</button>
-        <button className={btn} {...bind("down")} aria-label="Төмен">↓</button>
-        <button className={btn} {...bind("right")} aria-label="Оңға">→</button>
+        <button className={btn} {...hold("left")} aria-label="Солға">←</button>
+        <button className={btn} {...hold("down")} aria-label="Төмен">↓</button>
+        <button className={btn} {...hold("right")} aria-label="Оңға">→</button>
       </div>
-      <button
-        className="select-none rounded-2xl bg-amber-500 px-6 py-6 text-base font-bold text-white active:bg-amber-600"
-        {...bind("kick")}
-      >
-        Тебу
-      </button>
+      <div className="flex flex-col items-stretch gap-1.5">
+        <button
+          className="relative select-none overflow-hidden rounded-xl bg-slate-700 px-5 py-3 text-sm font-bold text-white active:bg-slate-600 disabled:opacity-45"
+          disabled={stamina <= 0}
+          {...hold("sprint")}
+        >
+          {/* The reserve fills the button itself, so the thumb never has to
+              leave the control to read it. */}
+          <span
+            className="absolute inset-y-0 left-0 bg-amber-500/45 transition-[width] duration-150"
+            style={{ width: `${Math.round(stamina * 100)}%` }}
+            aria-hidden
+          />
+          <span className="relative">Екпін</span>
+        </button>
+        <button
+          className="select-none rounded-2xl bg-amber-500 px-6 py-4 text-base font-bold text-white active:bg-amber-600"
+          {...hold("kick")}
+        >
+          Тебу
+        </button>
+      </div>
     </div>
   );
 }
@@ -315,8 +353,8 @@ function PhysicsPanel({ hud, compact = false }: { hud: HudSnapshot; compact?: bo
       <div className="grid shrink-0 grid-cols-3 gap-2 sm:grid-cols-6">
         <Stat label="Доп v" value={hud.ballSpeed.toFixed(2)} unit="м/с" tone="emerald" />
         <Stat label="Доп p" value={hud.ballMomentum.toFixed(2)} unit="кг·м/с" tone="amber" />
-        <Stat label="Жүйе p" value={hud.totalMomentum.toFixed(1)} unit="кг·м/с" />
-        <Stat label="Eₖ" value={hud.totalEnergy.toFixed(0)} unit="Дж" />
+        <Stat label="Менің F" value={hud.myDrive.toFixed(0)} unit="Н" tone="brand" />
+        <Stat label="Екпін қоры" value={`${Math.round(hud.myStamina * 100)}`} unit="%" tone="amber" />
         <Stat label="Δp" value={c ? deltaP(c.pAfter - c.pBefore) : "—"} unit="кг·м/с" tone="brand" />
         <Stat
           label="ΔEₖ"
@@ -337,6 +375,19 @@ function PhysicsPanel({ hud, compact = false }: { hud: HudSnapshot; compact?: bo
         <Stat label="Доптың импульсі" value={hud.ballMomentum.toFixed(2)} unit="кг·м/с" tone="amber" />
         <Stat label="Жүйенің импульсі" value={hud.totalMomentum.toFixed(1)} unit="кг·м/с" />
         <Stat label="Кинетикалық энергия" value={hud.totalEnergy.toFixed(0)} unit="Дж" />
+      </div>
+
+      {/* The sprint key, in numbers: the same body, a bigger F, a bigger a. */}
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Stat label="Қозғаушы күш F" value={hud.myDrive.toFixed(0)} unit="Н" tone="brand" />
+        <Stat label="Үдеу a = F/m" value={hud.myAccel.toFixed(2)} unit="м/с²" tone="brand" />
+        <Stat label="Менің v" value={hud.mySpeed.toFixed(2)} unit="м/с" tone="emerald" />
+        <Stat
+          label="Екпін қоры"
+          value={`${Math.round(hud.myStamina * 100)}`}
+          unit="%"
+          tone={hud.myStamina < 0.2 ? "rose" : "amber"}
+        />
       </div>
 
       {c ? (
@@ -415,6 +466,11 @@ interface HudSnapshot {
   ballMomentum: number;
   totalMomentum: number;
   totalEnergy: number;
+  /** The disc this browser drives, so the panel can show the second law on it. */
+  mySpeed: number;
+  myDrive: number;
+  myAccel: number;
+  myStamina: number;
   collision: MatchState["lastCollision"];
 }
 

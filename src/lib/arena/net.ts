@@ -106,7 +106,13 @@ export function useArenaRoom(
 
     channel.on("broadcast", { event: "input" }, ({ payload }) => {
       const p = payload as { id: string } & Input;
-      if (p?.id) inputsRef.current.set(p.id, { dx: p.dx, dy: p.dy, kick: p.kick });
+      if (p?.id)
+        inputsRef.current.set(p.id, {
+          dx: p.dx,
+          dy: p.dy,
+          kick: p.kick,
+          sprint: Boolean(p.sprint),
+        });
     });
 
     channel.on("broadcast", { event: "state" }, ({ payload }) => {

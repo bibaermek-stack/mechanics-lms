@@ -145,6 +145,25 @@ export function drawMatch(
     ctx.lineWidth = Math.max(1, S(d.local ? 0.09 : 0.05));
     ctx.stroke();
 
+    // The sprint reserve, as an arc around the disc the player drives. On the
+    // pitch rather than only in the panel: it is read mid-run, and nobody looks
+    // away from the ball to check a number.
+    if (d.local && d.stamina !== undefined && d.stamina < 0.999) {
+      const ring = pr + S(0.16);
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.lineWidth = Math.max(2, S(0.09));
+      ctx.beginPath();
+      ctx.arc(px, py, ring, 0, Math.PI * 2);
+      ctx.stroke();
+      if (d.stamina > 0) {
+        // Amber while there is something left, red on the last fifth.
+        ctx.strokeStyle = d.stamina < 0.2 ? "#f87171" : "#fbbf24";
+        ctx.beginPath();
+        ctx.arc(px, py, ring, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * d.stamina);
+        ctx.stroke();
+      }
+    }
+
     if (d.name) {
       ctx.fillStyle = "rgba(255,255,255,0.85)";
       ctx.font = `600 ${Math.max(9, Math.round(S(0.42)))}px "Segoe UI", system-ui, sans-serif`;
