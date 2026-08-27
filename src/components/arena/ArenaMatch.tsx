@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { Pause, Play, RotateCcw, Gauge } from "lucide-react";
+import { Maximize2, Minimize2, Pause, Play, RotateCcw, Gauge } from "lucide-react";
 import { botInputs } from "@/lib/arena/bots";
 import { FIXED_H, createMatch, isOver, readings, step } from "@/lib/arena/physics";
 import { TEAM_COLORS, TEAM_NAMES, resetPositions } from "@/lib/arena/pitch";
@@ -17,6 +17,7 @@ import type { ArenaTransport } from "@/lib/arena/transport";
 import type { Disc, Input, MatchConfig, MatchState, Team } from "@/lib/arena/types";
 import { drawMatch } from "./render";
 import { useArenaInput } from "./useArenaInput";
+import { useFullscreen } from "./useFullscreen";
 
 /** How often the host publishes a snapshot, and the HUD refreshes. */
 const NET_HZ = 20;
@@ -46,6 +47,7 @@ export function ArenaMatch({
   compact = false,
 }: ArenaMatchProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef<MatchState>(createMatch(discs, config));
   const accRef = useRef(0);
   const lastRef = useRef(0);
@@ -53,6 +55,7 @@ export function ArenaMatch({
   const hudRef = useRef(0);
   const endedRef = useRef(false);
 
+  const fullscreen = useFullscreen(shellRef);
   const [playing, setPlaying] = useState(true);
   const [hud, setHud] = useState(() => snapshotHud(stateRef.current));
   const input = useArenaInput(localId !== null);
@@ -83,12 +86,17 @@ export function ArenaMatch({
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const rect = canvas.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return;
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
-    window.addEventListener("resize", resize);
+    // A ResizeObserver rather than a window listener: going full screen the
+    // browser's way fires a resize, but the CSS fallback only changes the
+    // element, and a stale backing store draws blurred and off-centre.
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
 
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
@@ -141,16 +149,44 @@ export function ArenaMatch({
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
+      observer.disconnect();
     };
   }, [config, isBot, localId, transport, input.ref, onEnd]);
 
   const guest = Boolean(transport && !transport.isHost);
 
   return (
-    <div className="space-y-3">
-      <div className="relative overflow-hidden rounded-xl2 ring-1 ring-slate-900/10 dark:ring-white/10">
-        <canvas ref={canvasRef} className="block h-[46vh] max-h-[520px] min-h-[280px] w-full" />
+    <div
+      ref={shellRef}
+      className={clsx(
+        fullscreen.active
+          ? "fixed inset-0 z-50 flex h-screen w-screen flex-col gap-2 bg-slate-950 p-3"
+          : "space-y-3"
+      )}
+    >
+      <div
+        className={clsx(
+          "relative overflow-hidden ring-1 ring-slate-900/10 dark:ring-white/10",
+          fullscreen.active ? "min-h-0 flex-1 rounded-xl" : "rounded-xl2"
+        )}
+      >
+        <canvas
+          ref={canvasRef}
+          className={clsx(
+            "block w-full",
+            fullscreen.active ? "h-full" : "h-[46vh] max-h-[520px] min-h-[280px]"
+          )}
+        />
+
+        {/* Full screen sits on the pitch so it is there in the lesson tab too. */}
+        <button
+          onClick={fullscreen.toggle}
+          title={fullscreen.active ? "Толық экраннан шығу" : "Толық экран"}
+          aria-label={fullscreen.active ? "Толық экраннан шығу" : "Толық экран"}
+          className="absolute right-3 top-3 rounded-lg bg-black/45 p-2 text-white backdrop-blur transition-colors hover:bg-black/65"
+        >
+          {fullscreen.active ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+        </button>
 
         {/* Scoreboard */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-center gap-3 p-3">
@@ -220,7 +256,7 @@ export function ArenaMatch({
         </div>
       )}
 
-      <PhysicsPanel hud={hud} />
+      <PhysicsPanel hud={hud} compact={fullscreen.active} />
     </div>
   );
 }
@@ -259,8 +295,27 @@ function TouchPad({ input, visible }: { input: ReturnType<typeof useArenaInput>;
 }
 
 /** The readout that makes this a mechanics exercise rather than only a game. */
-function PhysicsPanel({ hud }: { hud: HudSnapshot }) {
+function PhysicsPanel({ hud, compact = false }: { hud: HudSnapshot; compact?: boolean }) {
   const c = hud.collision;
+  if (compact) {
+    // Full screen: one strip of numbers, no prose. The pitch is what the player
+    // came for; the explanation is still a keystroke away.
+    return (
+      <div className="grid shrink-0 grid-cols-3 gap-2 sm:grid-cols-6">
+        <Stat label="Доп v" value={hud.ballSpeed.toFixed(2)} unit="м/с" tone="emerald" />
+        <Stat label="Доп p" value={hud.ballMomentum.toFixed(2)} unit="кг·м/с" tone="amber" />
+        <Stat label="Жүйе p" value={hud.totalMomentum.toFixed(1)} unit="кг·м/с" />
+        <Stat label="Eₖ" value={hud.totalEnergy.toFixed(0)} unit="Дж" />
+        <Stat label="Δp" value={c ? deltaP(c.pAfter - c.pBefore) : "—"} unit="кг·м/с" tone="brand" />
+        <Stat
+          label="ΔEₖ"
+          value={c ? Math.max(c.ekBefore - c.ekAfter, 0).toFixed(2) : "—"}
+          unit="Дж"
+          tone="rose"
+        />
+      </div>
+    );
+  }
   return (
     <div className="surface p-4">
       <p className="mb-3 flex items-center gap-2 text-label uppercase text-slate-500 dark:text-slate-400">
@@ -284,10 +339,7 @@ function PhysicsPanel({ hud }: { hud: HudSnapshot }) {
             <Stat label="p кейін" value={c.pAfter.toFixed(2)} unit="кг·м/с" />
             <Stat
               label="Δp"
-              // Rounding noise below a tenth of a gram-metre per second is zero;
-              // printing "−0.0000" would read as a fault rather than as the
-              // conservation law it is.
-              value={Math.abs(c.pAfter - c.pBefore) < 5e-5 ? "0.0000" : (c.pAfter - c.pBefore).toFixed(4)}
+              value={deltaP(c.pAfter - c.pBefore)}
               unit="кг·м/с"
               tone="brand"
             />
@@ -365,6 +417,14 @@ function snapshotHud(state: MatchState): HudSnapshot {
     collision: state.lastCollision,
     ...r,
   };
+}
+
+/**
+ * Rounding noise below a twentieth of a gram-metre per second is zero; printing
+ * "−0.0000" would read as a fault rather than as the conservation law it is.
+ */
+function deltaP(value: number): string {
+  return Math.abs(value) < 5e-5 ? "0.0000" : value.toFixed(4);
 }
 
 function formatClock(seconds: number) {
