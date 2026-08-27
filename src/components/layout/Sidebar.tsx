@@ -21,12 +21,14 @@ import {
   ClipboardList,
   Video,
   Settings,
+  Calculator,
 } from "lucide-react";
 
 const STUDENT_LINKS = [
   { href: "/dashboard", label: "Басты бет", icon: LayoutDashboard },
   { href: "/modules", label: "Сабақтар", icon: BookOpen },
   { href: "/labs", label: "Зертханалық жұмыстар", icon: FlaskConical },
+  { href: "/problems", label: "Есеп шығару", icon: Calculator },
   { href: "/vr-lab", label: "VR/AR зертхана", icon: Headset },
   { href: "/arena", label: "Арена", icon: Gamepad2 },
   { href: "/connections", label: "Менің оқытушым", icon: UserPlus },
@@ -43,6 +45,7 @@ const TEACHER_LINKS = [
   { href: "/teacher/students", label: "Студенттер", icon: Users },
   { href: "/teacher/lessons", label: "Сабақтарды басқару", icon: Video },
   { href: "/labs", label: "Зертханалық жұмыстар", icon: FlaskConical },
+  { href: "/problems", label: "Есеп шығару", icon: Calculator },
   { href: "/vr-lab", label: "VR/AR зертхана", icon: Headset },
   { href: "/arena", label: "Арена", icon: Gamepad2 },
   { href: "/teacher/assignments", label: "Тапсырмаларды тексеру", icon: ClipboardList },
