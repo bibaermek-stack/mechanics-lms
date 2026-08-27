@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ArenaMatch } from "@/components/arena/ArenaMatch";
 import { useAuthStore } from "@/lib/authStore";
 import { normaliseRoomCode, rosterTeams, useArenaRoom } from "@/lib/arena/net";
+import { hasArenaServer, useArenaServer } from "@/lib/arena/server-net";
 import { makeIsBot, rosterDiscs } from "@/lib/arena/setup";
 import { TEAM_COLORS, TEAM_NAMES } from "@/lib/arena/pitch";
 import { DEFAULT_CONFIG, type Team } from "@/lib/arena/types";
@@ -32,7 +33,34 @@ export default function ArenaRoomPage({ params }: { params: { room: string } }) 
     [user]
   );
 
-  const room = useArenaRoom(code, me);
+  // Two ways to run a room, and the better one wins when it is available: a
+  // real server has one authority that outlives any single player, where the
+  // Realtime rooms have to elect one of the players and start over when they
+  // leave. The Realtime path stays for deployments that never stand a server up.
+  const server = useArenaServer(hasArenaServer ? code : null, hasArenaServer ? me : null);
+  const realtime = useArenaRoom(hasArenaServer ? null : code, hasArenaServer ? null : me);
+
+  const room = hasArenaServer
+    ? {
+        status: (server.status === "joined"
+          ? "joined"
+          : server.status === "connecting"
+            ? "connecting"
+            : server.status === "error"
+              ? "error"
+              : "connecting") as typeof realtime.status,
+        members: server.members,
+        // The server referees, so no player wears the crown and everyone may
+        // start a match that has not started yet.
+        hostId: null as string | null,
+        isHost: true,
+        transport: server.transport,
+        setTeam: server.setTeam,
+        started: server.started,
+        start: server.start,
+      }
+    : realtime;
+
   const config = DEFAULT_CONFIG;
 
   // The line-up is frozen the moment the match starts, so a late arrival cannot
@@ -53,7 +81,7 @@ export default function ArenaRoomPage({ params }: { params: { room: string } }) 
     });
   }, [code]);
 
-  if (room.status === "unavailable") {
+  if (!hasArenaServer && room.status === "unavailable") {
     return (
       <DashboardShell>
         <div className="surface mx-auto max-w-lg p-8 text-center">
@@ -78,9 +106,11 @@ export default function ArenaRoomPage({ params }: { params: { room: string } }) 
           as="h1"
           title={`Бөлме ${code}`}
           description={
-            room.isHost
-              ? "Сенің браузерің физиканы жүргізеді — бәрі сенің есептеуіңді көреді."
-              : "Физиканы бөлмені бірінші ашқан ойыншының браузері жүргізеді."
+            hasArenaServer
+              ? "Физиканы ойын сервері жүргізеді — бәрі бірдей көріністі көреді."
+              : room.isHost
+                ? "Сенің браузерің физиканы жүргізеді — бәрі сенің есептеуіңді көреді."
+                : "Физиканы бөлмені бірінші ашқан ойыншының браузері жүргізеді."
           }
           action={
             <div className="flex items-center gap-2">
@@ -153,6 +183,9 @@ export default function ArenaRoomPage({ params }: { params: { room: string } }) 
                 </button>
               ) : (
                 <Badge variant="warning">Төрешінің бастауын күтіңіз</Badge>
+              )}
+              {hasArenaServer && server.status === "closed" && (
+                <Badge variant="warning">Байланыс үзілді — қайта қосылуда…</Badge>
               )}
               <p className="text-micro text-slate-500 dark:text-slate-400">
                 Бос орындарды боттар толтырады ({config.perSide}×{config.perSide}).

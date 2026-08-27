@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "build:server": "tsc -p tsconfig.server.json",
+    "start:server": "node dist-server/server/index.js",
+    "dev:server": "npm run build:server && npm run start:server"
   },
   "dependencies": {
     "@react-three/drei": "^9.114.3",
@@ -26,6 +29,7 @@
     "react-chartjs-2": "5.2.0",
     "react-dom": "18.3.1",
     "three": "^0.169.0",
+    "ws": "^8.21.3",
     "zustand": "4.5.4"
   },
   "devDependencies": {
@@ -34,6 +38,7 @@
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
     "@types/three": "^0.169.0",
+    "@types/ws": "^8.18.1",
     "autoprefixer": "10.4.19",
     "postcss": "8.4.40",
     "tailwindcss": "3.4.7",

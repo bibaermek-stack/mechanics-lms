@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Maximize2, Minimize2, Pause, Play, RotateCcw, Gauge } from "lucide-react";
 import { botInputs } from "@/lib/arena/bots";
-import { FIXED_H, createMatch, isOver, readings, step } from "@/lib/arena/physics";
+import { FIXED_H, createMatch, extrapolated, isOver, readings, step } from "@/lib/arena/physics";
 import { TEAM_COLORS, TEAM_NAMES, resetPositions } from "@/lib/arena/pitch";
 import type { ArenaTransport } from "@/lib/arena/transport";
 import type { Disc, Input, MatchConfig, MatchState, Team } from "@/lib/arena/types";
@@ -54,6 +54,10 @@ export function ArenaMatch({
   const netRef = useRef(0);
   const hudRef = useRef(0);
   const endedRef = useRef(false);
+  // Last snapshot from the authority, and when it landed, so the frames between
+  // two snapshots can be carried forward instead of repeating.
+  const remoteRef = useRef<MatchState | null>(null);
+  const remoteAtRef = useRef(0);
 
   const fullscreen = useFullscreen(shellRef);
   const [playing, setPlaying] = useState(true);
@@ -106,10 +110,17 @@ export function ArenaMatch({
       const guest = transport && !transport.isHost;
 
       if (guest) {
-        // A guest draws what the host sends and never integrates: two machines
-        // stepping the same physics would drift apart within seconds.
+        // A guest draws what the authority sends and never integrates: two
+        // machines stepping the same physics would drift apart within seconds.
         const remote = transport.latestState();
-        if (remote) stateRef.current = remote;
+        if (remote && remote !== remoteRef.current) {
+          remoteRef.current = remote;
+          remoteAtRef.current = now;
+        }
+        if (remoteRef.current) {
+          const age = Math.min((now - remoteAtRef.current) / 1000, 0.2);
+          stateRef.current = extrapolated(remoteRef.current, age);
+        }
         if (localId) transport.sendInput(input.ref.current);
       } else if (playingRef.current) {
         accRef.current += dt;

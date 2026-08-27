@@ -237,6 +237,23 @@ export function isOver(state: MatchState, config: MatchConfig): boolean {
   return false;
 }
 
+/**
+ * A snapshot moved forward by `dt`, for drawing only.
+ *
+ * The server publishes twenty times a second and the screen draws sixty, so
+ * three frames in four would otherwise repeat the last one and the ball would
+ * visibly stutter. Carrying each body on at its own velocity for the age of the
+ * snapshot costs one array and hides the gap; it is never fed back into the
+ * simulation, so it cannot drift into it.
+ */
+export function extrapolated(state: MatchState, dt: number): MatchState {
+  if (dt <= 0) return state;
+  return {
+    ...state,
+    discs: state.discs.map((d) => ({ ...d, x: d.x + d.vx * dt, y: d.y + d.vy * dt })),
+  };
+}
+
 /** Live numbers for the physics panel. */
 export function readings(state: MatchState) {
   const ball = state.discs.find((d) => d.kind === "ball");

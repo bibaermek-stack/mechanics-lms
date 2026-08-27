@@ -93,6 +93,15 @@ export interface MatchConfig {
   goalLimit: number;
 }
 
+/** One person in a room, as both ends and the server see them. */
+export interface Member {
+  id: string;
+  name: string;
+  team: Team;
+  /** Milliseconds since the epoch — the room's join order, and its referee. */
+  joinedAt: number;
+}
+
 export const DEFAULT_CONFIG: MatchConfig = {
   perSide: 3,
   duration: 180,

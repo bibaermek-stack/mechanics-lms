@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist-server",
+    "rootDir": ".",
+    "types": ["node"]
+  },
+  "include": [
+    "server/**/*.ts",
+    "src/lib/arena/types.ts",
+    "src/lib/arena/pitch.ts",
+    "src/lib/arena/physics.ts",
+    "src/lib/arena/bots.ts",
+    "src/lib/arena/setup.ts"
+  ]
+}

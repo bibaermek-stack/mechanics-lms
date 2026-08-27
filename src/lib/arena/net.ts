@@ -18,17 +18,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { ArenaTransport } from "./transport";
-import type { Input, MatchState, Team } from "./types";
+import type { Input, MatchState, Member, Team } from "./types";
 
 export type RoomStatus = "idle" | "connecting" | "joined" | "unavailable" | "error";
 
-export interface Member {
-  id: string;
-  name: string;
-  team: Team;
-  /** Milliseconds since the epoch, as reported by the joining client. */
-  joinedAt: number;
-}
+export type { Member };
 
 /** Six characters a student can read out across a classroom without mistakes. */
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";

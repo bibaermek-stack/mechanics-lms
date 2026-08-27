@@ -1,16 +1,15 @@
-"use client";
-
 // Building the line-ups.
 //
 // Both ends of an online match derive their bodies from the same roster in the
 // same order, so the ids line up and an input addressed to "player 3" reaches
 // the same disc everywhere. Any side short of players is filled with bots, which
 // is what lets two people start a three-a-side match without waiting for four
-// more.
+// more. Kept free of React and of "use client" so the game server can build the
+// same line-up from the same code — two implementations of a kick-off would
+// drift apart the first time either was touched.
 
 import { makeBall, makePlayer } from "./pitch";
-import type { Member } from "./net";
-import type { Disc, MatchConfig, Team } from "./types";
+import type { Disc, MatchConfig, Member, Team } from "./types";
 
 const BOT_NAMES = ["Бот-1", "Бот-2", "Бот-3", "Бот-4"];
 

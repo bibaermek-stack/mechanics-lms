@@ -17,11 +17,15 @@ import { Badge } from "@/components/ui/Badge";
 import { ArenaMatch } from "@/components/arena/ArenaMatch";
 import { useAuthStore } from "@/lib/authStore";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { hasArenaServer } from "@/lib/arena/server-net";
 import { makeRoomCode, normaliseRoomCode } from "@/lib/arena/net";
 import { makeIsBot, practiceDiscs } from "@/lib/arena/setup";
 import { TEAM_COLORS, TEAM_NAMES } from "@/lib/arena/pitch";
 import { DEFAULT_CONFIG } from "@/lib/arena/types";
 import type { Team } from "@/lib/arena/types";
+
+/** Online is possible either way: with a game server, or with Realtime rooms. */
+const ONLINE = hasArenaServer || isSupabaseConfigured;
 
 export default function ArenaLobbyPage() {
   const router = useRouter();
@@ -58,7 +62,7 @@ export default function ArenaLobbyPage() {
           title="Арена — физикалық футбол"
           description="Дөңгелек ойыншылар, серпімді соқтығыс, үйкеліс және импульстің сақталуы. Допты қақпаға кіргіз — әр соқтығыстың импульсі мен энергиясы экранда есептеліп отырады."
           action={
-            isSupabaseConfigured ? (
+            ONLINE ? (
               <Badge variant="success">
                 <Wifi size={12} /> Онлайн қолжетімді
               </Badge>
@@ -132,9 +136,11 @@ export default function ArenaLobbyPage() {
             </p>
             <p className="mt-2 text-body text-slate-600 dark:text-slate-300">
               Бес таңбалы код аласың. Кодты сыныптастарыңа айт — олар сол кодпен қосылады.
-              Бөлмені бірінші ашқан адамның браузері физиканы жүргізеді.
+              {hasArenaServer
+                ? " Физиканы ойын сервері жүргізеді."
+                : " Бөлмені бірінші ашқан адамның браузері физиканы жүргізеді."}
             </p>
-            <button onClick={createRoom} disabled={!isSupabaseConfigured} className="btn-primary mt-4 disabled:opacity-50">
+            <button onClick={createRoom} disabled={!ONLINE} className="btn-primary mt-4 disabled:opacity-50">
               <Plus size={15} /> Жаңа бөлме
             </button>
           </div>
@@ -157,7 +163,7 @@ export default function ArenaLobbyPage() {
               />
               <button
                 onClick={join}
-                disabled={!isSupabaseConfigured || normaliseRoomCode(joinCode).length !== 5}
+                disabled={!ONLINE || normaliseRoomCode(joinCode).length !== 5}
                 className="btn-secondary disabled:opacity-50"
               >
                 Кіру
@@ -166,13 +172,14 @@ export default function ArenaLobbyPage() {
           </div>
         </div>
 
-        {!isSupabaseConfigured && (
+        {!ONLINE && (
           <div className="flex gap-3 rounded-xl2 border border-amber-200/70 bg-amber-50/60 p-4 dark:border-amber-500/20 dark:bg-amber-900/15">
             <Info size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
             <p className="text-micro leading-relaxed text-amber-800 dark:text-amber-200">
-              Онлайн бөлмелер Supabase Realtime арқылы жұмыс істейді, ал бұл нұсқада
-              Supabase кілттері қосылмаған (демо режим). Жаттығу режимі толық жұмыс
-              істейді. Кілттерді қосу үшін <code>DEPLOYMENT.md</code>-ті қараңыз.
+              Онлайн бөлмелер үшін не ойын сервері (<code>NEXT_PUBLIC_ARENA_SERVER</code>),
+              не Supabase кілттері керек — бұл нұсқада екеуі де қосылмаған. Жаттығу
+              режимі толық жұмыс істейді. Орнату қадамдары{" "}
+              <code>DEPLOYMENT.md</code> файлында.
             </p>
           </div>
         )}
