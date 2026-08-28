@@ -107,7 +107,7 @@ export function ArenaControls({ keymap, bind, reset, active }: ArenaControlsProp
             <div
               key={action}
               className={clsx(
-                "flex items-center justify-between gap-2 rounded-xl px-3 py-2 ring-1 ring-inset transition-colors",
+                "flex min-w-0 items-center justify-between gap-2 rounded-xl px-3 py-2 ring-1 ring-inset transition-colors",
                 lit
                   ? "bg-brand-50 ring-brand-300 dark:bg-brand-500/15 dark:ring-brand-400/40"
                   : "bg-slate-50 ring-slate-900/5 dark:bg-white/5 dark:ring-white/10"

@@ -6,6 +6,7 @@ import { Bell, LogOut, Moon, Sun, Search, Menu } from "lucide-react";
 import { useAuthStore } from "@/lib/authStore";
 import { Badge } from "@/components/ui/Badge";
 import { signOut } from "@/lib/supabase/accounts";
+import { MobileNav } from "./MobileNav";
 
 // Notification kinds are labelled in words, so the meaning does not depend on
 // an emoji rendering the same way on every device.
@@ -21,6 +22,7 @@ export function Navbar() {
   const darkMode = useAuthStore((s) => s.darkMode);
   const toggleDarkMode = useAuthStore((s) => s.toggleDarkMode);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   async function handleSignOut() {
     await signOut();
@@ -32,9 +34,15 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-white/10 dark:bg-slate-900 md:px-6">
       <div className="flex items-center gap-3">
-        <button className="btn-ghost md:hidden" aria-label="Мәзір">
+        <button
+          onClick={() => setMenuOpen(true)}
+          className="btn-ghost md:hidden"
+          aria-label="Мәзір"
+          aria-expanded={menuOpen}
+        >
           <Menu size={20} />
         </button>
+        <MobileNav open={menuOpen} onClose={() => setMenuOpen(false)} />
         <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-white/5 md:flex">
           <Search size={16} className="text-slate-500" />
           <input

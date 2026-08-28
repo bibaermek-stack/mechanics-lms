@@ -43,7 +43,7 @@ export default function CertificatesPage() {
       <div className="space-y-6">
         {/* Page Header Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-white/10 dark:bg-slate-900">
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
                 <Award size={20} />

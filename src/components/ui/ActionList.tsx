@@ -83,7 +83,7 @@ export function ActionList({
           </select>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Quick Action Notification Button */}
           <button
             onClick={() => {
@@ -173,7 +173,7 @@ export function ActionList({
                 {it.href && (
                   <Link
                     href={it.href}
-                    className="inline-flex shrink-0 items-center gap-1.5 text-body font-semibold text-brand-700 transition-colors hover:text-brand-800 dark:text-brand-300 dark:hover:text-brand-200"
+                    className="-my-1.5 inline-flex shrink-0 items-center gap-1.5 py-1.5 text-body font-semibold text-brand-700 transition-colors hover:text-brand-800 dark:text-brand-300 dark:hover:text-brand-200"
                   >
                     Өту <ArrowRight size={15} />
                   </Link>

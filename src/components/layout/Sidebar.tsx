@@ -53,22 +53,23 @@ const TEACHER_LINKS = [
   { href: "/profile", label: "Профиль", icon: Settings },
 ];
 
-export function Sidebar() {
-  const pathname = usePathname();
+/** The links for whoever is signed in. Shared by the rail and the drawer. */
+export function useNavLinks() {
   const role = useAuthStore((s) => s.user?.role) ?? "student";
-  const links = role === "teacher" ? TEACHER_LINKS : STUDENT_LINKS;
+  return role === "teacher" ? TEACHER_LINKS : STUDENT_LINKS;
+}
 
+/**
+ * The nav itself, without the shell around it.
+ *
+ * Exported so the phone drawer renders exactly these links rather than a second
+ * copy that would drift out of step the first time a route was added.
+ */
+export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const pathname = usePathname();
+  const links = useNavLinks();
   return (
-    <aside className="hidden w-64 shrink-0 flex-col gap-0.5 border-r border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900 md:flex">
-      <div className="mb-5 flex items-center gap-2.5 px-2 pt-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 font-bold text-white">
-          М
-        </div>
-        <div>
-          <p className="text-sm font-bold leading-tight">Механика AI</p>
-          <p className="text-micro text-slate-500 dark:text-slate-400">LMS платформасы</p>
-        </div>
-      </div>
+    <>
       {links.map((link) => {
         const Icon = link.icon;
         const active =
@@ -77,6 +78,7 @@ export function Sidebar() {
           <Link
             key={link.href}
             href={link.href}
+            onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={clsx(
               // Active state is a left rule plus weight — no shadow, no motion.
@@ -91,6 +93,30 @@ export function Sidebar() {
           </Link>
         );
       })}
+    </>
+  );
+}
+
+/** The wordmark block at the top of both the rail and the drawer. */
+export function NavBrand() {
+  return (
+    <div className="mb-5 flex items-center gap-2.5 px-2 pt-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 font-bold text-white">
+          М
+        </div>
+        <div>
+          <p className="text-sm font-bold leading-tight">Механика AI</p>
+          <p className="text-micro text-slate-500 dark:text-slate-400">LMS платформасы</p>
+        </div>
+      </div>
+  );
+}
+
+export function Sidebar() {
+  return (
+    <aside className="hidden w-64 shrink-0 flex-col gap-0.5 border-r border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900 md:flex">
+      <NavBrand />
+      <NavLinks />
     </aside>
   );
 }

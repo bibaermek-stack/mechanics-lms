@@ -209,6 +209,39 @@ body {
   @apply rounded-full bg-slate-300 dark:bg-white/20;
 }
 
+/* A thumb is not a mouse pointer. Many of the pill controls here are 24-28 px
+   tall, which is comfortable to click and easy to miss with a finger, so on a
+   touch screen give every control a floor of 36 px. Anything already taller is
+   untouched, and the rule is scoped to coarse pointers so the desktop density
+   stays as designed. */
+@media (pointer: coarse) {
+  button,
+  [role="tab"],
+  a[class*="rounded-full"],
+  select {
+    min-height: 36px;
+  }
+}
+
+/* Kazakh compounds run long and a phone is 320 px wide. `overflow-wrap` is
+   inherited, so one declaration on the body lets any word that would otherwise
+   overflow break instead — which is what stops a single heading from widening
+   the whole page. */
+body {
+  overflow-wrap: break-word;
+}
+
+/* Headings need the stronger form. `break-word` lets a word wrap but does not
+   shrink the element's min-content width, so a heading beside an icon on a
+   320 px screen still pushed the page sideways; `anywhere` does shrink it. It
+   only ever breaks a word that would not fit at all, so wider screens are
+   unaffected. */
+h1,
+h2,
+h3 {
+  overflow-wrap: anywhere;
+}
+
 /* ==========================================================================
    Background layer
    ========================================================================== */
