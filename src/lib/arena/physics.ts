@@ -263,7 +263,10 @@ export function step(state: MatchState, h: number, inputs: Map<string, Input>, c
       // reserve for nothing.
       const sprinting = Boolean(input.sprint) && mag > 1e-6 && reserve > 0;
       const force = DRIVE_FORCE * (sprinting ? SPRINT_FACTOR : 1);
-      d.drive = mag > 1e-6 ? force : 0;
+      // What is actually applied, not what a fully deflected stick would apply:
+      // an analogue stick at 45 % asks for 45 % of the force, and a readout that
+      // said 780 N while the body felt 351 N would be teaching the wrong number.
+      d.drive = force * Math.min(mag, 1);
       d.stamina = Math.min(
         1,
         Math.max(0, reserve + (sprinting ? -h / SPRINT_SECONDS : h / SPRINT_RECOVERY))

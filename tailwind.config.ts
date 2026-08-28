@@ -42,7 +42,7 @@ const config: Config = {
       },
       fontSize: {
         display: ["clamp(2.5rem, 6vw, 4.5rem)", { lineHeight: "1.05", letterSpacing: "-0.035em", fontWeight: "700" }],
-        h1: ["clamp(1.75rem, 3vw, 2.5rem)", { lineHeight: "1.15", letterSpacing: "-0.025em", fontWeight: "700" }],
+        h1: ["clamp(1.5rem, 1.1rem + 2.2vw, 2.5rem)", { lineHeight: "1.15", letterSpacing: "-0.025em", fontWeight: "700" }],
         h2: ["1.375rem", { lineHeight: "1.25", letterSpacing: "-0.015em", fontWeight: "650" }],
         h3: ["1.0625rem", { lineHeight: "1.4", letterSpacing: "-0.01em", fontWeight: "600" }],
         body: ["0.9375rem", { lineHeight: "1.65" }],

@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { Maximize2, Minimize2, Pause, Play, RotateCcw, Gauge } from "lucide-react";
+import { Maximize2, Minimize2, Pause, Play, RotateCcw, Gauge, RotateCw } from "lucide-react";
 import { botInputs } from "@/lib/arena/bots";
 import { FIXED_H, createMatch, extrapolated, isOver, readings, step } from "@/lib/arena/physics";
 import { TEAM_COLORS, TEAM_NAMES, resetPositions } from "@/lib/arena/pitch";
@@ -18,8 +18,9 @@ import type { Disc, Input, MatchConfig, MatchState, Team } from "@/lib/arena/typ
 import { useKeymap } from "@/lib/arena/keybindings";
 import type { ArenaAction } from "@/lib/arena/keybindings";
 import { ArenaControls } from "./ArenaControls";
+import { Joystick } from "./Joystick";
 import { drawMatch } from "./render";
-import { useArenaInput } from "./useArenaInput";
+import { useArenaInput, useCoarsePointer } from "./useArenaInput";
 import { useFullscreen } from "./useFullscreen";
 
 /** How often the host publishes a snapshot, and the HUD refreshes. */
@@ -66,6 +67,7 @@ export function ArenaMatch({
   const [playing, setPlaying] = useState(true);
   const [hud, setHud] = useState(() => snapshotHud(stateRef.current));
   const { keymap, bind, reset: resetKeys } = useKeymap();
+  const coarse = useCoarsePointer();
   const input = useArenaInput(localId !== null, keymap);
 
   const playingRef = useRef(playing);
@@ -203,6 +205,26 @@ export function ArenaMatch({
           {fullscreen.active ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
         </button>
 
+        {fullscreen.active && (
+          <TouchPad
+            input={input}
+            visible={(coarse || input.touch) && localId !== null}
+            stamina={hud.myStamina}
+            overlay
+          />
+        )}
+
+        {/* Full screen on a phone held upright shows a 24 × 14 m pitch in a
+            tall box. Where the browser refuses an orientation lock — iOS has
+            none — the only thing left is to ask. */}
+        {fullscreen.active && fullscreen.portrait && (
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center px-4 md:hidden">
+            <span className="inline-flex items-center gap-2 rounded-xl bg-black/70 px-3 py-2 text-sm font-semibold text-white backdrop-blur">
+              <RotateCw size={15} /> Телефонды бұрыңыз
+            </span>
+          </div>
+        )}
+
         {/* Scoreboard */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-center gap-3 p-3">
           <span className="rounded-lg bg-black/45 px-3 py-1.5 text-sm font-bold text-white backdrop-blur">
@@ -247,14 +269,17 @@ export function ArenaMatch({
         )}
       </div>
 
-      {/* Touch pad, shown once a touch control has been used or on coarse pointers */}
-      <TouchPad
-        input={input}
-        visible={input.touch || localId !== null}
-        stamina={hud.myStamina}
-      />
+      {/* Under the pitch when the page is scrollable; over it in full screen,
+          where there is nothing below the canvas to sit in. */}
+      {!fullscreen.active && (
+        <TouchPad
+          input={input}
+          visible={(coarse || input.touch) && localId !== null}
+          stamina={hud.myStamina}
+        />
+      )}
 
-      {!compact && !guest && (
+      {!compact && !guest && !fullscreen.active && (
         <div className="flex items-center gap-2">
           <button
             onClick={() => setPlaying((p) => !p)}
@@ -286,40 +311,54 @@ export function ArenaMatch({
   );
 }
 
+/**
+ * Thumb controls: an analogue stick on the left, the two actions on the right.
+ *
+ * `overlay` lays them over the pitch instead of under it, which is what full
+ * screen wants — there is no room below the canvas once it fills the phone, and
+ * a player holding the handset in landscape already has both thumbs at the
+ * bottom corners.
+ */
 function TouchPad({
   input,
   visible,
   stamina,
+  overlay = false,
 }: {
   input: ReturnType<typeof useArenaInput>;
   visible: boolean;
   stamina: number;
+  overlay?: boolean;
 }) {
+  const hold = useCallback(
+    (action: ArenaAction) => ({
+      onPointerDown: (e: React.PointerEvent) => {
+        e.preventDefault();
+        input.press(action, true);
+      },
+      onPointerUp: () => input.press(action, false),
+      onPointerLeave: () => input.press(action, false),
+      onPointerCancel: () => input.press(action, false),
+    }),
+    [input]
+  );
+
   if (!visible) return null;
-  const btn =
-    "select-none rounded-xl bg-slate-800/90 px-4 py-3 text-white active:bg-brand-500 dark:bg-white/10";
-  const hold = (action: ArenaAction) => ({
-    onPointerDown: (e: React.PointerEvent) => {
-      e.preventDefault();
-      input.press(action, true);
-    },
-    onPointerUp: () => input.press(action, false),
-    onPointerLeave: () => input.press(action, false),
-    onPointerCancel: () => input.press(action, false),
-  });
+
   return (
-    <div className="flex items-center justify-between gap-3 md:hidden">
-      <div className="grid grid-cols-3 gap-1.5">
-        <span />
-        <button className={btn} {...hold("up")} aria-label="Жоғары">↑</button>
-        <span />
-        <button className={btn} {...hold("left")} aria-label="Солға">←</button>
-        <button className={btn} {...hold("down")} aria-label="Төмен">↓</button>
-        <button className={btn} {...hold("right")} aria-label="Оңға">→</button>
-      </div>
-      <div className="flex flex-col items-stretch gap-1.5">
+    <div
+      className={clsx(
+        "flex touch-none items-end justify-between gap-3",
+        overlay
+          ? "pointer-events-none absolute inset-x-0 bottom-0 z-10 p-3"
+          : "pt-1"
+      )}
+    >
+      <Joystick onMove={input.setStick} className="pointer-events-auto" />
+
+      <div className="pointer-events-auto flex flex-col items-stretch gap-2">
         <button
-          className="relative select-none overflow-hidden rounded-xl bg-slate-700 px-5 py-3 text-sm font-bold text-white active:bg-slate-600 disabled:opacity-45"
+          className="relative select-none overflow-hidden rounded-xl border border-white/15 bg-slate-800/80 px-5 py-3 text-sm font-bold text-white backdrop-blur active:bg-slate-600 disabled:opacity-45"
           disabled={stamina <= 0}
           {...hold("sprint")}
         >
@@ -333,7 +372,7 @@ function TouchPad({
           <span className="relative">Екпін</span>
         </button>
         <button
-          className="select-none rounded-2xl bg-amber-500 px-6 py-4 text-base font-bold text-white active:bg-amber-600"
+          className="h-20 w-20 select-none rounded-full bg-amber-500 text-base font-bold text-white shadow-lg active:bg-amber-600"
           {...hold("kick")}
         >
           Тебу
@@ -351,12 +390,12 @@ function PhysicsPanel({ hud, compact = false }: { hud: HudSnapshot; compact?: bo
     // came for; the explanation is still a keystroke away.
     return (
       <div className="grid shrink-0 grid-cols-3 gap-2 sm:grid-cols-6">
-        <Stat label="Доп v" value={hud.ballSpeed.toFixed(2)} unit="м/с" tone="emerald" />
-        <Stat label="Доп p" value={hud.ballMomentum.toFixed(2)} unit="кг·м/с" tone="amber" />
-        <Stat label="Менің F" value={hud.myDrive.toFixed(0)} unit="Н" tone="brand" />
-        <Stat label="Екпін қоры" value={`${Math.round(hud.myStamina * 100)}`} unit="%" tone="amber" />
-        <Stat label="Δp" value={c ? deltaP(c.pAfter - c.pBefore) : "—"} unit="кг·м/с" tone="brand" />
-        <Stat
+        <Stat dense label="Доп v" value={hud.ballSpeed.toFixed(2)} unit="м/с" tone="emerald" />
+        <Stat dense label="Доп p" value={hud.ballMomentum.toFixed(2)} unit="кг·м/с" tone="amber" />
+        <Stat dense label="Менің F" value={hud.myDrive.toFixed(0)} unit="Н" tone="brand" />
+        <Stat dense label="Екпін қоры" value={`${Math.round(hud.myStamina * 100)}`} unit="%" tone="amber" />
+        <Stat dense label="Δp" value={c ? deltaP(c.pAfter - c.pBefore) : "—"} unit="кг·м/с" tone="brand" />
+        <Stat dense
           label="ΔEₖ"
           value={c ? Math.max(c.ekBefore - c.ekAfter, 0).toFixed(2) : "—"}
           unit="Дж"
@@ -433,11 +472,14 @@ function Stat({
   value,
   unit,
   tone = "slate",
+  dense = false,
 }: {
   label: string;
   value: string;
   unit?: string;
   tone?: "slate" | "brand" | "amber" | "emerald" | "rose";
+  /** Full screen: the pitch gets the height, the numbers get what is left. */
+  dense?: boolean;
 }) {
   const tones: Record<string, string> = {
     slate: "text-slate-700 dark:text-slate-200",
@@ -447,9 +489,27 @@ function Stat({
     rose: "text-rose-700 dark:text-rose-400",
   };
   return (
-    <div className="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-inset ring-slate-900/5 dark:bg-white/5 dark:ring-white/10">
-      <p className="truncate text-label uppercase text-slate-500 dark:text-slate-400">{label}</p>
-      <p className={clsx("font-mono text-[15px] font-bold tabular-nums leading-tight", tones[tone])}>
+    <div
+      className={clsx(
+        "rounded-xl bg-slate-50 ring-1 ring-inset ring-slate-900/5 dark:bg-white/5 dark:ring-white/10",
+        dense ? "px-2 py-1" : "px-3 py-2"
+      )}
+    >
+      <p
+        className={clsx(
+          "truncate uppercase text-slate-500 dark:text-slate-400",
+          dense ? "text-[9px] leading-tight" : "text-label"
+        )}
+      >
+        {label}
+      </p>
+      <p
+        className={clsx(
+          "font-mono font-bold tabular-nums leading-tight",
+          dense ? "text-[12px]" : "text-[15px]",
+          tones[tone]
+        )}
+      >
         {value}
         {unit && <span className="ml-0.5 text-[10px] font-medium opacity-80">{unit}</span>}
       </p>
