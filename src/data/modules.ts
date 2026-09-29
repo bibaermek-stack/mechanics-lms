@@ -14,7 +14,7 @@ export const MODULES: LessonModule[] = [
     title: "Механикаға кіріспе",
     shortDescription:
       "Механика ғылымының пәні, негізгі ұғымдары және қолданылу аясымен танысу.",
-    youtubeId: "b1t41Q3xRM8",
+    youtubeId: "gMyQOH96NHQ", // 9 сынып § 1. Механикалық қозғалыс
     videoDurationMinutes: 14,
     objectives: [
       "Механика ғылымының не екенін және оның бөлімдерін атай білу",
@@ -100,7 +100,7 @@ export const MODULES: LessonModule[] = [
     title: "Кинематика",
     shortDescription:
       "Дене қозғалысын, оның себептерін ескермей, жылдамдық пен үдеу арқылы сипаттау.",
-    youtubeId: "MG-oJydUpiw",
+    youtubeId: "fXLbc8MGhM8", // 10 сынып § 3. Тең үдемелі қозғалыстағы кинематика ұғымдары мен теңдеулері
     videoDurationMinutes: 18,
     objectives: [
       "Жылдамдық пен үдеу ұғымдарын анықтап, формулаларын жаза білу",
@@ -202,7 +202,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     slug: "dinamika",
     title: "Динамика",
     shortDescription: "Күштер мен қозғалыс арасындағы байланысты зерттеу.",
-    youtubeId: "kKKM8Y-u7ds",
+    youtubeId: "lHUUwpu0XSA", // Динамика. Ауырлық күші, үйкеліс күші, салмақ, серпімділік күші
     keyConcepts: ["Күш", "Масса", "Инерттілік", "Импульс"],
     glossary: [
       { term: "Күш", definition: "Дененің жылдамдығын өзгертетін немесе оны деформациялайтын әсер." },
@@ -230,7 +230,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     slug: "newton-zandary",
     title: "Ньютон заңдары",
     shortDescription: "Классикалық механиканың негізгі үш заңы.",
-    youtubeId: "AVghDU9zt5w",
+    youtubeId: "hnFfR2vULnM", // Ньютонның екінші заңы · Қазақ Хан Академиясы
     keyConcepts: ["Ньютонның І заңы", "Ньютонның ІІ заңы", "Ньютонның ІІІ заңы"],
     glossary: [
       { term: "Инерциялық жүйе", definition: "Ньютонның бірінші заңы орындалатын санақ жүйесі." },
@@ -257,7 +257,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     slug: "zhumys-energiya",
     title: "Жұмыс және энергия",
     shortDescription: "Механикалық жұмыс, қуат және энергияның сақталу заңы.",
-    youtubeId: "w4QFJb9a8vo",
+    youtubeId: "202Trtiv6BI", // Механикалық жұмыс. Механикалық энергия және оның сақталу заңы
     keyConcepts: ["Жұмыс", "Қуат", "Кинетикалық энергия", "Потенциалдық энергия"],
     glossary: [
       { term: "Жұмыс", definition: "Күш пен орын ауыстырудың скаляр көбейтіндісі, A = F·s·cosα." },
@@ -285,7 +285,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     slug: "impuls",
     title: "Импульс",
     shortDescription: "Дене импульсі және импульстің сақталу заңы.",
-    youtubeId: "gp8yPY6Vgy4",
+    youtubeId: "0mvMq7qwA7c", // 9 сынып § 23. Импульстің сақталу заңы
     keyConcepts: ["Дене импульсі", "Импульстің сақталу заңы", "Соққы (соударение)"],
     glossary: [
       { term: "Импульс", definition: "Дене массасы мен жылдамдығының көбейтіндісі, p = mv." },
@@ -312,7 +312,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     slug: "aynalmaly-qozgalys",
     title: "Айналмалы қозғалыс",
     shortDescription: "Дененің өз білігі немесе орталық нүкте айналасындағы қозғалысы.",
-    youtubeId: "F5abg7g5UWU",
+    youtubeId: "XY3nK3zHvlc", // Дененің шеңбер бойымен бірқалыпты қозғалысы: период, бұрыштық жылдамдық, центрге тартқыш үдеу
     keyConcepts: ["Бұрыштық жылдамдық", "Центрге тартқыш үдеу", "Инерция моменті"],
     glossary: [
       { term: "Бұрыштық жылдамдық", definition: "Бұрыштың уақыт бойынша өзгеру жылдамдығы, ω = φ/t." },
@@ -339,7 +339,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     slug: "tербelister",
     title: "Тербелістер",
     shortDescription: "Периодты қозғалыстар: маятниктер мен серпімді тербелістер.",
-    youtubeId: "h2WT2b0MhIw",
+    youtubeId: "79J-HpK_THI", // Математикалық және серіппелі маятниктердің тербелістері. 9 сынып
     keyConcepts: ["Амплитуда", "Период мен жиілік", "Математикалық маятник", "Серпімді тербеліс"],
     glossary: [
       { term: "Амплитуда", definition: "Тербеліс кезіндегі ең үлкен ауытқу шамасы." },
@@ -367,7 +367,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     slug: "suiyqtar-mehanikasy",
     title: "Сұйықтар механикасы",
     shortDescription: "Гидростатика мен гидродинамиканың негіздері.",
-    youtubeId: "jZaRz_deiPY",
+    youtubeId: "Q-zlQ6OrL2c", // Сұйықтар мен газдардағы қысым, Паскаль заңы, Архимед күші
     keyConcepts: ["Қысым", "Архимед заңы", "Паскаль заңы", "Үздіксіздік теңдеуі"],
     glossary: [
       { term: "Қысым", definition: "Күштің бетке перпендикуляр әсер ету шамасы, P = F/S." },
@@ -394,7 +394,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     slug: "ingenerlik-mehanika",
     title: "Инженерлік механика",
     shortDescription: "Механика заңдарын нақты инженерлік конструкцияларда қолдану.",
-    youtubeId: "K3B6P0KomVE",
+    youtubeId: "4BANDv2lT44", // Серпімділік күші. Гук заңы. Юнг модулі
     keyConcepts: ["Кернеу және деформация", "Иілу моменті", "Конструкция беріктігі"],
     glossary: [
       { term: "Кернеу", definition: "Ішкі күштің дене қимасының ауданына қатынасы." },
