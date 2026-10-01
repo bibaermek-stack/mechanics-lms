@@ -26,6 +26,21 @@ import { BENCH_H, LabBench, MassHanger, RodStand } from "../lab/equipment";
 
 const SENSOR_X = 0.3;
 const SENSOR_Y = BENCH_H + 0.42;
+/**
+ * The worktop stops short of the string. The weight falls half a metre, and
+ * with the bench running underneath it that half-metre went straight through
+ * the worktop: the run ended with the hanger 23 cm inside the bench.
+ */
+const BENCH_END = 0.27;
+/** Half the scanned sensor's depth: its front face, where the shaft comes out. */
+const SENSOR_FRONT = 0.08;
+/** The aluminium disc rides on the shaft just clear of the sensor face… */
+const DISC_Z = SENSOR_FRONT + 0.006;
+const DISC_R = 0.048;
+/** …and the three-step pulley sits in front of it, largest groove first. */
+const GROOVE_Z = { large: DISC_Z + 0.008, mid: DISC_Z + 0.015, small: DISC_Z + 0.022 } as const;
+/** Rod-stand set back from the sensor, its arm reaching the sensor's side. */
+const ROD_X = SENSOR_X - 0.13;
 
 /** The three grooves of the PASCO three-step pulley, in metres. */
 type Step = "small" | "mid" | "large";
@@ -104,9 +119,9 @@ export function Sim13RotaryKinematics() {
       pasco={[PASCO.rotarySensor]}
       built={["штатив", "үш сатылы шкив", "алюминий диск", "жүк ілгіші", "жіп"]}
       stage={
-        <SimStage camera={[0.62, 1.25, 0.95]} target={[SENSOR_X, BENCH_H + 0.25, 0]} extent={2}>
+        <SimStage camera={[0.8, 1.3, 1.15]} target={[SENSOR_X, BENCH_H + 0.17, 0.05]} extent={2}>
           <SimDriver engine={engine} />
-          <Scene engine={engine} radius={r} hangMass={hangMass} />
+          <Scene engine={engine} step={step} hangMass={hangMass} />
         </SimStage>
       }
       controls={
@@ -155,7 +170,7 @@ export function Sim13RotaryKinematics() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Датчик көрсеткіштері">
             <Readout
               items={[
@@ -199,57 +214,85 @@ export function Sim13RotaryKinematics() {
 
 function Scene({
   engine,
-  radius,
+  step,
   hangMass,
 }: {
   engine: SimEngine<S>;
-  radius: number;
+  step: Step;
   hangMass: number;
 }) {
-  const disc = useRef<THREE.Group>(null!);
+  const spin = useRef<THREE.Group>(null!);
   const hanger = useRef<THREE.Group>(null!);
   const string = useRef<SegmentHandle>(null);
   const a = useRef(new THREE.Vector3());
   const b = useRef(new THREE.Vector3());
 
+  const radius = STEP_R[step].r;
+  const grooveZ = GROOVE_Z[step];
   const HANGER_Y0 = SENSOR_Y - 0.1;
 
   useFrame(() => {
     const s = engine.stateRef.current;
-    // The scan itself turns — the shaft is the thing being measured.
-    if (disc.current) disc.current.rotation.z = -s.theta;
+    // Only the shaft turns. The housing used to spin with it — the whole
+    // sensor wheeling round its own base like a propeller.
+    if (spin.current) spin.current.rotation.z = -s.theta;
     if (hanger.current) hanger.current.position.y = HANGER_Y0 - s.drop;
 
-    a.current.set(SENSOR_X + radius, SENSOR_Y, 0);
-    b.current.set(SENSOR_X + radius, HANGER_Y0 - s.drop + 0.02, 0);
+    // The string leaves the chosen groove, in that groove's plane.
+    a.current.set(SENSOR_X + radius, SENSOR_Y, grooveZ);
+    b.current.set(SENSOR_X + radius, HANGER_Y0 - s.drop + 0.02, grooveZ);
     string.current?.set(a.current, b.current);
   });
 
   return (
     <group>
-      <LabBench to={0.75} />
-      <RodStand position={[SENSOR_X - 0.13, BENCH_H, 0]} height={SENSOR_Y - BENCH_H + 0.1} />
+      <LabBench from={-0.32} to={BENCH_END} />
+      {/* The arm comes in at the sensor's height and holds it; before, the
+          sensor hung in the air beside a bare rod. */}
+      <RodStand
+        position={[ROD_X, BENCH_H, 0]}
+        height={SENSOR_Y - BENCH_H}
+        armLength={SENSOR_X - ROD_X - 0.05}
+      />
 
-      <group ref={disc} position={[SENSOR_X, SENSOR_Y, 0]}>
-        <PascoModel spec={PASCO.rotarySensor} />
-      </group>
-      <Tag position={[SENSOR_X, SENSOR_Y + 0.13, 0]} tone="brand">
+      <PascoModel spec={PASCO.rotarySensor} groundAlign={false} position={[SENSOR_X, SENSOR_Y, 0]} />
+      <Tag position={[SENSOR_X, SENSOR_Y + 0.1, 0]} tone="brand">
         Rotary Motion Sensor
       </Tag>
 
-      {/* The pulley groove the string actually leaves from, so the torque arm
-          is something you can see rather than only read. */}
-      <mesh position={[SENSOR_X, SENSOR_Y, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[radius, 0.0014, 8, 40]} />
-        <meshStandardMaterial color="#f59e0b" roughness={0.4} metalness={0.3} />
-      </mesh>
-      <Tag position={[SENSOR_X - 0.09, SENSOR_Y - 0.03, 0]} tone="amber">
+      {/* Shaft, disc and three-step pulley: the part that actually turns. */}
+      <group ref={spin} position={[SENSOR_X, SENSOR_Y, 0]}>
+        <mesh position={[0, 0, (SENSOR_FRONT + GROOVE_Z.small) / 2]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.003, 0.003, GROOVE_Z.small - SENSOR_FRONT + 0.006, 12]} />
+          <meshStandardMaterial color="#cbd5e1" metalness={0.8} roughness={0.25} />
+        </mesh>
+        <mesh position={[0, 0, DISC_Z]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <cylinderGeometry args={[DISC_R, DISC_R, 0.004, 48]} />
+          <meshStandardMaterial color="#d6dde6" metalness={0.75} roughness={0.3} />
+        </mesh>
+        {/* Index stripe, so a turn of the disc is visible. */}
+        <mesh position={[DISC_R * 0.55, 0, DISC_Z + 0.0025]}>
+          <boxGeometry args={[DISC_R * 0.8, 0.005, 0.001]} />
+          <meshStandardMaterial color="#ef4444" />
+        </mesh>
+        {(Object.keys(STEP_R) as Step[]).map((k) => (
+          <mesh key={k} position={[0, 0, GROOVE_Z[k]]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[STEP_R[k].r, STEP_R[k].r, 0.006, 32]} />
+            <meshStandardMaterial
+              color={k === step ? "#f59e0b" : "#64748b"}
+              metalness={0.4}
+              roughness={0.4}
+            />
+          </mesh>
+        ))}
+      </group>
+      <Tag position={[SENSOR_X - 0.1, SENSOR_Y - 0.05, grooveZ]} tone="amber">
         r = {(radius * 1000).toFixed(1)} мм
       </Tag>
 
       <Segment ref={string} color="#f1f5f9" radius={0.0011} />
 
-      <group ref={hanger} position={[SENSOR_X + radius, HANGER_Y0, 0]}>
+      <group ref={hanger} position={[SENSOR_X + radius, HANGER_Y0, grooveZ]}>
         <MassHanger discs={Math.max(1, Math.round(hangMass / 0.05))} />
         <Tag position={[0.09, -0.02, 0]} tone="emerald">
           m = {hangMass.toFixed(3)} кг

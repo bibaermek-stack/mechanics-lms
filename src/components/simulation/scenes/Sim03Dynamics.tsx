@@ -20,6 +20,7 @@ import {
   BENCH_H,
   DynamicsTrack,
   GATE_LIFT,
+  hangerDepth,
   LabBench,
   MassHanger,
   PhotogateMount,
@@ -38,12 +39,9 @@ const BENCH_EDGE = TRACK_L + 0.02;
 const PULLEY_Y = CART_Y + 0.055;
 const PULLEY_R = 0.025;
 const HANGER_Y0 = PULLEY_Y - 0.18;
-/** Height of the hanger below its own origin, down to the lowest disc. */
-const HANGER_DROP = 0.08;
-/** How far the hanging mass can fall before its lowest disc meets the floor. */
-const FLOOR_DROP = HANGER_Y0 - HANGER_DROP;
-/** Where the cart is when the weight lands and the string goes slack. */
-const X_LAND = X_START + FLOOR_DROP;
+
+/** Slotted discs drawn for a hanging mass: one per 50 g, at least one. */
+const discsFor = (m2: number) => Math.max(1, Math.round(m2 / 0.05));
 /** The cart's centre when its nose meets the far end stop. */
 const X_MAX = TRACK_L - 0.105;
 
@@ -70,6 +68,12 @@ export function Sim03Dynamics() {
   const tension = m2 * (G - aTheory);
   const normal = m1 * G;
 
+  // How far the weight can fall before its lowest disc meets the floor — which
+  // depends on how many discs are on it — and so where the cart is when the
+  // string goes slack.
+  const floorDrop = HANGER_Y0 - hangerDepth(discsFor(m2));
+  const xLand = X_START + floorDrop;
+
   const engine = useSimEngine<S>({
     init: () => ({ x: X_START, v: 0, a: aTheory, landed: false, stopped: aTheory === 0 }),
     step: (s, h) => {
@@ -84,8 +88,8 @@ export function Sim03Dynamics() {
         s.a = aTheory;
         s.v += s.a * h;
         s.x += s.v * h;
-        if (s.x >= X_LAND) {
-          s.x = X_LAND;
+        if (s.x >= xLand) {
+          s.x = xLand;
           s.landed = true;
         }
       } else {
@@ -150,7 +154,7 @@ export function Sim03Dynamics() {
       stage={
         <SimStage camera={[0.85, 1.25, 1.35]} target={[0.65, BENCH_H - 0.02, 0]} extent={2}>
           <SimDriver engine={engine} />
-          <Scene engine={engine} showVectors={showVectors} m1={m1} m2={m2} mu={mu} />
+          <Scene engine={engine} showVectors={showVectors} m1={m1} m2={m2} mu={mu} floorDrop={floorDrop} />
         </SimStage>
       }
       controls={
@@ -189,7 +193,7 @@ export function Sim03Dynamics() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Есептелген шамалар">
             <Readout
               items={[
@@ -231,12 +235,14 @@ function Scene({
   m1,
   m2,
   mu,
+  floorDrop,
 }: {
   engine: SimEngine<S>;
   showVectors: boolean;
   m1: number;
   m2: number;
   mu: number;
+  floorDrop: number;
 }) {
   const cart = useRef<THREE.Group>(null!);
   const hanger = useRef<THREE.Group>(null!);
@@ -261,7 +267,7 @@ function Scene({
 
     // The weight rests on the floor once it gets there, however much further
     // the cart runs.
-    const drop = Math.min(s.x - X_START, FLOOR_DROP);
+    const drop = Math.min(s.x - X_START, floorDrop);
     if (hanger.current) hanger.current.position.y = HANGER_Y0 - drop;
 
     // Nothing runs over the pulley once the string is slack.
@@ -286,8 +292,13 @@ function Scene({
     const drive = m2 * G;
     const fricMax = mu * m1 * G;
     const aTh = drive > fricMax ? (drive - fricMax) / (m1 + m2) : 0;
-    const T = m2 * (G - aTh);
-    const fric = Math.min(drive, fricMax);
+    // The arrows follow the same phases as the readout cards. They used to draw
+    // the driving-phase tension and friction for the whole run, so once the
+    // weight had landed the scene showed a pull on a slack string — and, with
+    // the cart at rest, a friction force with nothing for it to oppose.
+    const T = aTh === 0 ? m2 * G : s.landed ? 0 : m2 * (G - aTh);
+    const fric =
+      aTh === 0 ? Math.min(drive, fricMax) : s.v > 1e-6 || !s.landed ? fricMax : 0;
 
     const cx = s.x;
     const cy = CART_Y + 0.05;
@@ -327,7 +338,7 @@ function Scene({
       <Segment ref={ropeDown} color="#f1f5f9" radius={0.0012} />
 
       <group ref={hanger} position={[PULLEY_X + PULLEY_R, HANGER_Y0, 0]}>
-        <MassHanger discs={Math.max(1, Math.round(m2 / 0.05))} />
+        <MassHanger discs={discsFor(m2)} />
         <Tag position={[0.09, -0.03, 0]} tone="amber">
           m₂ = {m2.toFixed(3)} кг
         </Tag>

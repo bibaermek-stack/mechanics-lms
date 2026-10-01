@@ -176,7 +176,7 @@ export function Sim10Engineering() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Есептік шамалар">
             <Readout
               items={[
@@ -253,8 +253,17 @@ function Scene({
       return -Math.min(d * exaggeration, cap);
     };
     beam.current?.deflect(y);
-    // The indicator reads the true deflection at midspan, not the exaggerated one.
-    dial.current?.setReading(Math.abs(y(SPAN / 2)) / exaggeration * 1000);
+    // The indicator reads the true deflection at midspan — computed directly,
+    // not recovered from the drawn curve. The drawn curve is capped so an
+    // overloaded beam does not sink through the bench, and dividing the capped
+    // value back out made the dial under-read exactly when the beam was in
+    // trouble.
+    const mid = SPAN / 2;
+    const trueMid =
+      mid <= a
+        ? (P * bb * mid * (SPAN * SPAN - bb * bb - mid * mid)) / (6 * SPAN * E * I)
+        : (P * a * (SPAN - mid) * (2 * SPAN * mid - mid * mid - a * a)) / (6 * SPAN * E * I);
+    dial.current?.setReading(trueMid * 1000);
     if (cart.current) cart.current.position.set(a, BEAM_Y + h / 2 + y(a), 0);
   });
 

@@ -40,6 +40,20 @@ const PIVOT_Y = BENCH_H + 0.62;
 
 type Mode = "spring" | "pendulum";
 
+/**
+ * Arithmetic–geometric mean. The exact period of a pendulum released from θ₀
+ * is T₀ / AGM(1, cos(θ₀/2)) — Gauss's form of the complete elliptic integral —
+ * and it converges to machine precision in five or six iterations.
+ */
+function agm(a: number, b: number): number {
+  for (let i = 0; i < 12 && Math.abs(a - b) > 1e-15; i++) {
+    const m = (a + b) / 2;
+    b = Math.sqrt(a * b);
+    a = m;
+  }
+  return a;
+}
+
 interface S {
   q: number; // displacement (m) or angle (rad)
   qd: number;
@@ -59,8 +73,13 @@ export function Sim08Oscillations() {
   const tTheorySpring = 2 * Math.PI * Math.sqrt(mass / k);
   const tTheoryPend = 2 * Math.PI * Math.sqrt(len / G);
   // First-order large-amplitude correction, so the student can see why the
-  // simple formula drifts at big angles.
+  // simple formula drifts at big angles…
   const tPendCorrected = tTheoryPend * (1 + (th0 * th0) / 16);
+  // …and the exact value, which the simulation — integrating sin θ itself —
+  // reproduces. The first-order formula alone is a full percent short at 75°,
+  // so offering it as "the corrected period" made an exact simulation look
+  // wrong.
+  const tPendExact = tTheoryPend / agm(1, Math.cos(th0 / 2));
 
   const engine = useSimEngine<S>({
     init: () => ({ q: mode === "spring" ? amp : th0, qd: 0 }),
@@ -104,6 +123,7 @@ export function Sim08Oscillations() {
         "f = 1/T",
         "x(t) = A·cos(ωt)",
         "T ≈ T₀(1 + θ₀²/16)",
+        "T_дәл = T₀ / AGM(1, cos θ₀/2)",
       ]}
       pasco={mode === "spring" ? [PASCO.smartCart, PASCO.smartGate] : [PASCO.smartGate]}
       built={
@@ -164,9 +184,14 @@ export function Sim08Oscillations() {
           <Panel title="Период">
             <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
               <p className="font-mono">
-                T_теория = {fmt(tTheory, 3)} с
-                {mode === "pendulum" && ` (түзетілген: ${fmt(tPendCorrected, 3)} с)`}
+                T_теория = {fmt(tTheory, 3)} с{mode === "pendulum" && " (кіші бұрыш)"}
               </p>
+              {mode === "pendulum" && (
+                <>
+                  <p className="font-mono">T₀(1 + θ₀²/16) = {fmt(tPendCorrected, 3)} с</p>
+                  <p className="font-mono">T_дәл = {fmt(tPendExact, 3)} с</p>
+                </>
+              )}
               <p className="font-mono">T_өлшенген = {measured > 0 ? `${fmt(measured, 3)} с` : "—"}</p>
               <p className="font-mono">f = {measured > 0 ? fmt(1 / measured, 3) : "—"} Гц</p>
               {mode === "pendulum" && theta0 > 25 && (
@@ -179,7 +204,7 @@ export function Sim08Oscillations() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Сенсор көрсеткіштері">
             <Readout
               items={[

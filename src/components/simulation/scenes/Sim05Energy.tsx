@@ -65,17 +65,40 @@ export function Sim05Energy() {
       if (Math.abs(st.v) < 1e-4) {
         // Static case: does gravity beat static friction?
         a = G * sinT > fricMag ? gravAlong + fricMag : 0;
+        if (a === 0) {
+          st.stopped = true;
+          return;
+        }
       } else {
         a = gravAlong - Math.sign(st.v) * fricMag;
       }
       const vNext = st.v + a * h;
       // Friction can stop the cart but never reverse it on its own.
-      st.v = Math.abs(st.v) > 1e-4 && Math.sign(vNext) !== Math.sign(st.v) && G * sinT <= fricMag ? 0 : vNext;
-      const ds = st.v * h;
+      const stalls = Math.abs(st.v) > 1e-4 && Math.sign(vNext) !== Math.sign(st.v) && G * sinT <= fricMag;
+      // a is constant across the step, so the exact displacement is v·h + a·h²/2
+      // and then v'² − v² = 2a·ds holds to rounding: the kinetic energy gained
+      // is exactly the potential energy lost minus the friction heat. The plain
+      // v-then-x update let "Толық E" wander by a third of a percent — visible
+      // in the fourth decimal of a readout whose whole point is that it does not
+      // change.
+      let ds = stalls ? 0 : st.v * h + 0.5 * a * h * h;
+      let vEnd = stalls ? 0 : vNext;
+      // The step that reaches the lower stop is cut off at the stop. Taking the
+      // whole step and then clamping the cart back put it up to 4 mm higher than
+      // it had actually got — Eₚ it had already spent, and friction heat for a
+      // distance it never travelled — so "Толық E" jumped by a third of a
+      // percent at the very moment the bumper was meant to balance the books.
+      let hitsStop = false;
+      if (st.s + ds <= S_MIN) {
+        ds = S_MIN - st.s; // negative: moving down the ramp
+        vEnd = -Math.sqrt(Math.max(st.v * st.v + 2 * a * ds, 0));
+        hitsStop = true;
+      }
+      st.v = vEnd;
       st.s += ds;
       st.path += Math.abs(ds);
       st.heat += mu * mass * G * cosT * Math.abs(ds);
-      if (st.s <= S_MIN) {
+      if (hitsStop) {
         st.s = S_MIN;
         // The bumper takes whatever kinetic energy is left, so the books still
         // balance once the cart has stopped.
@@ -107,6 +130,9 @@ export function Sim05Energy() {
     },
     resetKey: [angleDeg, mass, mu, s0],
     duration: 20,
+    // The run is over once the cart is at the foot of the ramp or friction has
+    // held it; there is nothing left to measure for the rest of 20 s.
+    stopWhen: (st) => st.stopped,
     // The cart is at the foot of the ramp in about eight tenths of a second,
     // so the scene opens at half speed rather than already finished.
     initialSpeed: 0.5,
@@ -157,7 +183,7 @@ export function Sim05Energy() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Өлшеу нәтижелері">
             <Readout
               items={[
@@ -170,7 +196,9 @@ export function Sim05Energy() {
                 { label: "Тірекке берілді", value: fmt(r.W, 4), unit: "Дж", tone: "slate" },
                 { label: "Толық E", value: fmt(r.E, 4), unit: "Дж", tone: "amber" },
                 {
-                  label: "Идеал v = √(2gh₀)",
+                  // This is the frictionless speed at the *current* height, not
+                  // at the foot — the label used to promise the latter.
+                  label: "Идеал v = √(2g(h₀−h))",
                   value: fmt(Math.sqrt(2 * G * Math.max(h0 - r.h, 0)), 3),
                   unit: "м/с",
                 },

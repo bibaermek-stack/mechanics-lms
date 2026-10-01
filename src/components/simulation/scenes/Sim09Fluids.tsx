@@ -74,16 +74,20 @@ export function Sim09Fluids() {
 
   /**
    * Liquid rises as the block goes in, which in turn changes how much of the
-   * block is under the surface. Three fixed-point passes converge to well
-   * under a millimetre.
+   * block is under the surface.
+   *
+   * The liquid's own volume is fixed: S·level − V_submerged = S·level₀, so
+   * level = level₀ + V_submerged / S. Dividing by (S − a²) instead, as this did,
+   * counted the block's footprint twice and conjured up to 170 cm³ of extra
+   * water, lifting the surface by as much as 7 mm. The fixed point converges
+   * because a²/S < 1; eight passes reach a micron.
    */
   const solveSubmersion = (yBottom: number) => {
     let level = LEVEL_0;
     let depth = 0;
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 8; i++) {
       depth = Math.min(Math.max(level - yBottom, 0), side);
-      const vSub = depth * side * side;
-      level = LEVEL_0 + vSub / (TANK_AREA - side * side * (depth > 0 ? 1 : 0));
+      level = LEVEL_0 + (depth * side * side) / TANK_AREA;
     }
     const vSub = depth * side * side;
     return { level, depth, vSub, buoy: rhoL * G * vSub };
@@ -123,6 +127,8 @@ export function Sim09Fluids() {
         level,
         buoy,
         apparent: Math.max(weight - buoy, 0),
+        // Released, the block is off the hook: the scale holds nothing.
+        scale: mode === "manual" ? Math.max(weight - buoy, 0) : 0,
         vSub: vSub * 1e6, // cm³
         pressure: rhoL * G * Math.max(level - s.yb, 0),
       };
@@ -158,6 +164,7 @@ export function Sim09Fluids() {
             liquidColor={LIQUIDS[liquid].color}
             solidName={solid}
             weight={weight}
+            hanging={mode === "manual"}
           />
         </SimStage>
       }
@@ -226,7 +233,7 @@ export function Sim09Fluids() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Өлшемдер">
             <Readout
               items={[
@@ -237,7 +244,7 @@ export function Sim09Fluids() {
                 { label: "Көрінетін салмақ", value: fmt(d.apparent, 4), unit: "Н", tone: "amber" },
                 { label: "Сұйық деңгейі", value: fmt(d.level * 100, 2), unit: "см" },
                 { label: "Қысым P = ρgh", value: fmt(d.pressure, 1), unit: "Па" },
-                { label: "Динамометр көрсеткіші", value: fmt(d.apparent, 4), unit: "Н", tone: "amber" },
+                { label: "Динамометр көрсеткіші", value: fmt(d.scale, 4), unit: "Н", tone: "amber" },
               ]}
             />
           </Panel>
@@ -269,12 +276,15 @@ function Scene({
   liquidColor,
   solidName,
   weight,
+  hanging,
 }: {
   engine: SimEngine<S>;
   side: number;
   liquidColor: string;
   solidName: string;
   weight: number;
+  /** On the dynamometer's string (manual), or released and free (release). */
+  hanging: boolean;
 }) {
   const block = useRef<THREE.Mesh>(null!);
   const scale = useRef<SpringScaleHandle>(null);
@@ -305,10 +315,14 @@ function Scene({
 
     // The string hangs from the cross-arm itself, not from thin air below it.
     // Pointer runs from zero to the block's dry weight.
-    scale.current?.setFraction(weight > 1e-9 ? (r.apparent ?? weight) / weight : 0);
+    scale.current?.setFraction(weight > 1e-9 ? (r.scale ?? 0) / weight : 0);
 
+    // A released block is not on the string. Drawing it still tied to the
+    // scale, with the scale reading its apparent weight, described a block
+    // hanging at rest while the physics was letting it fall.
     a.current.set(TANK_X, SENSOR_Y - 0.09, 0);
-    b.current.set(TANK_X, yCentre + side / 2, 0);
+    if (hanging) b.current.set(TANK_X, yCentre + side / 2, 0);
+    else b.current.set(TANK_X, SENSOR_Y - 0.11, 0);
     rope.current?.set(a.current, b.current);
 
     // Room between the block's centre and the bench top, so the downward arrow

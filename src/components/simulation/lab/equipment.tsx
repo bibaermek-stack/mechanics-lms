@@ -304,6 +304,23 @@ export const SuperPulley = forwardRef<
 // Mass hanger + slotted masses
 // ---------------------------------------------------------------------------
 
+/** Spacing and thickness of the slotted discs, as MassHanger draws them. */
+const DISC_TOP = 0.042;
+const DISC_PITCH = 0.011;
+const DISC_THICK = 0.0095;
+
+/**
+ * Distance from a hanger's origin down to the underside of its lowest disc, m.
+ *
+ * Scenes that drop a hanger to the floor have to know where its bottom is, and
+ * that depends on how many discs are stacked on it. A single fixed allowance
+ * left a one-disc hanger hovering 3 cm above the floor and pushed a six-disc
+ * one 2 cm into it.
+ */
+export function hangerDepth(discs: number): number {
+  return DISC_TOP + (Math.max(discs, 1) - 1) * DISC_PITCH + DISC_THICK / 2;
+}
+
 export const MassHanger = forwardRef<
   THREE.Group,
   { discs?: number; mass?: number }
@@ -322,8 +339,8 @@ export const MassHanger = forwardRef<
       </mesh>
       {/* slotted discs */}
       {Array.from({ length: discs }).map((_, i) => (
-        <mesh key={i} position={[0, -0.042 - i * 0.011, 0]} castShadow>
-          <cylinderGeometry args={[0.019, 0.019, 0.0095, 24]} />
+        <mesh key={i} position={[0, -DISC_TOP - i * DISC_PITCH, 0]} castShadow>
+          <cylinderGeometry args={[0.019, 0.019, DISC_THICK, 24]} />
           <meshStandardMaterial
             color={i % 2 ? "#475569" : "#64748b"}
             metalness={0.6}
