@@ -29,6 +29,8 @@ import {
 
 const S_MIN = 0.14; // cart centre cannot pass the lower end stop
 const S_MAX = TRACK_L - 0.14;
+/** Where the Smart Gate is bolted to the ramp, measured along it. */
+const GATE_S = 0.45;
 
 interface S {
   s: number; // position measured along the ramp from its lower end
@@ -43,6 +45,12 @@ interface S {
   absorbed: number;
   path: number;
   stopped: boolean;
+  /**
+   * Speed through the gate, latched as the cart crosses it. NaN until then. The
+   * gate used to be scenery: bolted to the ramp, labelled, and measuring
+   * nothing.
+   */
+  vGate: number;
 }
 
 export function Sim05Energy() {
@@ -56,7 +64,7 @@ export function Sim05Energy() {
   const cosT = Math.cos(theta);
 
   const engine = useSimEngine<S>({
-    init: () => ({ s: s0, v: 0, heat: 0, absorbed: 0, path: 0, stopped: false }),
+    init: () => ({ s: s0, v: 0, heat: 0, absorbed: 0, path: 0, stopped: false, vGate: NaN }),
     step: (st, h) => {
       if (st.stopped) return;
       const gravAlong = -G * sinT; // always pulls toward the foot of the ramp
@@ -94,6 +102,12 @@ export function Sim05Energy() {
         vEnd = -Math.sqrt(Math.max(st.v * st.v + 2 * a * ds, 0));
         hitsStop = true;
       }
+      // Crossing the gate: the speed at the beam itself, from v² = v₀² + 2a·Δs
+      // over the part of the step before it, rather than whatever the step
+      // happened to end on.
+      if (Number.isNaN(st.vGate) && (st.s - GATE_S) * (st.s + ds - GATE_S) <= 0 && ds !== 0) {
+        st.vGate = Math.sqrt(Math.max(st.v * st.v + 2 * a * (GATE_S - st.s), 0));
+      }
       st.v = vEnd;
       st.s += ds;
       st.path += Math.abs(ds);
@@ -126,6 +140,7 @@ export function Sim05Energy() {
         W: st.absorbed,
         E: ep + ek + st.heat + st.absorbed,
         path: st.path,
+        vGate: st.vGate,
       };
     },
     resetKey: [angleDeg, mass, mu, s0],
@@ -142,6 +157,11 @@ export function Sim05Energy() {
   const h0 = (s0 - S_MIN) * sinT;
   const e0 = mass * G * h0;
   const willSlide = G * sinT > mu * G * cosT;
+  // What energy conservation predicts at the gate: the drop in Eₚ over the run
+  // down to it, less the friction work over the same distance.
+  const runToGate = s0 - GATE_S;
+  const vGateTheory =
+    willSlide && runToGate > 0 ? Math.sqrt(2 * G * runToGate * (sinT - mu * cosT)) : NaN;
 
   return (
     <SimLayout
@@ -196,6 +216,17 @@ export function Sim05Energy() {
                 { label: "Тірекке берілді", value: fmt(r.W, 4), unit: "Дж", tone: "slate" },
                 { label: "Толық E", value: fmt(r.E, 4), unit: "Дж", tone: "amber" },
                 {
+                  label: "v қақпада (өлшенді)",
+                  value: Number.isFinite(r.vGate) ? fmt(r.vGate, 3) : "—",
+                  unit: "м/с",
+                  tone: "brand",
+                },
+                {
+                  label: "v қақпада (энергиядан)",
+                  value: Number.isFinite(vGateTheory) ? fmt(vGateTheory, 3) : "—",
+                  unit: "м/с",
+                },
+                {
                   // This is the frictionless speed at the *current* height, not
                   // at the foot — the label used to promise the latter.
                   label: "Идеал v = √(2g(h₀−h))",
@@ -233,6 +264,7 @@ export function Sim05Energy() {
         </div>
       }
       tasks={[
+        "Smart Gate өлшеген жылдамдықты энергия сақталу заңынан болжанған мәнмен салыстыр: v² = 2g·d(sin θ − μ cos θ), мұндағы d — бастапқы орыннан қақпаға дейінгі арақашықтық.",
         "μ = 0 кезінде арба төменгі нүктеде қандай жылдамдыққа жетеді? Оны v = √(2gh₀) формуласымен салыстыр.",
         "μ-ді 0,15-ке қой. Толық механикалық энергия (Eₚ + Eₖ) неге кемиді, ал Eₚ + Eₖ + Q неге тұрақты қалады?",
         "Арба төменгі тірекке соғылғанда кинетикалық энергия қайда кетті? «Тірекке берілді» бағанын бақыла — «Толық E» сызығы неге түзу қалады?",
@@ -262,11 +294,11 @@ function Scene({ engine, theta, mass }: { engine: SimEngine<S>; theta: number; m
         </group>
         {/* The photogate is bolted to the ramp itself, so it stays square to
             the track at any angle and the cart runs straight through it. */}
-        <PhotogateMount x={0.45} y={TRACK_H - 0.032} />
-        <group position={[0.45, TRACK_H - 0.032 + GATE_LIFT, 0]}>
+        <PhotogateMount x={GATE_S} y={TRACK_H - 0.032} />
+        <group position={[GATE_S, TRACK_H - 0.032 + GATE_LIFT, 0]}>
           <PascoModel spec={PASCO.smartGate} />
         </group>
-        <Tag position={[0.45, 0.2, 0]} tone="brand">
+        <Tag position={[GATE_S, 0.2, 0]} tone="brand">
           Smart Gate
         </Tag>
       </Incline>
