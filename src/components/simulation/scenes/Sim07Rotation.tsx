@@ -4,8 +4,8 @@
 // A flywheel on a bearing stand is spun up by a mass falling over a pulley at
 // the bench edge. Three bodies of the *same* mass and radius — a solid disc, a
 // thin ring and a cross of rods — give three different moments of inertia, so
-// τ = Iα can be tested by changing I alone. A Smart Gate straddles the path of
-// an index flag and is cut once per revolution, which is how ω is measured.
+// τ = Iα can be tested by changing I alone. A Rotary Motion Sensor on the axle
+// reads θ, ω and α continuously.
 
 import { useRef, useState } from "react";
 import * as THREE from "three";
@@ -21,6 +21,7 @@ import { Segment, SegmentHandle, Tag } from "../core/primitives";
 import {
   BENCH_H,
   BenchClamp,
+  hangerDepth,
   LabBench,
   MassHanger,
   PulleyHandle,
@@ -36,7 +37,8 @@ const PULLEY_X = 1.0;
 /** Outer face of the bench top — where the pulley's clamp bites. */
 const BENCH_EDGE = 0.98;
 const PULLEY_R = 0.025;
-/** Height of the scanned gate and of its clear opening, at its catalogue size. */
+/** The weight is always drawn with three slotted discs. */
+const HANGER_DISCS = 3;
 /**
  * Bearing friction, modelled as a constant *torque* rather than a constant
  * angular deceleration: a light wheel then slows quickly and a heavy one keeps
@@ -81,9 +83,12 @@ export function Sim07Rotation() {
   const tension = mHang * (G - aLin);
   const torque = tension * Rd;
 
-  // The weight starts just under the drum and falls to the floor.
+  // The weight starts just under the drum and falls until its lowest disc
+  // meets the floor. It used to be capped at 0,8 m, which stopped it 15 cm in
+  // mid-air while the panel announced that it had reached the ground.
   const ropeTopY = AXLE_Y + Rd;
-  const dropMax = Math.min(ropeTopY - 0.12, 0.8);
+  const hangerY0 = ropeTopY - 0.05;
+  const dropMax = hangerY0 - hangerDepth(HANGER_DISCS);
 
   const engine = useSimEngine<S>({
     init: () => ({ theta: 0, omega: 0, drop: 0, landed: false }),
@@ -125,9 +130,9 @@ export function Sim07Rotation() {
       goal="Инерция моментінің дене пішініне, массасына және радиусына тәуелділігін зерттеу; айналмалы қозғалыс үшін Ньютон заңының аналогын (τ = Iα) тексеру."
       formulas={[
         "I = kMR²",
-        "a = mg/(m + I/R²)",
-        "α = a/R",
-        "τ = T·R = Iα",
+        "T·R_б − τ_үйк = Iα",
+        "α = (mgR_б − τ_үйк)/(I + mR_б²)",
+        "a = αR_б",
         "Eₖ = Iω²/2",
       ]}
       pasco={[PASCO.rotarySensor]}
@@ -140,7 +145,7 @@ export function Sim07Rotation() {
       stage={
         <SimStage camera={[1.25, 1.5, 1.0]} target={[CX + 0.15, BENCH_H + 0.14, 0.05]} extent={2}>
           <SimDriver engine={engine} />
-          <Scene engine={engine} kind={kind} radius={radius} Rd={Rd} ropeTopY={ropeTopY} />
+          <Scene engine={engine} kind={kind} radius={radius} Rd={Rd} ropeTopY={ropeTopY} hangerY0={hangerY0} />
         </SimStage>
       }
       controls={
@@ -185,8 +190,16 @@ export function Sim07Rotation() {
               </p>
               <p>T = {fmt(tension, 3)} Н</p>
               <p>τ = T·R_б = {fmt(torque * 1000, 2)}·10⁻³ Н·м</p>
-              <p>α = τ/I = {fmt(alpha, 2)} рад/с²</p>
-              <p>a = {fmt(aLin, 3)} м/с² (жүктің үдеуі)</p>
+              <p>τ_үйк = {fmt(FRICTION_TORQUE * 1000, 2)}·10⁻³ Н·м (мойынтірек)</p>
+              {/* The bearing torque has to appear here. Without it the panel
+                  printed τ and I and then an α that was not τ/I — 9,77 / 3,00
+                  next to "α = 1,92" — and a student checking the arithmetic
+                  found the simulation contradicting itself. */}
+              <p>
+                α = (τ − τ_үйк)/I = {fmt(Math.max(torque - FRICTION_TORQUE, 0) * 1000, 2)}·10⁻³ /{" "}
+                {(I * 1000).toFixed(3)}·10⁻³ = {fmt(alpha, 2)} рад/с²
+              </p>
+              <p>a = αR_б = {fmt(aLin, 3)} м/с² (жүктің үдеуі)</p>
             </div>
             <p className="mt-2 rounded-lg bg-brand-50 px-2 py-1 text-[11px] text-brand-700 dark:bg-brand-900/30 dark:text-brand-200">
               Бірдей M мен R: айқас өзек {(1 / 3).toFixed(2)}MR² · диск 0,50MR² · сақина 1,00MR²
@@ -217,7 +230,7 @@ export function Sim07Rotation() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Rotary Motion Sensor өлшемдері">
             <Readout
               items={[
@@ -260,12 +273,14 @@ function Scene({
   radius,
   Rd,
   ropeTopY,
+  hangerY0,
 }: {
   engine: SimEngine<S>;
   kind: FlywheelKind;
   radius: number;
   Rd: number;
   ropeTopY: number;
+  hangerY0: number;
 }) {
   const wheel = useRef<FlywheelHandle>(null);
   const pulley = useRef<PulleyHandle>(null);
@@ -285,7 +300,7 @@ function Scene({
     pulley.current?.spin((s.theta - lastTheta.current) * Rd / PULLEY_R);
     lastTheta.current = s.theta;
 
-    const y = ropeTopY - 0.05 - s.drop;
+    const y = hangerY0 - s.drop;
     if (hanger.current) hanger.current.position.y = y;
 
     a.current.set(CX, ropeTopY, BODY_Z - 0.03);
@@ -335,8 +350,8 @@ function Scene({
         postTop={ropeTopY - PULLEY_R - 0.09}
       />
       <SuperPulley ref={pulley} position={[PULLEY_X, ropeTopY - PULLEY_R, BODY_Z - 0.03]} radius={PULLEY_R} />
-      <group ref={hanger} position={[PULLEY_X + PULLEY_R, ropeTopY - 0.05, BODY_Z - 0.03]}>
-        <MassHanger discs={3} />
+      <group ref={hanger} position={[PULLEY_X + PULLEY_R, hangerY0, BODY_Z - 0.03]}>
+        <MassHanger discs={HANGER_DISCS} />
       </group>
       <Tag position={[PULLEY_X + 0.09, ropeTopY - 0.02, BODY_Z - 0.03]} tone="amber">
         m · g

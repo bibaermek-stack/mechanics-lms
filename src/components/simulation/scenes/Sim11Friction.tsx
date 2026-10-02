@@ -55,6 +55,12 @@ interface S {
   sliding: boolean;
   /** Pull at the instant it broke free — the static peak. */
   peak: number;
+  /**
+   * Acceleration while it slid. Latched, because the student reads μₖ once the
+   * run has ended — and by then the cart is at rest against the end stop with
+   * a = 0, which turned (F − ma)/N back into F/N, the static coefficient.
+   */
+  aSlide: number;
 }
 
 export function Sim11Friction() {
@@ -70,7 +76,7 @@ export function Sim11Friction() {
   const fKinetic = mk * N;
 
   const engine = useSimEngine<S>({
-    init: () => ({ F: 0, f: 0, x: X_START, v: 0, a: 0, sliding: false, peak: 0 }),
+    init: () => ({ F: 0, f: 0, x: X_START, v: 0, a: 0, sliding: false, peak: 0, aSlide: 0 }),
     step: (s, h) => {
       if (!s.sliding) {
         // Static: friction matches the pull exactly, so nothing moves…
@@ -90,6 +96,7 @@ export function Sim11Friction() {
       // its kinetic value, so the cart accelerates by the difference.
       s.f = fKinetic;
       s.a = (s.F - s.f) / m;
+      s.aSlide = s.a;
       s.v += s.a * h;
       s.x += s.v * h;
 
@@ -110,7 +117,7 @@ export function Sim11Friction() {
 
   // What the student would compute from the readings, not from the constants.
   const measuredMs = st.peak > 0 ? st.peak / N : null;
-  const measuredMk = st.sliding ? (st.F - m * r.a) / N : null;
+  const measuredMk = st.sliding ? (st.F - m * st.aSlide) / N : null;
 
   return (
     <SimLayout
@@ -176,7 +183,7 @@ export function Sim11Friction() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Өлшенген шамалар">
             <Readout
               items={[

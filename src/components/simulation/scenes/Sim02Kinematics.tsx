@@ -45,9 +45,13 @@ export function Sim02Kinematics() {
     step: (s, h) => {
       if (s.stopped) return;
       s.a = a0;
+      // Exact for constant acceleration. The usual v-then-x update drifts by
+      // a·h·t/2 — over half a millimetre by the far end — which the theory
+      // panel beside it, printing x to the millimetre, made visible.
+      const dx = s.v * h + 0.5 * s.a * h * h;
       s.v += s.a * h;
-      s.x += s.v * h;
-      s.path += Math.abs(s.v * h);
+      s.x += dx;
+      s.path += Math.abs(dx);
       if (s.x <= X_MIN || s.x >= X_MAX) {
         s.x = Math.min(Math.max(s.x, X_MIN), X_MAX);
         s.v = 0;
@@ -55,9 +59,12 @@ export function Sim02Kinematics() {
         s.stopped = true; // the end stop absorbs the cart
       }
     },
-    read: (s) => ({ x: s.x, v: s.v, a: s.a, path: s.path }),
+    read: (s) => ({ x: s.x, v: s.v, a: s.a, path: s.path, stopped: s.stopped ? 1 : 0 }),
     resetKey: [x0, v0, a0, mode],
     duration: 24,
+    // Once the end stop has the cart the run is over; the clock running on to
+    // 24 s left the theory panel extrapolating a cart a metre past the track.
+    stopWhen: (s) => s.stopped,
   });
 
   const r = engine.readings;
@@ -115,6 +122,12 @@ export function Sim02Kinematics() {
                 t = {fmt(t, 1)} с кезінде теория: v = {fmt(v0 + a0 * t, 3)} м/с, x ={" "}
                 {fmt(x0 + v0 * t + (a0 * t * t) / 2, 3)} м
               </p>
+              {r.stopped === 1 && (
+                <p className="rounded-lg bg-amber-50 px-2 py-1 text-[11px] text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                  Арба рельстің шетіндегі тірекке жетіп тоқтады. Формулалар тек тірекке
+                  дейінгі қозғалысты сипаттайды — одан кейін арбаға тіректің күші әсер етеді.
+                </p>
+              )}
             </div>
           </Panel>
         </>
@@ -131,11 +144,11 @@ export function Sim02Kinematics() {
                 { label: "Жүрілген жол", value: fmt(r.path, 3), unit: "м" },
                 { label: "Орын ауыстыру", value: fmt(r.x - x0, 3), unit: "м" },
                 { label: "Орташа жылдамдық", value: fmt(t > 0 ? (r.x - x0) / t : 0, 3), unit: "м/с" },
-                { label: "Күй", value: r.v === 0 && t > 0.2 ? "тоқтады" : "қозғалыста" },
+                { label: "Күй", value: r.stopped === 1 ? "тірекке жетті" : "қозғалыста" },
               ]}
             />
           </Panel>
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Panel>
               <LiveChart series={engine.series} lines={[{ key: "x", label: "x(t)", color: COLORS.x }]} yLabel="x, м" />
             </Panel>
@@ -167,21 +180,37 @@ export function Sim02Kinematics() {
   );
 }
 
+/** Where the sensor's transducer face is, and the cart's half-length. */
+const SENSOR_FACE = -0.035;
+const CART_HALF = 0.105;
+
 function Scene({ engine }: { engine: SimEngine<S> }) {
   const cart = useRef<THREE.Group>(null!);
   const ping = useRef<THREE.Mesh>(null!);
+  const travel = useRef(0);
 
   useFrame((_, dt) => {
     const s = engine.stateRef.current;
     if (cart.current) cart.current.position.x = s.x;
-    // Ultrasonic ping travelling from the sensor toward the cart.
+
+    // An ultrasonic ping leaves the transducer and spreads toward the cart: a
+    // cone with its apex on the sensor, stretching along the track until it
+    // reaches the cart's rear face, then starting again. It used to be a fixed
+    // metre-long sliver squashed flat, pointing the wrong way and reaching half
+    // a metre behind the sensor.
     if (ping.current) {
+      const reach = Math.max(s.x - CART_HALF - SENSOR_FACE, 0.02);
+      // Clamped: a slow frame, or a tab coming back from the background, hands
+      // over a delta of a second or more and the ping would restart every frame.
+      travel.current += Math.min(dt, 1 / 30) * 1.2;
+      if (travel.current > reach) travel.current = 0.01;
+      const L = travel.current;
+      const radius = 0.012 + L * 0.13; // the beam opens at about 7°
       const m = ping.current;
-      m.scale.x += dt * 1.6;
-      if (m.scale.x > Math.max(s.x, 0.1)) m.scale.x = 0.02;
-      m.position.x = m.scale.x * 0.5;
+      m.scale.set(radius, L, radius);
+      m.position.x = SENSOR_FACE + L / 2;
       const mat = m.material as THREE.MeshBasicMaterial;
-      mat.opacity = 0.35 * (1 - m.scale.x / Math.max(s.x, 0.1));
+      mat.opacity = 0.32 * (1 - L / reach);
     }
   });
 
@@ -197,10 +226,11 @@ function Scene({ engine }: { engine: SimEngine<S> }) {
         PS-3219 · ультрадыбыс
       </Tag>
 
-      {/* the ping cone, stretched along +x */}
-      <mesh ref={ping} position={[0.05, CART_Y + 0.05, 0]} rotation={[0, 0, -Math.PI / 2]}>
-        <coneGeometry args={[0.05, 1, 16, 1, true]} />
-        <meshBasicMaterial color="#38bdf8" transparent opacity={0.25} side={THREE.DoubleSide} />
+      {/* Unit cone, apex at local +y; turned so +y points back at the sensor
+          and scaled every frame to the current length and width of the ping. */}
+      <mesh ref={ping} position={[SENSOR_FACE, CART_Y + 0.05, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <coneGeometry args={[1, 1, 24, 1, true]} />
+        <meshBasicMaterial color="#38bdf8" transparent opacity={0.25} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
 
       <group ref={cart} position={[0.15, CART_Y, 0]}>

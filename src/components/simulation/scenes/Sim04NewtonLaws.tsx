@@ -49,6 +49,12 @@ interface S {
   x2: number;
   v2: number;
   f: number; // contact force magnitude (third law) or applied force
+  /**
+   * Laws 1 and 2: the run is over — the cart has reached an end stop, or
+   * friction has brought it to rest. From then on the stop (or the floor of the
+   * track) carries the load, so the net force and the acceleration are zero.
+   */
+  ended: boolean;
 }
 
 export function Sim04NewtonLaws() {
@@ -66,8 +72,18 @@ export function Sim04NewtonLaws() {
       law === "third"
         ? // The carts start pressed together with their bumpers compressed —
           // release is what launches them apart.
-          { x1: 0.6 - CONTACT / 2, v1: 0, x2: 0.6 + CONTACT / 2 - PRELOAD, v2: 0, f: 0 }
-        : { x1: law === "first" ? X_MIN : 0.2, v1: law === "first" ? 0.45 : 0, x2: 0, v2: 0, f: 0 },
+          { x1: 0.6 - CONTACT / 2, v1: 0, x2: 0.6 + CONTACT / 2 - PRELOAD, v2: 0, f: 0, ended: false }
+        : {
+            // A pulled cart starts at the end it is pulled away from, so it has
+            // the whole track to accelerate along. Starting at 0,2 m a negative
+            // force pinned it against the left stop after six centimetres.
+            x1: law === "first" ? X_MIN : force >= 0 ? X_MIN : X_MAX,
+            v1: law === "first" ? 0.45 : 0,
+            x2: 0,
+            v2: 0,
+            f: 0,
+            ended: false,
+          },
     step: (s, h) => {
       if (law === "third") {
         // The bumpers behave as a stiff spring while they overlap.
@@ -86,6 +102,12 @@ export function Sim04NewtonLaws() {
           s.x2 = X_MAX;
           s.v2 = 0;
         }
+        return;
+      }
+
+      if (s.ended) {
+        s.v1 = 0;
+        s.f = 0;
         return;
       }
 
@@ -108,16 +130,32 @@ export function Sim04NewtonLaws() {
       s.f = net;
       const a = net / m1;
       const vNext = s.v1 + a * h;
-      // Friction brings the cart to rest, it never reverses it.
-      s.v1 = Math.abs(s.v1) > 1e-4 && Math.sign(vNext) !== Math.sign(s.v1) && applied === 0 ? 0 : vNext;
-      s.x1 += s.v1 * h;
-      if (s.x1 <= X_MIN) {
-        s.x1 = X_MIN;
-        s.v1 = Math.abs(s.v1) * 0.4;
+      // Friction brings the cart to rest; it never reverses it. That holds
+      // whenever the pull cannot overcome static friction on its own, not only
+      // when there is no pull at all.
+      const stalls = Math.abs(applied) <= fricMax;
+      if (Math.abs(s.v1) > 1e-4 && Math.sign(vNext) !== Math.sign(s.v1) && stalls) {
+        s.v1 = 0;
+        s.f = 0;
+        if (law === "first") s.ended = true;
+      } else {
+        s.v1 = vNext;
       }
-      if (s.x1 >= X_MAX) {
+      s.x1 += s.v1 * h;
+      // Reaching an end stop ends the experiment. Bouncing off it at 40 % and
+      // being pushed back in, over and over, left the cart pinned against the
+      // stop while the panel still read a = F/m.
+      if (s.x1 <= X_MIN && s.v1 < 0) {
+        s.x1 = X_MIN;
+        s.v1 = 0;
+        s.f = 0;
+        s.ended = true;
+      }
+      if (s.x1 >= X_MAX && s.v1 > 0) {
         s.x1 = X_MAX;
-        s.v1 = -Math.abs(s.v1) * 0.4;
+        s.v1 = 0;
+        s.f = 0;
+        s.ended = true;
       }
     },
     read: (s) => ({
@@ -134,6 +172,7 @@ export function Sim04NewtonLaws() {
     }),
     resetKey: [law, m1, m2, force, friction],
     duration: 25,
+    stopWhen: (s) => s.ended,
   });
 
   const r = engine.readings;
@@ -233,7 +272,7 @@ export function Sim04NewtonLaws() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Өлшемдер">
             <Readout items={readouts} />
           </Panel>

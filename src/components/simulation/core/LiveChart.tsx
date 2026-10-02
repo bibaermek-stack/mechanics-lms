@@ -5,7 +5,34 @@
 // and only ever draw a few hundred points.
 
 import { useMemo } from "react";
+import { Download } from "lucide-react";
 import type { Sample } from "./useSimEngine";
+
+/**
+ * The run's samples as a CSV file, for the lab report.
+ *
+ * Semicolon-separated with a decimal comma and a UTF-8 byte-order mark, because
+ * that is what Excel expects on a Kazakh or Russian locale: with plain commas it
+ * puts every row in one cell, and without the BOM the Cyrillic headers arrive as
+ * mojibake. The whole buffer is exported, not just the window on screen.
+ */
+function downloadCsv(series: Sample[], lines: ChartLine[], xLabel: string) {
+  const cell = (v: number) =>
+    Number.isFinite(v) ? String(Number(v.toPrecision(7))).replace(".", ",") : "";
+  const head = [xLabel, ...lines.map((l) => l.label)].join(";");
+  const rows = series.map((s) => [s.t, ...lines.map((l) => s[l.key])].map(cell).join(";"));
+  const blob = new Blob(["\ufeff" + [head, ...rows].join("\r\n")], {
+    type: "text/csv;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `zerthana-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 export interface ChartLine {
   key: string;
@@ -116,6 +143,15 @@ export function LiveChart({
             {l.label}
           </span>
         ))}
+        <button
+          type="button"
+          onClick={() => downloadCsv(series, lines, xLabel)}
+          disabled={series.length === 0}
+          title="Өлшеу деректерін кесте (CSV) ретінде жүктеу — Excel не Google Sheets-те ашылады"
+          className="ml-auto inline-flex items-center gap-1 rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 transition-colors hover:border-brand-300 hover:text-brand-600 disabled:opacity-40 dark:border-white/10 dark:text-slate-400 dark:hover:text-brand-300"
+        >
+          <Download size={11} /> CSV
+        </button>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={yLabel}>
         <rect

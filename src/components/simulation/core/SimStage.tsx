@@ -62,12 +62,50 @@ function Loader() {
   );
 }
 
-/** Frames the scene once on mount without pulling in drei's <Bounds/>. */
-function CameraRig({ target }: { target: [number, number, number] }) {
-  const { camera } = useThree();
+/**
+ * The stage shape every scene's camera was composed for: a landscape panel about
+ * 1,4 times as wide as it is tall, which is what the desktop and tablet layouts
+ * give it.
+ */
+const DESIGN_ASPECT = 1.4;
+
+/**
+ * Frames the scene for the stage it is actually in.
+ *
+ * The camera keeps its direction and pivot, and only backs off along that line
+ * when the stage is narrower than the design shape. The vertical field of view
+ * is fixed, so the horizontal one shrinks with the aspect ratio: on a phone held
+ * upright the desktop camera saw a slice of the track with the pulley, the
+ * hanging mass and the cart all off screen. Backing off by DESIGN_ASPECT/aspect
+ * restores the horizontal coverage exactly.
+ *
+ * Keyed on the numbers rather than the arrays: scenes pass fresh array literals
+ * on every render, and re-running this twenty times a second would snap the
+ * camera back each time the student tried to orbit.
+ */
+function CameraRig({
+  position,
+  target,
+}: {
+  position: [number, number, number];
+  target: [number, number, number];
+}) {
+  const { camera, size } = useThree();
+  const controls = useThree((st) => st.controls) as { update?: () => void } | null;
+  const key = `${position.join(",")}|${target.join(",")}`;
   useEffect(() => {
+    const aspect = size.width / Math.max(size.height, 1);
+    const k = Math.max(1, DESIGN_ASPECT / aspect);
+    camera.position.set(
+      target[0] + (position[0] - target[0]) * k,
+      target[1] + (position[1] - target[1]) * k,
+      target[2] + (position[2] - target[2]) * k
+    );
     camera.lookAt(target[0], target[1], target[2]);
-  }, [camera, target]);
+    controls?.update?.();
+    // `key` stands in for position and target; see above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camera, controls, size.width, size.height, key]);
   return null;
 }
 
@@ -93,11 +131,13 @@ export function SimStage({
     <div
       className={
         className ??
-        "sim-stage relative h-[400px] w-full overflow-hidden rounded-xl2 shadow-lg ring-1 ring-slate-900/10 dark:ring-white/10 sm:h-[500px]"
+        // Shorter on phones: a 288 px-wide stage 400 px tall is a portrait slot
+        // for a landscape apparatus, and the extra height was empty floor.
+        "sim-stage relative h-[320px] w-full overflow-hidden rounded-xl2 shadow-lg ring-1 ring-slate-900/10 dark:ring-white/10 sm:h-[500px]"
       }
     >
       <Canvas shadows dpr={[1, 2]} camera={{ position: camera, fov: 40, near: 0.01, far: 60 }}>
-        <CameraRig target={target} />
+        <CameraRig position={camera} target={target} />
         {/* Three-point studio rig: cool sky fill, warm key, cool rim. */}
         <hemisphereLight args={["#e7eeff", "#7b8496", 1.15]} />
         <directionalLight
@@ -163,10 +203,13 @@ export function SimStage({
         }}
       />
 
-      <div className="pointer-events-none absolute bottom-2.5 right-3 flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium text-slate-600 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300">
-        <span>Сүйреу — айналдыру</span>
+      <div className="pointer-events-none absolute bottom-2.5 right-3 flex items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium text-slate-600 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300">
+        {/* A phone has no wheel and no drag-with-a-mouse; say what the fingers do. */}
+        <span className="[@media(pointer:coarse)]:hidden">Сүйреу — айналдыру</span>
+        <span className="hidden [@media(pointer:coarse)]:inline">1 саусақ — бұру</span>
         <span className="opacity-40">·</span>
-        <span>Дөңгелек — масштаб</span>
+        <span className="[@media(pointer:coarse)]:hidden">Дөңгелек — масштаб</span>
+        <span className="hidden [@media(pointer:coarse)]:inline">2 саусақ — масштаб</span>
       </div>
     </div>
   );

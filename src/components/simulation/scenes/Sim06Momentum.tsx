@@ -44,7 +44,12 @@ interface S {
   x2: number;
   v2: number;
   hit: boolean;
-  /** Velocities latched as each cart crosses its gate. */
+  /**
+   * What the gates measured: each cart's velocity at its first pass through
+   * either gate before the collision (g1b, g2b) and after it (g1, g2). NaN until
+   * a gate has seen it. These were latched before but never shown — the panel
+   * titled "Smart Gate" displayed live simulation values instead.
+   */
   g1: number;
   g2: number;
   g1b: number;
@@ -75,10 +80,12 @@ export function Sim06Momentum() {
       x2: 1.0,
       v2,
       hit: false,
-      g1: 0,
-      g2: 0,
-      g1b: 0,
-      g2b: 0,
+      g1: NaN,
+      g2: NaN,
+      // A cart released at rest never cuts a beam beforehand; its velocity is
+      // known, and it is zero.
+      g1b: v1 === 0 ? 0 : NaN,
+      g2b: v2 === 0 ? 0 : NaN,
       pAfter: m1 * v1 + m2 * v2,
       ekAfter: 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2,
     }),
@@ -88,13 +95,18 @@ export function Sim06Momentum() {
       s.x1 += s.v1 * h;
       s.x2 += s.v2 * h;
 
-      // Gate crossings: latch the velocity the first time each gate is passed.
-      if (!s.hit) {
-        if ((p1 - GATE_1) * (s.x1 - GATE_1) <= 0) s.g1b = s.v1;
-        if ((p2 - GATE_2) * (s.x2 - GATE_2) <= 0) s.g2b = s.v2;
-      } else {
-        if ((p1 - GATE_1) * (s.x1 - GATE_1) <= 0) s.g1 = s.v1;
-        if ((p2 - GATE_2) * (s.x2 - GATE_2) <= 0) s.g2 = s.v2;
+      // Gate readings: the first pass of each cart through either gate, before
+      // and after the collision. Between collisions the track is frictionless,
+      // so the speed a gate times over the flag is the cart's speed exactly.
+      const through = (from: number, to: number) =>
+        from !== to && [GATE_1, GATE_2].some((g) => (from - g) * (to - g) <= 0);
+      if (through(p1, s.x1)) {
+        if (!s.hit && Number.isNaN(s.g1b)) s.g1b = s.v1;
+        else if (s.hit && Number.isNaN(s.g1)) s.g1 = s.v1;
+      }
+      if (through(p2, s.x2)) {
+        if (!s.hit && Number.isNaN(s.g2b)) s.g2b = s.v2;
+        else if (s.hit && Number.isNaN(s.g2)) s.g2 = s.v2;
       }
 
       // Collision. Resolved whenever the carts overlap and are closing, so a
@@ -146,6 +158,10 @@ export function Sim06Momentum() {
       pAfter: s.pAfter,
       ekAfter: s.ekAfter,
       hit: s.hit ? 1 : 0,
+      g1b: s.g1b,
+      g2b: s.g2b,
+      g1: s.g1,
+      g2: s.g2,
     }),
     resetKey: [m1, m2, v1, v2, e],
     duration: 20,
@@ -209,8 +225,11 @@ export function Sim06Momentum() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Smart Gate өлшемдері">
+            <GateReadout r={r} m1={m1} m2={m2} />
+          </Panel>
+          <Panel title="Есептелген шамалар">
             <Readout
               items={[
                 { label: "Уақыт t", value: fmt(engine.timeRef.current, 2), unit: "с" },
@@ -249,6 +268,36 @@ export function Sim06Momentum() {
         "m₂-ні m₁-ден 3 есе ауыр қылып, u₂ = 0 ал. Жеңіл арба соққыдан кейін қай бағытта қозғалады? Неге?",
       ]}
     />
+  );
+}
+
+/**
+ * The experiment as a student does it at the bench: four speeds from the gates,
+ * and the momentum built from those — not from the simulation's own state.
+ */
+function GateReadout({ r, m1, m2 }: { r: Record<string, number>; m1: number; m2: number }) {
+  const seen = (v: number | undefined) => v !== undefined && Number.isFinite(v);
+  const show = (v: number | undefined, d = 3) => (seen(v) ? fmt(v as number, d) : "—");
+  const before = seen(r.g1b) && seen(r.g2b) ? m1 * r.g1b + m2 * r.g2b : NaN;
+  const after = seen(r.g1) && seen(r.g2) ? m1 * r.g1 + m2 * r.g2 : NaN;
+  return (
+    <>
+      <Readout
+        items={[
+          { label: "u₁ (дейін)", value: show(r.g1b), unit: "м/с", tone: "brand" },
+          { label: "u₂ (дейін)", value: show(r.g2b), unit: "м/с", tone: "emerald" },
+          { label: "v₁ (кейін)", value: show(r.g1), unit: "м/с", tone: "brand" },
+          { label: "v₂ (кейін)", value: show(r.g2), unit: "м/с", tone: "emerald" },
+          { label: "Σp дейін", value: show(before, 4), unit: "кг·м/с" },
+          { label: "Σp кейін", value: show(after, 4), unit: "кг·м/с", tone: "amber" },
+        ]}
+      />
+      <p className="mt-2 text-[10px] leading-snug text-slate-500">
+        Әр арбаның жылдамдығы — соқтығысқа дейін және кейін алғаш өткен қақпаның
+        өлшемі. «—» — арба әзірге қақпадан өтпеді (мысалы, соқтығыстан кейін тоқтап
+        қалса немесе қақпадан әрі қарай кетсе).
+      </p>
+    </>
   );
 }
 

@@ -40,9 +40,29 @@ const PIVOT_Y = BENCH_H + 0.62;
 
 type Mode = "spring" | "pendulum";
 
+/**
+ * Arithmetic–geometric mean. The exact period of a pendulum released from θ₀
+ * is T₀ / AGM(1, cos(θ₀/2)) — Gauss's form of the complete elliptic integral —
+ * and it converges to machine precision in five or six iterations.
+ */
+function agm(a: number, b: number): number {
+  for (let i = 0; i < 12 && Math.abs(a - b) > 1e-15; i++) {
+    const m = (a + b) / 2;
+    b = Math.sqrt(a * b);
+    a = m;
+  }
+  return a;
+}
+
 interface S {
   q: number; // displacement (m) or angle (rad)
   qd: number;
+  /** Simulated time, to timestamp the gate crossings. */
+  t: number;
+  /** Time of the last upward pass through equilibrium, −1 before the first. */
+  lastCross: number;
+  /** The most recent periods, newest last. */
+  periods: number[];
 }
 
 export function Sim08Oscillations() {
@@ -59,12 +79,18 @@ export function Sim08Oscillations() {
   const tTheorySpring = 2 * Math.PI * Math.sqrt(mass / k);
   const tTheoryPend = 2 * Math.PI * Math.sqrt(len / G);
   // First-order large-amplitude correction, so the student can see why the
-  // simple formula drifts at big angles.
+  // simple formula drifts at big angles…
   const tPendCorrected = tTheoryPend * (1 + (th0 * th0) / 16);
+  // …and the exact value, which the simulation — integrating sin θ itself —
+  // reproduces. The first-order formula alone is a full percent short at 75°,
+  // so offering it as "the corrected period" made an exact simulation look
+  // wrong.
+  const tPendExact = tTheoryPend / agm(1, Math.cos(th0 / 2));
 
   const engine = useSimEngine<S>({
-    init: () => ({ q: mode === "spring" ? amp : th0, qd: 0 }),
+    init: () => ({ q: mode === "spring" ? amp : th0, qd: 0, t: 0, lastCross: -1, periods: [] }),
     step: (s, h) => {
+      const qPrev = s.q;
       // Semi-implicit Euler — energy-stable for oscillators at this step size.
       const acc =
         mode === "spring"
@@ -72,6 +98,20 @@ export function Sim08Oscillations() {
           : -(G / len) * Math.sin(s.q) - damping * s.qd;
       s.qd += acc * h;
       s.q += s.qd * h;
+
+      // The gate sits at equilibrium. Each upward pass through it is timed
+      // inside the step, interpolated between the two positions either side,
+      // so the period is not tied to the 20 Hz chart samples it used to be read
+      // from (which left it 0,15 % off the exact value).
+      if (qPrev < 0 && s.q >= 0) {
+        const tCross = s.t + h * (-qPrev / (s.q - qPrev));
+        if (s.lastCross >= 0) {
+          s.periods.push(tCross - s.lastCross);
+          if (s.periods.length > 4) s.periods.shift();
+        }
+        s.lastCross = tCross;
+      }
+      s.t += h;
     },
     read: (s, t) => {
       const disp = mode === "spring" ? s.q : (s.q * 180) / Math.PI;
@@ -85,6 +125,7 @@ export function Sim08Oscillations() {
             ? 0.5 * k * s.q * s.q
             : mass * G * len * (1 - Math.cos(s.q)),
         t,
+        T: s.periods.length ? s.periods.reduce((a, b) => a + b, 0) / s.periods.length : 0,
       };
     },
     resetKey: [mode, k, mass, amp, damping, len, theta0],
@@ -93,7 +134,7 @@ export function Sim08Oscillations() {
 
   const d = engine.readings;
   const tTheory = mode === "spring" ? tTheorySpring : tTheoryPend;
-  const measured = measurePeriod(engine);
+  const measured = d.T ?? 0;
 
   return (
     <SimLayout
@@ -104,6 +145,7 @@ export function Sim08Oscillations() {
         "f = 1/T",
         "x(t) = A·cos(ωt)",
         "T ≈ T₀(1 + θ₀²/16)",
+        "T_дәл = T₀ / AGM(1, cos θ₀/2)",
       ]}
       pasco={mode === "spring" ? [PASCO.smartCart, PASCO.smartGate] : [PASCO.smartGate]}
       built={
@@ -148,10 +190,24 @@ export function Sim08Oscillations() {
                 <>
                   <Slider label="Жіп ұзындығы L" unit="м" value={len} min={0.15} max={0.52} step={0.01} onChange={setLen} />
                   <Slider label="Бастапқы бұрыш θ₀" unit="°" value={theta0} min={3} max={75} step={1} decimals={0} onChange={setTheta0} />
+                  {/* The energies always used this mass; it was simply out of
+                      reach in this mode. Changing it is the quickest way to see
+                      that the period does not depend on it. */}
+                  <Slider
+                    label="Жүк массасы m"
+                    unit="кг"
+                    value={mass}
+                    min={0.2}
+                    max={1.5}
+                    step={0.05}
+                    onChange={setMass}
+                    hint="Массаны өзгертіп көр — период өзгере ме?"
+                  />
                 </>
               )}
               <Slider
                 label="Сөну коэффициенті b"
+                unit={mode === "spring" ? "кг/с" : "1/с"}
                 value={damping}
                 min={0}
                 max={1.2}
@@ -164,9 +220,14 @@ export function Sim08Oscillations() {
           <Panel title="Период">
             <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
               <p className="font-mono">
-                T_теория = {fmt(tTheory, 3)} с
-                {mode === "pendulum" && ` (түзетілген: ${fmt(tPendCorrected, 3)} с)`}
+                T_теория = {fmt(tTheory, 3)} с{mode === "pendulum" && " (кіші бұрыш)"}
               </p>
+              {mode === "pendulum" && (
+                <>
+                  <p className="font-mono">T₀(1 + θ₀²/16) = {fmt(tPendCorrected, 3)} с</p>
+                  <p className="font-mono">T_дәл = {fmt(tPendExact, 3)} с</p>
+                </>
+              )}
               <p className="font-mono">T_өлшенген = {measured > 0 ? `${fmt(measured, 3)} с` : "—"}</p>
               <p className="font-mono">f = {measured > 0 ? fmt(1 / measured, 3) : "—"} Гц</p>
               {mode === "pendulum" && theta0 > 25 && (
@@ -179,7 +240,7 @@ export function Sim08Oscillations() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Сенсор көрсеткіштері">
             <Readout
               items={[
@@ -223,30 +284,10 @@ export function Sim08Oscillations() {
         "Серіппелі маятникте амплитуданы екі есе арттыр. Период өзгерді ме? Неге?",
         "m-ді 4 есе арттырғанда период неше есе өседі? Формуладағы түбір мұны қалай түсіндіреді?",
         "Математикалық маятникте θ₀ = 5° және θ₀ = 70° үшін өлшенген периодтарды салыстыр. T = 2π√(L/g) формуласы қай жағдайда дәл жұмыс істейді?",
+        "Маятник режимінде массаны 0,2-ден 1,5 кг-ға дейін өзгерт. Өлшенген период өзгерді ме? Ал Eₖ мен Eₚ ше — неге?",
       ]}
     />
   );
-}
-
-/** Measures the period from the sampled series, by upward zero crossings. */
-function measurePeriod(engine: SimEngine<S>): number {
-  const series = engine.series;
-  if (series.length < 8) return 0;
-  const crossings: number[] = [];
-  for (let i = 1; i < series.length; i++) {
-    const a = series[i - 1].q;
-    const b = series[i].q;
-    if (a < 0 && b >= 0) {
-      // linear interpolation of the zero crossing time
-      const f = -a / (b - a);
-      crossings.push(series[i - 1].t + f * (series[i].t - series[i - 1].t));
-    }
-  }
-  if (crossings.length < 2) return 0;
-  const spans: number[] = [];
-  for (let i = 1; i < crossings.length; i++) spans.push(crossings[i] - crossings[i - 1]);
-  const last = spans.slice(-4);
-  return last.reduce((s, v) => s + v, 0) / last.length;
 }
 
 function SpringScene({ engine, mass }: { engine: SimEngine<S>; mass: number }) {

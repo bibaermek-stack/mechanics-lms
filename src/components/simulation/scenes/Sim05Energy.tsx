@@ -29,6 +29,8 @@ import {
 
 const S_MIN = 0.14; // cart centre cannot pass the lower end stop
 const S_MAX = TRACK_L - 0.14;
+/** Where the Smart Gate is bolted to the ramp, measured along it. */
+const GATE_S = 0.45;
 
 interface S {
   s: number; // position measured along the ramp from its lower end
@@ -43,6 +45,12 @@ interface S {
   absorbed: number;
   path: number;
   stopped: boolean;
+  /**
+   * Speed through the gate, latched as the cart crosses it. NaN until then. The
+   * gate used to be scenery: bolted to the ramp, labelled, and measuring
+   * nothing.
+   */
+  vGate: number;
 }
 
 export function Sim05Energy() {
@@ -56,7 +64,7 @@ export function Sim05Energy() {
   const cosT = Math.cos(theta);
 
   const engine = useSimEngine<S>({
-    init: () => ({ s: s0, v: 0, heat: 0, absorbed: 0, path: 0, stopped: false }),
+    init: () => ({ s: s0, v: 0, heat: 0, absorbed: 0, path: 0, stopped: false, vGate: NaN }),
     step: (st, h) => {
       if (st.stopped) return;
       const gravAlong = -G * sinT; // always pulls toward the foot of the ramp
@@ -65,17 +73,46 @@ export function Sim05Energy() {
       if (Math.abs(st.v) < 1e-4) {
         // Static case: does gravity beat static friction?
         a = G * sinT > fricMag ? gravAlong + fricMag : 0;
+        if (a === 0) {
+          st.stopped = true;
+          return;
+        }
       } else {
         a = gravAlong - Math.sign(st.v) * fricMag;
       }
       const vNext = st.v + a * h;
       // Friction can stop the cart but never reverse it on its own.
-      st.v = Math.abs(st.v) > 1e-4 && Math.sign(vNext) !== Math.sign(st.v) && G * sinT <= fricMag ? 0 : vNext;
-      const ds = st.v * h;
+      const stalls = Math.abs(st.v) > 1e-4 && Math.sign(vNext) !== Math.sign(st.v) && G * sinT <= fricMag;
+      // a is constant across the step, so the exact displacement is v·h + a·h²/2
+      // and then v'² − v² = 2a·ds holds to rounding: the kinetic energy gained
+      // is exactly the potential energy lost minus the friction heat. The plain
+      // v-then-x update let "Толық E" wander by a third of a percent — visible
+      // in the fourth decimal of a readout whose whole point is that it does not
+      // change.
+      let ds = stalls ? 0 : st.v * h + 0.5 * a * h * h;
+      let vEnd = stalls ? 0 : vNext;
+      // The step that reaches the lower stop is cut off at the stop. Taking the
+      // whole step and then clamping the cart back put it up to 4 mm higher than
+      // it had actually got — Eₚ it had already spent, and friction heat for a
+      // distance it never travelled — so "Толық E" jumped by a third of a
+      // percent at the very moment the bumper was meant to balance the books.
+      let hitsStop = false;
+      if (st.s + ds <= S_MIN) {
+        ds = S_MIN - st.s; // negative: moving down the ramp
+        vEnd = -Math.sqrt(Math.max(st.v * st.v + 2 * a * ds, 0));
+        hitsStop = true;
+      }
+      // Crossing the gate: the speed at the beam itself, from v² = v₀² + 2a·Δs
+      // over the part of the step before it, rather than whatever the step
+      // happened to end on.
+      if (Number.isNaN(st.vGate) && (st.s - GATE_S) * (st.s + ds - GATE_S) <= 0 && ds !== 0) {
+        st.vGate = Math.sqrt(Math.max(st.v * st.v + 2 * a * (GATE_S - st.s), 0));
+      }
+      st.v = vEnd;
       st.s += ds;
       st.path += Math.abs(ds);
       st.heat += mu * mass * G * cosT * Math.abs(ds);
-      if (st.s <= S_MIN) {
+      if (hitsStop) {
         st.s = S_MIN;
         // The bumper takes whatever kinetic energy is left, so the books still
         // balance once the cart has stopped.
@@ -103,10 +140,14 @@ export function Sim05Energy() {
         W: st.absorbed,
         E: ep + ek + st.heat + st.absorbed,
         path: st.path,
+        vGate: st.vGate,
       };
     },
     resetKey: [angleDeg, mass, mu, s0],
     duration: 20,
+    // The run is over once the cart is at the foot of the ramp or friction has
+    // held it; there is nothing left to measure for the rest of 20 s.
+    stopWhen: (st) => st.stopped,
     // The cart is at the foot of the ramp in about eight tenths of a second,
     // so the scene opens at half speed rather than already finished.
     initialSpeed: 0.5,
@@ -116,6 +157,11 @@ export function Sim05Energy() {
   const h0 = (s0 - S_MIN) * sinT;
   const e0 = mass * G * h0;
   const willSlide = G * sinT > mu * G * cosT;
+  // What energy conservation predicts at the gate: the drop in Eₚ over the run
+  // down to it, less the friction work over the same distance.
+  const runToGate = s0 - GATE_S;
+  const vGateTheory =
+    willSlide && runToGate > 0 ? Math.sqrt(2 * G * runToGate * (sinT - mu * cosT)) : NaN;
 
   return (
     <SimLayout
@@ -157,7 +203,7 @@ export function Sim05Energy() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Өлшеу нәтижелері">
             <Readout
               items={[
@@ -170,7 +216,20 @@ export function Sim05Energy() {
                 { label: "Тірекке берілді", value: fmt(r.W, 4), unit: "Дж", tone: "slate" },
                 { label: "Толық E", value: fmt(r.E, 4), unit: "Дж", tone: "amber" },
                 {
-                  label: "Идеал v = √(2gh₀)",
+                  label: "v қақпада (өлшенді)",
+                  value: Number.isFinite(r.vGate) ? fmt(r.vGate, 3) : "—",
+                  unit: "м/с",
+                  tone: "brand",
+                },
+                {
+                  label: "v қақпада (энергиядан)",
+                  value: Number.isFinite(vGateTheory) ? fmt(vGateTheory, 3) : "—",
+                  unit: "м/с",
+                },
+                {
+                  // This is the frictionless speed at the *current* height, not
+                  // at the foot — the label used to promise the latter.
+                  label: "Идеал v = √(2g(h₀−h))",
                   value: fmt(Math.sqrt(2 * G * Math.max(h0 - r.h, 0)), 3),
                   unit: "м/с",
                 },
@@ -205,6 +264,7 @@ export function Sim05Energy() {
         </div>
       }
       tasks={[
+        "Smart Gate өлшеген жылдамдықты энергия сақталу заңынан болжанған мәнмен салыстыр: v² = 2g·d(sin θ − μ cos θ), мұндағы d — бастапқы орыннан қақпаға дейінгі арақашықтық.",
         "μ = 0 кезінде арба төменгі нүктеде қандай жылдамдыққа жетеді? Оны v = √(2gh₀) формуласымен салыстыр.",
         "μ-ді 0,15-ке қой. Толық механикалық энергия (Eₚ + Eₖ) неге кемиді, ал Eₚ + Eₖ + Q неге тұрақты қалады?",
         "Арба төменгі тірекке соғылғанда кинетикалық энергия қайда кетті? «Тірекке берілді» бағанын бақыла — «Толық E» сызығы неге түзу қалады?",
@@ -234,11 +294,11 @@ function Scene({ engine, theta, mass }: { engine: SimEngine<S>; theta: number; m
         </group>
         {/* The photogate is bolted to the ramp itself, so it stays square to
             the track at any angle and the cart runs straight through it. */}
-        <PhotogateMount x={0.45} y={TRACK_H - 0.032} />
-        <group position={[0.45, TRACK_H - 0.032 + GATE_LIFT, 0]}>
+        <PhotogateMount x={GATE_S} y={TRACK_H - 0.032} />
+        <group position={[GATE_S, TRACK_H - 0.032 + GATE_LIFT, 0]}>
           <PascoModel spec={PASCO.smartGate} />
         </group>
-        <Tag position={[0.45, 0.2, 0]} tone="brand">
+        <Tag position={[GATE_S, 0.2, 0]} tone="brand">
           Smart Gate
         </Tag>
       </Incline>

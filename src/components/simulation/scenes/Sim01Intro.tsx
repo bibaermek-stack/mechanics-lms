@@ -13,7 +13,7 @@ import { PASCO } from "../core/pascoCatalog";
 import { PascoModel } from "../core/PascoModel";
 import { SimDriver, SimStage } from "../core/SimStage";
 import { useSimEngine, type SimEngine } from "../core/useSimEngine";
-import { COLORS, G, SimLayout } from "../core/SimLayout";
+import { COLORS, SimLayout } from "../core/SimLayout";
 import { LiveChart } from "../core/LiveChart";
 import { Panel, PlayBar, Readout, Segmented, Slider, Toggle, fmt } from "../core/ui";
 import { Tag, Trail, TrailHandle } from "../core/primitives";
@@ -120,18 +120,18 @@ export function Sim01Intro() {
         </>
       }
       data={
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Сенсор көрсеткіштері">
             <Readout
               items={[
                 { label: "Уақыт t", value: fmt(engine.timeRef.current, 1), unit: "с" },
                 { label: "x (үстел)", value: fmt(r.x, 3), unit: "м", tone: "brand" },
                 { label: "x (арба)", value: fmt(0, 3), unit: "м" },
-                { label: "Жылдамдық v", value: fmt(r.v, 3), unit: "м/с", tone: "emerald" },
+                { label: "v (үстел)", value: fmt(r.v, 3), unit: "м/с", tone: "emerald" },
+                { label: "v (арба)", value: fmt(0, 3), unit: "м/с" },
                 { label: "Жол s", value: fmt(r.path, 3), unit: "м", tone: "amber" },
                 { label: "Орын ауыстыру Δx", value: fmt(r.disp, 3), unit: "м", tone: "rose" },
                 { label: "s − |Δx|", value: fmt(r.path - Math.abs(r.disp), 3), unit: "м" },
-                { label: "g", value: fmt(G, 2), unit: "м/с²" },
               ]}
             />
           </Panel>
@@ -172,6 +172,7 @@ function Scene({
 }) {
   const world = useRef<THREE.Group>(null!);
   const cart = useRef<THREE.Group>(null!);
+  const origin = useRef<THREE.Group>(null!);
   const trail = useRef<TrailHandle>(null);
   const tmp = useRef(new THREE.Vector3());
   const lastEpoch = useRef(epoch);
@@ -182,6 +183,10 @@ function Scene({
     // In the cart frame everything is shifted so the cart appears to stand
     // still while the track and the sensor slide past.
     if (world.current) world.current.position.x = frame === "cart" ? 0.6 - s.x : 0;
+    // The origin of the chosen frame. In the cart frame it rides on the cart —
+    // that is what "the cart's coordinate is always zero" means. It used to sit
+    // at a fixed point on the bench and slide away with everything else.
+    if (origin.current) origin.current.position.x = frame === "cart" ? s.x : 0;
 
     if (lastEpoch.current !== epoch) {
       lastEpoch.current = epoch;
@@ -208,7 +213,7 @@ function Scene({
         </Tag>
 
         {/* Origin marker of the chosen frame */}
-        <group position={[frame === "bench" ? 0 : 0.6, BENCH_H + 0.001, -0.075]}>
+        <group ref={origin} position={[0, BENCH_H + 0.001, -0.075]}>
           <mesh position={[0, 0.05, 0]}>
             <boxGeometry args={[0.003, 0.1, 0.003]} />
             <meshStandardMaterial color="#ef4444" />
