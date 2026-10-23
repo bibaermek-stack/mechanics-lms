@@ -67,9 +67,10 @@ export function VideoPlayer({
             aria-label={title}
             onTimeUpdate={onTime}
             onEnded={markWatched}
-            onError={() => setFailed(true)}
+            // <source> errors bubble up to the video in React; a missing caption file must not count.
+            onError={(e) => (e.target as HTMLElement).tagName !== "TRACK" && setFailed(true)}
           >
-            <source src={src} type={src.endsWith(".webm") ? "video/webm" : "video/mp4"} />
+            <source src={src} />
             {/* The captions are already burned into the bundled films; this track is for screen readers and is off by default. */}
             {captions && <track kind="captions" src={captions} srcLang="kk" label="Қазақша (мәтін)" />}
           </video>
