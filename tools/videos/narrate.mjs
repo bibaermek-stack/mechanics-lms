@@ -97,6 +97,13 @@ function narrate(lesson) {
     worstDrift = Math.max(worstDrift, start - (c.cue.start + LEAD));
     return { ...c, tempo, dur, start };
   });
+  // The closing line must not be cut off by the end of the film: squeeze it a little more if need be.
+  const closing = plan[plan.length - 1];
+  const room = filmLength - 0.1 - closing.start;
+  if (closing.start + closing.dur > filmLength - 0.1 && room > 0) {
+    closing.tempo = Math.min(1.4, closing.length / room);
+    closing.dur = closing.length / closing.tempo;
+  }
   const missing = cues.length - clips.length;
 
   console.log(`${name}: ${clips.length}/${cues.length} clips${missing ? ` (${missing} captions stay silent)` : ""}`);
