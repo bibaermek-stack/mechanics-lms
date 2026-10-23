@@ -50,6 +50,7 @@ Useful options:
 | `--workers 4` | Parallel browser processes (default 4; one per CPU core is right) |
 | `--times 3,12,40 --preview-dir DIR` | Photograph only these seconds — a quick look while editing a scene |
 | `--frames 0-47 --no-encode` | Render a few frames and stop |
+| `--encode-only` | Skip the frame pass and encode the frames already in `tools/videos/.frames` (after an interrupted encode) |
 | `--dist DIR` | Use another bundle, so a render can keep going while you rebuild `dist` |
 | `--fps`, `--width`, `--crf` | Output frame rate, width (height follows 16:9) and quality |
 

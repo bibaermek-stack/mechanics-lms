@@ -48,6 +48,7 @@ const framesDir = join(here, ".frames");
 const shard = opt("shard", null); // "i/n" — set by the parent for its workers
 const frameRange = opt("frames", null); // "a-b", for a quick look
 const noEncode = flag("no-encode");
+const encodeOnly = flag("encode-only"); // reuse the frames already in .frames (after an interrupted encode)
 const dist = join(root, opt("dist", "tools/videos/dist"));
 const times = opt("times", null); // "3,10,20": just photograph these instants (a quick look while editing a scene)
 const previewDir = opt("preview-dir", join(here, ".preview"));
@@ -153,16 +154,18 @@ function run(cmd, cmdArgs, opts = {}) {
 
 async function renderLesson(lesson) {
   const dir = join(framesDir, `lesson-${pad2(lesson)}`);
-  await rm(dir, { recursive: true, force: true });
-  await mkdir(dir, { recursive: true });
-  const self = fileURLToPath(import.meta.url);
-  const base = [self, "--lesson", String(lesson), "--fps", String(fps), "--width", String(width), "--dpr", String(dpr)];
-  if (frameRange) base.push("--frames", frameRange);
-  const t0 = Date.now();
-  await Promise.all(
-    Array.from({ length: workers }, (_, i) => run(process.execPath, [...base, "--shard", `${i}/${workers}`]))
-  );
-  console.log(`lesson ${lesson}: frames done in ${((Date.now() - t0) / 60000).toFixed(1)} min`);
+  if (!encodeOnly) {
+    await rm(dir, { recursive: true, force: true });
+    await mkdir(dir, { recursive: true });
+    const self = fileURLToPath(import.meta.url);
+    const base = [self, "--lesson", String(lesson), "--fps", String(fps), "--width", String(width), "--dpr", String(dpr)];
+    if (frameRange) base.push("--frames", frameRange);
+    const t0 = Date.now();
+    await Promise.all(
+      Array.from({ length: workers }, (_, i) => run(process.execPath, [...base, "--shard", `${i}/${workers}`]))
+    );
+    console.log(`lesson ${lesson}: frames done in ${((Date.now() - t0) / 60000).toFixed(1)} min`);
+  }
   if (noEncode) return;
 
   // Script-derived files come from the page itself so they can never drift from the film.
