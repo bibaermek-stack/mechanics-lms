@@ -63,24 +63,34 @@ duration shown on lesson cards follows automatically (`lessonVideoSeconds`).
 
 ## Adding a voice-over
 
-The captions are written to be read aloud, one caption per chapter. To voice a
-lesson:
+The captions are written to be read aloud, one caption per chapter. A text-to-speech
+voice cannot read "F = ma" or "9,8 м/с²", so what is *spoken* is the caption unless
+`tools/videos/narration/spoken.json` replaces it with the same thing spelled out in
+words (and kept short enough to fit its chapter).
 
-1. Make one audio clip per caption (the text is in `public/videos/lesson-NN.vtt`)
-   and save it as `tools/videos/narration/lesson-NN/cue-KK.mp3`, where `KK` is
-   the caption's number from 01. A text-to-speech service with a cloned or
-   library voice works; ElevenLabs `eleven_v3` speaks Kazakh.
-2. Run `npm run videos:narrate -- --lesson 4` (or `--lesson all`; add `--dry`
-   to only print the schedule).
+1. Print the text for a lesson (or two lessons) — captions separated by `[long pause]`:
+   `node tools/videos/speech-script.mjs 4 --whole`
+2. Record it as **one** audio file with the voice service (ElevenLabs `eleven_v3` speaks
+   Kazakh; the library voice used for the bundled films is *Nurlan*). One request per
+   lesson, instead of one per caption, is far kinder to the service's rate limit and
+   keeps the voice consistent. It costs about one credit per character: ~1 000 credits
+   per lesson, ~11 000 for all ten.
+3. Cut it into one clip per caption:
+   `node tools/videos/split-speech.mjs --lesson 4 --in lesson-04.mp3`
+   (`--lesson 2,3` for a recording of several lessons in order). The cut points are
+   the silences that make each piece as long as its text should take; the tool refuses
+   to write if a piece is far off.
+4. Add the voice to the film: `npm run videos:narrate -- --lesson 4` (`--dry` only
+   prints the schedule).
 
-`narrate.mjs` puts each clip where its caption appears, speeds a long clip up
-by at most 1.25×, makes the next clip wait if one still overruns, levels the
-loudness, and adds the track to the existing MP4 **without touching the video
-stream** — it takes seconds and can be repeated with a different voice.
+`narrate.mjs` puts each clip where its caption appears, speeds a long clip up by at most
+1.25×, makes the next clip wait if one still overruns, levels the loudness, and adds the
+track to the existing MP4 **without touching the video stream** — it takes seconds and can
+be repeated with a different voice. Read its report: "N s behind its captions" means the
+spoken text of that chapter is too long.
 
-Alternatively, drop a whole-lesson recording at
-`tools/videos/narration/lesson-NN.mp3` (or `.m4a`, `.wav`) and re-render: the
-render tool muxes it in.
+Alternatively, drop a whole-lesson recording at `tools/videos/narration/lesson-NN.mp3`
+(or `.m4a`, `.wav`) and re-render: the render tool muxes it in.
 
 ## Replacing a film with your own
 
