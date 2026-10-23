@@ -35,8 +35,8 @@ lessons/{moduleId}
 ## `videos`
 ```
 videos/{moduleId}
-  youtubeId: string      // admin-editable, see /teacher/lessons
-  durationMinutes: number
+  src: string            // /videos/lesson-NN.mp4 or an https URL; admin-editable, see /teacher/lessons
+  durationSeconds: number
 ```
 
 ## `quizzes` / `questions`

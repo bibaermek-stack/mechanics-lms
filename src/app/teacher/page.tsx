@@ -39,7 +39,7 @@ export default function TeacherDashboard() {
           <Link href="/teacher/lessons" className="surface-card">
             <Video className="mb-2 text-brand-500" />
             <p className="font-semibold">Сабақтарды басқару</p>
-            <p className="text-body text-slate-600 dark:text-slate-400">YouTube сілтемелерін, викторина мен ойындарды өзгерту.</p>
+            <p className="text-body text-slate-600 dark:text-slate-400">Дәріс бейнелерін, викторина мен ойындарды өзгерту.</p>
           </Link>
           <Link href="/teacher/assignments" className="surface-card">
             <ClipboardList className="mb-2 text-brand-500" />

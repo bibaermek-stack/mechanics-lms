@@ -7,3 +7,7 @@ out
 .DS_Store
 npm-debug.log*
 dist-server
+tools/videos/dist
+tools/videos/dist-*
+tools/videos/.preview
+tools/videos/.frames

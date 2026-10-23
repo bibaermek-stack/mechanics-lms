@@ -1,0 +1,230 @@
+/*
+ * Lesson-film chrome. Everything is sized in container units (cqw / cqh) so the
+ * same layout is correct at 1280×720 in the render tool and at any width in the
+ * lesson page. Class names are prefixed .st- to stay clear of the app's Tailwind.
+ */
+
+.st-root {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  container-type: size;
+  overflow: hidden;
+  background: #cfe3f7;
+  color: #0f172a;
+  font-family: "Inter", "Segoe UI", "DejaVu Sans", "Liberation Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+.st-canvas {
+  position: absolute;
+  inset: 0;
+}
+.st-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ---- lesson badge (top-left) ------------------------------------------- */
+.st-badge {
+  position: absolute;
+  left: 2.2cqw;
+  top: 3.4cqh;
+  display: flex;
+  align-items: center;
+  gap: 0.9cqw;
+  padding: 0.7cqw 1.4cqw 0.7cqw 0.8cqw;
+  border-radius: 99cqw;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 0.3cqw 1.2cqw rgba(15, 23, 42, 0.16);
+  backdrop-filter: blur(0.6cqw);
+}
+.st-badge-num {
+  display: grid;
+  place-items: center;
+  width: 3.1cqw;
+  height: 3.1cqw;
+  border-radius: 50%;
+  background: #3366ff;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.55cqw;
+}
+.st-badge-kicker {
+  font-size: 0.95cqw;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #1f47e6;
+  line-height: 1.1;
+}
+.st-badge-title {
+  font-size: 1.7cqw;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+/* ---- caption (bottom-centre) ------------------------------------------- */
+.st-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: fit-content;
+  bottom: 5.2cqh;
+  max-width: 78cqw;
+  padding: 1.1cqh 2cqw;
+  border-radius: 1.2cqw;
+  background: rgba(10, 16, 36, 0.78);
+  color: #fff;
+  text-align: center;
+  font-size: 1.95cqw;
+  font-weight: 600;
+  line-height: 1.38;
+  box-shadow: 0 0.4cqw 1.6cqw rgba(0, 0, 0, 0.28);
+}
+
+.st-mark {
+  position: absolute;
+  right: 2.2cqw;
+  top: 3.9cqh;
+  font-size: 1.1cqw;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(15, 23, 42, 0.55);
+}
+
+/* ---- cards -------------------------------------------------------------- */
+.st-card {
+  position: absolute;
+  padding: 1.1cqw 1.5cqw;
+  border-radius: 1.2cqw;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0.35cqw 1.4cqw rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(0.5cqw);
+  will-change: opacity, transform;
+}
+.st-card-title {
+  font-size: 1.05cqw;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1f47e6;
+  margin-bottom: 0.45cqw;
+}
+.st-formula {
+  font-family: "DejaVu Serif", "Cambria Math", "Times New Roman", serif;
+  font-style: italic;
+  font-size: 2.9cqw;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #0f1a45;
+  white-space: nowrap;
+}
+.st-formula small {
+  font-family: inherit;
+  font-style: normal;
+  font-size: 1.25cqw;
+  font-weight: 500;
+  color: #475569;
+  margin-left: 0.7cqw;
+}
+.st-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.6cqw;
+  font-size: 1.55cqw;
+  line-height: 1.55;
+  white-space: nowrap;
+}
+.st-row b {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 1.75cqw;
+}
+.st-row span {
+  color: #475569;
+  font-weight: 600;
+}
+.st-dot {
+  display: inline-block;
+  width: 0.9cqw;
+  height: 0.9cqw;
+  border-radius: 50%;
+  margin-right: 0.6cqw;
+  vertical-align: baseline;
+}
+
+/* ---- labels pinned to 3D objects ---------------------------------------- */
+.st-tag {
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.st-tag-chip {
+  padding: 0.25em 0.7em;
+  border-radius: 0.55em;
+  background: rgba(15, 23, 42, 0.88);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+.st-tag-chip.is-brand { background: #1f47e6; }
+.st-tag-chip.is-red { background: #dc2626; }
+.st-tag-chip.is-green { background: #059669; }
+.st-tag-chip.is-amber { background: #f59e0b; color: #1c1917; }
+.st-tag-stem {
+  width: 2px;
+  height: 9px;
+  background: rgba(15, 23, 42, 0.85);
+}
+
+/* ---- live player UI ------------------------------------------------------ */
+.st-ui {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 1.2cqw;
+  padding: 1.1cqh 1.8cqw;
+  background: linear-gradient(to top, rgba(8, 12, 28, 0.78), rgba(8, 12, 28, 0));
+  pointer-events: auto;
+}
+.st-ui button {
+  display: grid;
+  place-items: center;
+  min-width: 3.4cqw;
+  height: 3.4cqw;
+  padding: 0 1cqw;
+  border: 0;
+  border-radius: 99cqw;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
+  font: inherit;
+  font-size: 1.2cqw;
+  font-weight: 700;
+  cursor: pointer;
+}
+.st-ui button[aria-pressed="true"] {
+  background: #3366ff;
+  color: #fff;
+}
+.st-ui input[type="range"] {
+  flex: 1;
+  accent-color: #3366ff;
+  cursor: pointer;
+}
+.st-ui time {
+  font-size: 1.15cqw;
+  font-weight: 600;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}

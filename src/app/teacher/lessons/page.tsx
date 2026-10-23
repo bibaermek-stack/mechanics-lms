@@ -26,7 +26,7 @@ import {
 import { ALL_MODULES } from "@/data/modules";
 import { useAuthStore } from "@/lib/authStore";
 import { useLessons } from "@/components/providers/LessonsProvider";
-import { diffPatch, patchFromModule, type LessonPatch } from "@/lib/lessonContent";
+import { diffPatch, isValidVideoSrc, patchFromModule, type LessonPatch } from "@/lib/lessonContent";
 import { loadTeacherOverrides, resetOverride, saveOverride } from "@/lib/supabase/content";
 
 type Draft = Required<LessonPatch>;
@@ -187,21 +187,26 @@ export default function TeacherLessonsPage() {
               </label>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block text-micro uppercase tracking-wider text-slate-500">
-                  YouTube ID
+                  Бейне сілтемесі (MP4 / WebM)
                   <input
-                    value={draft.youtubeId}
-                    onChange={(e) => set("youtubeId", e.target.value)}
-                    placeholder="dQw4w9WgXcQ"
+                    value={draft.videoSrc}
+                    onChange={(e) => set("videoSrc", e.target.value)}
+                    placeholder="https://… .mp4"
                     className="input-glow mt-1 w-full"
                   />
+                  {!isValidVideoSrc(draft.videoSrc) && (
+                    <span className="mt-1 block normal-case tracking-normal text-red-600">
+                      Сілтеме «/» немесе «https://» деп басталуы тиіс; әйтпесе әдепкі бейне қалады.
+                    </span>
+                  )}
                 </label>
                 <label className="block text-micro uppercase tracking-wider text-slate-500">
-                  Бейне ұзақтығы (мин)
+                  Бейне ұзақтығы (сек)
                   <input
                     type="number"
                     min={1}
-                    value={draft.videoDurationMinutes}
-                    onChange={(e) => set("videoDurationMinutes", Number(e.target.value))}
+                    value={draft.videoDurationSeconds}
+                    onChange={(e) => set("videoDurationSeconds", Number(e.target.value))}
                     className="input-glow mt-1 w-full"
                   />
                 </label>

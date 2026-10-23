@@ -184,8 +184,9 @@ Vercel-де тұра алмайды (serverless функциялар жадта 
 
 | Талап | Іске асырылған жері |
 |---|---|
-| 10 сабақ (YouTube, глоссарий, викторина, ойын, БӨЖ, AI, бағалау) | `src/data/modules.ts`, `src/app/modules/[id]/page.tsx` |
+| 10 сабақ (3D сахнадан рендерленген бейне-дәріс, глоссарий, викторина, ойын, БӨЖ, AI, бағалау) | `src/data/modules.ts`, `src/app/modules/[id]/page.tsx` |
 | Сабақ 1–2 толық тереңдікте, 3–10 — жеңіл үлгі (оқытушы кеңейте алады) | `src/data/modules.ts` (`MODULES` vs `TEMPLATE_SEEDS`) |
+| Бейне-дәрістер: 10 сабақтың 3D сахнасынан рендерленген қазақша субтитрлі MP4, сол сахнаны сабақ бетінде «3D сахна» табында тікелей айналдырып көру | `src/components/lesson3d/`, `src/components/studio/`, `tools/videos/` (`README.md`), `public/videos/`, `docs/3d-references.md` |
 | Рандомизацияланған викторина, автобаға, түсіндірме | `src/components/quiz/QuizEngine.tsx`, `randomizeQuiz()` |
 | 5 интерактивті ойын түрі (сәйкестендіру, жады, флэш-карточка, сүйреп апару, дөңгелек) | `src/components/games/*` |
 | VR/AR зертханалық орта (4 иммерсивті тәжірибе) | `src/app/vr-lab/*`, `src/components/vr/*`, `src/lib/vr/*` |
@@ -208,20 +209,24 @@ mechanics-lms/
 │   │   ├── api/ai/           # AI шлюзі (OpenAI/Gemini/mock)
 │   │   ├── api/google/       # Google Sheets оқу
 │   │   ├── api/auth/google/  # OAuth callback
-│   │   ├── modules/[id]/     # Сабақ беті (7 табы бар)
+│   │   ├── modules/[id]/     # Сабақ беті (9 табы бар)
 │   ├── vr-lab/           # VR/AR зертханалық орта
 │   ├── arena/            # 2D физикалық футбол (жаттығу + онлайн бөлмелер)
 │   │   ├── teacher/          # Оқытушы дашборды
 │   │   └── ...
 │   ├── components/           # Қайта пайдаланылатын UI компоненттер
 │   │   ├── simulation/       # 13 3D симуляция (react-three-fiber)
+│   │   ├── lesson3d/         # 10 бейне-дәрістің 3D сахналары мен нысандары
+│   │   ├── studio/           # Бейне студиясы: сахна, субтитр, графиктер, тікелей ойнатқыш
 │   │   ├── vr/               # VR/AR қабаты (A-Frame компоненттері + бет UI)
 │   │   └── arena/            # Ойын алаңы, canvas рендері, басқару
 │   ├── data/modules.ts       # 10 сабақтың толық контенті
 │   ├── lib/vr/               # three.js модельдері, физика rig-тері, canvas панельдер
 │   ├── lib/arena/            # Ойын физикасы, боттар, Supabase Realtime бөлмелері
 │   └── lib/                  # Firebase, AI, Google, competency, dataStore
-├── docs/firestore-schema.md
+├── docs/firestore-schema.md, docs/3d-references.md
+├── tools/videos/         # Бейнені рендерлеу құралы (README.md)
+├── public/videos/        # Дайын lesson-NN.mp4 / .vtt / .jpg
 ├── README.md / DEPLOYMENT.md
 └── .env.local.example
 ```
@@ -233,7 +238,7 @@ Firestore коллекциялары толық сипатталған: `docs/fi
 ## Пайдалану нұсқаулықтары
 
 - **Студент:** `/login` бетінен "Студент" рөлін таңдап кіріңіз → `/dashboard` → сабақтарды оқыңыз → викторина/ойын/БӨЖ орындаңыз → `/analytics` пен `/certificates` арқылы нәтижені бақылаңыз.
-- **Оқытушы:** `/login` бетінен "Оқытушы" рөлін таңдаңыз → `/teacher` → студенттер тізімі, YouTube сілтемелерін өзгерту, тапсырмаларды тексеру, топ аналитикасы.
+- **Оқытушы:** `/login` бетінен "Оқытушы" рөлін таңдаңыз → `/teacher` → студенттер тізімі, дәріс бейнесінің сілтемесін өзгерту, тапсырмаларды тексеру, топ аналитикасы.
 
 Демо режимде екі рөл де нақты тіркелгісіз, бір батырма басу арқылы қолжетімді.
 

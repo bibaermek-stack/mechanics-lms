@@ -127,8 +127,9 @@ export interface LessonModule {
   slug: string;
   title: string;
   shortDescription: string;
-  youtubeId: string; // just the video id, admin-editable
-  videoDurationMinutes: number;
+  /** The lecture film: a root-relative path or https URL to an MP4/WebM. Teacher-editable. */
+  videoSrc: string;
+  videoDurationSeconds: number;
   objectives: string[];
   bloom: BloomOutcomes;
   lectureSummary: string[]; // paragraphs

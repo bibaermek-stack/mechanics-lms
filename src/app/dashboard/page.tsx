@@ -13,6 +13,7 @@ import { ActionList } from "@/components/ui/ActionList";
 import { LoadingBlock } from "@/components/ui/Skeleton";
 import { LessonScoreChart } from "@/components/charts/LessonScoreChart";
 import { ALL_MODULES } from "@/data/modules";
+import { formatVideoLength } from "@/data/lessonVideos";
 import { useLessons } from "@/components/providers/LessonsProvider";
 import { useAuthStore } from "@/lib/authStore";
 import { buildStudentPlan, studentLessonScores } from "@/lib/studentPlan";
@@ -145,7 +146,7 @@ export default function StudentDashboard() {
                 id={m.id}
                 title={m.title}
                 description={m.shortDescription}
-                minutes={m.videoDurationMinutes}
+                length={formatVideoLength(m.videoDurationSeconds)}
                 done={completedModuleIds.includes(m.id)}
               />
             ))}
