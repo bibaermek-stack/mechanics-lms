@@ -4,6 +4,7 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { useLessons } from "@/components/providers/LessonsProvider";
+import { formatVideoLength } from "@/data/lessonVideos";
 
 export default function ModulesPage() {
   const { modules } = useLessons();
@@ -40,7 +41,7 @@ export default function ModulesPage() {
               {/* Contents of the lesson, as figures rather than icon rows */}
               <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pl-2 pt-3 dark:border-white/5">
                 {[
-                  { label: "Дәріс", value: `${m.videoDurationMinutes} мин` },
+                  { label: "Дәріс", value: formatVideoLength(m.videoDurationSeconds) },
                   { label: "Викторина", value: `${m.quiz.length} сұрақ` },
                   { label: "Глоссарий", value: `${m.glossary.length} термин` },
                 ].map((s) => (

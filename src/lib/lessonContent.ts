@@ -14,8 +14,8 @@ import type { GamePair, GlossaryTerm, LessonModule, QuizQuestion } from "./types
 export interface LessonPatch {
   title?: string;
   shortDescription?: string;
-  youtubeId?: string;
-  videoDurationMinutes?: number;
+  videoSrc?: string;
+  videoDurationSeconds?: number;
   objectives?: string[];
   lectureSummary?: string[];
   keyConcepts?: string[];
@@ -28,8 +28,8 @@ export interface LessonPatch {
 export const PATCH_KEYS: (keyof LessonPatch)[] = [
   "title",
   "shortDescription",
-  "youtubeId",
-  "videoDurationMinutes",
+  "videoSrc",
+  "videoDurationSeconds",
   "objectives",
   "lectureSummary",
   "keyConcepts",
@@ -37,6 +37,11 @@ export const PATCH_KEYS: (keyof LessonPatch)[] = [
   "quiz",
   "gamePairs",
 ];
+
+/** A site-relative path or an https URL; anything else (javascript:, data:, bare words) is refused. */
+export function isValidVideoSrc(src: string | undefined): src is string {
+  return typeof src === "string" && /^(\/(?!\/)|https:\/\/)\S+$/.test(src.trim());
+}
 
 /**
  * Lay a patch over a lesson.
@@ -49,7 +54,7 @@ export const PATCH_KEYS: (keyof LessonPatch)[] = [
 export function applyPatch(mod: LessonModule, patch: LessonPatch | undefined): LessonModule {
   if (!patch) return mod;
 
-  const text = <K extends "title" | "shortDescription" | "youtubeId">(key: K) => {
+  const text = <K extends "title" | "shortDescription">(key: K) => {
     const v = patch[key];
     return typeof v === "string" && v.trim() ? v.trim() : mod[key];
   };
@@ -59,11 +64,11 @@ export function applyPatch(mod: LessonModule, patch: LessonPatch | undefined): L
     ...mod,
     title: text("title"),
     shortDescription: text("shortDescription"),
-    youtubeId: text("youtubeId"),
-    videoDurationMinutes:
-      typeof patch.videoDurationMinutes === "number" && patch.videoDurationMinutes > 0
-        ? patch.videoDurationMinutes
-        : mod.videoDurationMinutes,
+    videoSrc: isValidVideoSrc(patch.videoSrc) ? patch.videoSrc.trim() : mod.videoSrc,
+    videoDurationSeconds:
+      typeof patch.videoDurationSeconds === "number" && patch.videoDurationSeconds > 0
+        ? Math.round(patch.videoDurationSeconds)
+        : mod.videoDurationSeconds,
     objectives: list(patch.objectives, mod.objectives),
     lectureSummary: list(patch.lectureSummary, mod.lectureSummary),
     keyConcepts: list(patch.keyConcepts, mod.keyConcepts),
@@ -85,14 +90,14 @@ export function diffPatch(mod: LessonModule, draft: LessonPatch): LessonPatch {
   if (draft.title?.trim() && draft.title.trim() !== mod.title) out.title = draft.title.trim();
   if (draft.shortDescription?.trim() && draft.shortDescription.trim() !== mod.shortDescription)
     out.shortDescription = draft.shortDescription.trim();
-  if (draft.youtubeId?.trim() && draft.youtubeId.trim() !== mod.youtubeId)
-    out.youtubeId = draft.youtubeId.trim();
+  if (isValidVideoSrc(draft.videoSrc) && draft.videoSrc.trim() !== mod.videoSrc)
+    out.videoSrc = draft.videoSrc.trim();
   if (
-    typeof draft.videoDurationMinutes === "number" &&
-    draft.videoDurationMinutes > 0 &&
-    draft.videoDurationMinutes !== mod.videoDurationMinutes
+    typeof draft.videoDurationSeconds === "number" &&
+    draft.videoDurationSeconds > 0 &&
+    Math.round(draft.videoDurationSeconds) !== mod.videoDurationSeconds
   )
-    out.videoDurationMinutes = draft.videoDurationMinutes;
+    out.videoDurationSeconds = Math.round(draft.videoDurationSeconds);
 
   if (draft.objectives?.length && !sameJson(draft.objectives, mod.objectives))
     out.objectives = draft.objectives;
@@ -114,8 +119,8 @@ export function patchFromModule(mod: LessonModule): Required<LessonPatch> {
   return {
     title: mod.title,
     shortDescription: mod.shortDescription,
-    youtubeId: mod.youtubeId,
-    videoDurationMinutes: mod.videoDurationMinutes,
+    videoSrc: mod.videoSrc,
+    videoDurationSeconds: mod.videoDurationSeconds,
     objectives: [...mod.objectives],
     lectureSummary: [...mod.lectureSummary],
     keyConcepts: [...mod.keyConcepts],

@@ -14,14 +14,15 @@ export function LessonCard({
   id,
   title,
   description,
-  minutes,
+  length,
   done = false,
   compact = false,
 }: {
   id: number;
   title: string;
   description?: string;
-  minutes?: number;
+  /** Running time of the lesson film, already formatted. */
+  length?: string;
   done?: boolean;
   /** Tighter variant for dense grids (landing page). */
   compact?: boolean;
@@ -68,9 +69,9 @@ export function LessonCard({
           ) : (
             <Badge variant="neutral">Оқу керек</Badge>
           )}
-          {minutes !== undefined && (
+          {length !== undefined && (
             <span className="data-num text-micro text-slate-500 dark:text-slate-400">
-              {minutes} мин
+              {length}
             </span>
           )}
         </div>

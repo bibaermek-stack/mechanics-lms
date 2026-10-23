@@ -13,6 +13,7 @@ import {
   Award,
   Brain,
   Boxes,
+  Orbit,
 } from "lucide-react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card } from "@/components/ui/Card";
@@ -27,6 +28,12 @@ import { useLessons } from "@/components/providers/LessonsProvider";
 import { getSimulation } from "@/data/simulations";
 import { LAB_WORKS, labsForLesson } from "@/data/labWorks";
 
+// The lesson film played live, with a free camera. Each scene is its own chunk.
+const LiveScene = dynamic(
+  () => import("@/components/lesson3d/LiveScene").then((m) => m.LiveScene),
+  { ssr: false }
+);
+
 // three.js only ships to the browser, and only when this tab is opened.
 const SimulationPanel = dynamic(
   () => import("@/components/simulation/SimulationPanel").then((m) => m.SimulationPanel),
@@ -35,6 +42,7 @@ const SimulationPanel = dynamic(
 
 const TABS = [
   { key: "lecture", label: "Дәріс", icon: BookOpen },
+  { key: "scene", label: "3D сахна", icon: Orbit },
   { key: "simulation", label: "3D Симуляция", icon: Boxes },
   { key: "glossary", label: "Глоссарий", icon: ListChecks },
   { key: "quiz", label: "Викторина", icon: HelpCircle },
@@ -152,10 +160,11 @@ export default function ModuleDetailPage() {
         {tab === "lecture" && (
           <div className="space-y-4">
             <VideoPlayer
-              youtubeId={mod.youtubeId}
+              src={mod.videoSrc}
               title={mod.title}
               description={mod.shortDescription}
-              durationMinutes={mod.videoDurationMinutes}
+              durationSeconds={mod.videoDurationSeconds}
+              onOpenScene={() => setTab("scene")}
             />
             <Card>
               <p className="mb-3 text-h3">Оқу мақсаттары</p>
@@ -220,6 +229,8 @@ export default function ModuleDetailPage() {
             ))}
           </div>
         )}
+
+        {tab === "scene" && <LiveScene moduleId={mod.id} />}
 
         {tab === "simulation" && <LessonSimulations lessonId={mod.id} />}
 

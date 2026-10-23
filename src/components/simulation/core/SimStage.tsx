@@ -16,7 +16,7 @@ import type { SimEngine } from "./useSimEngine";
  * shapes — a bright sky dome, a soft ceiling panel and a floor bounce — which
  * is enough to make aluminium read as aluminium.
  */
-function StudioEnvironment() {
+export function StudioEnvironment() {
   return (
     <Environment resolution={64} frames={1}>
       <mesh scale={12}>
