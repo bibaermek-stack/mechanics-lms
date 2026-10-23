@@ -63,10 +63,24 @@ duration shown on lesson cards follows automatically (`lessonVideoSeconds`).
 
 ## Adding a voice-over
 
-The captions are written to be read aloud. Record each lesson to the same
-timings and drop the file in `tools/videos/narration/` as
-`lesson-NN.mp3` (or `.m4a`, `.wav`); the render tool muxes it into the MP4
-automatically.
+The captions are written to be read aloud, one caption per chapter. To voice a
+lesson:
+
+1. Make one audio clip per caption (the text is in `public/videos/lesson-NN.vtt`)
+   and save it as `tools/videos/narration/lesson-NN/cue-KK.mp3`, where `KK` is
+   the caption's number from 01. A text-to-speech service with a cloned or
+   library voice works; ElevenLabs `eleven_v3` speaks Kazakh.
+2. Run `npm run videos:narrate -- --lesson 4` (or `--lesson all`; add `--dry`
+   to only print the schedule).
+
+`narrate.mjs` puts each clip where its caption appears, speeds a long clip up
+by at most 1.25×, makes the next clip wait if one still overruns, levels the
+loudness, and adds the track to the existing MP4 **without touching the video
+stream** — it takes seconds and can be repeated with a different voice.
+
+Alternatively, drop a whole-lesson recording at
+`tools/videos/narration/lesson-NN.mp3` (or `.m4a`, `.wav`) and re-render: the
+render tool muxes it in.
 
 ## Replacing a film with your own
 
