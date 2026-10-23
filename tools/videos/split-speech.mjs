@@ -2,6 +2,7 @@
 // Cuts one recording of a whole lesson into one clip per caption.
 //
 //   node tools/videos/split-speech.mjs --lesson 4 --in lesson-04.mp3
+//   node tools/videos/split-speech.mjs --lesson 1,2 --in lessons-1-2.mp3   one recording of several lessons, in that order
 //
 // The recording is made from the text printed by `speech-script.mjs N --whole`,
 // which puts "[long pause]" between captions. A text-to-speech voice leaves
@@ -26,19 +27,19 @@ const opt = (name, fallback) => {
   return i >= 0 && args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : fallback;
 };
 const ffmpeg = process.env.FFMPEG || "ffmpeg";
-const lesson = String(opt("lesson", "")).padStart(2, "0");
+const lessons = String(opt("lesson", "")).split(",").map((n) => n.padStart(2, "0"));
 const input = resolve(opt("in", ""));
-const outDir = resolve(root, opt("out", join("tools/videos/narration", `lesson-${lesson}`)));
+const outRoot = resolve(root, opt("out", "tools/videos/narration"));
 const minGap = Number(opt("min-gap", "1.4")); // seconds; the pauses inside sentences are well below this
 
-if (!/^\d\d$/.test(lesson) || !opt("in", "")) {
-  console.error("usage: split-speech.mjs --lesson N --in whole-lesson.mp3 [--cues K] [--out DIR]");
+if (!lessons.every((l) => /^\d\d$/.test(l)) || !opt("in", "")) {
+  console.error("usage: split-speech.mjs --lesson N[,M…] --in recording.mp3 [--out DIR]");
   process.exit(2);
 }
 
-// How many captions there are, from the caption file.
-const vtt = readFileSync(join(root, "public", "videos", `lesson-${lesson}.vtt`), "utf8");
-const cueCount = Number(opt("cues", vtt.split(/\r?\n\r?\n/).filter((b) => b.includes("-->")).length));
+// How many captions each lesson has, from its caption file.
+const counts = lessons.map((l) => readFileSync(join(root, "public", "videos", `lesson-${l}.vtt`), "utf8").split(/\r?\n\r?\n/).filter((b) => b.includes("-->")).length);
+const cueCount = counts.reduce((a, b) => a + b, 0);
 
 const probe = spawnSync(ffmpeg, ["-hide_banner", "-i", input, "-af", `silencedetect=noise=-38dB:d=${minGap}`, "-f", "null", "-"], { encoding: "utf8" });
 const log = probe.stderr ?? "";
@@ -64,7 +65,6 @@ if (rest && rest.dur > chosen.reduce((m, g) => Math.min(m, g.dur), Infinity) * 0
   process.exit(1);
 }
 
-mkdirSync(outDir, { recursive: true });
 const cuts = [];
 let from = 0;
 for (const g of chosen) {
@@ -73,9 +73,13 @@ for (const g of chosen) {
 }
 cuts.push([from, total]);
 
+// The clips run through the lessons in order: the first counts[0] belong to the first lesson, and so on.
+const owner = counts.flatMap((n, li) => Array.from({ length: n }, (_, k) => ({ lesson: lessons[li], cue: k + 1 })));
 cuts.forEach(([a, b], i) => {
-  const file = join(outDir, `cue-${String(i + 1).padStart(2, "0")}.mp3`);
+  const dir = join(outRoot, `lesson-${owner[i].lesson}`);
+  mkdirSync(dir, { recursive: true });
+  const file = join(dir, `cue-${String(owner[i].cue).padStart(2, "0")}.mp3`);
   const r = spawnSync(ffmpeg, ["-y", "-loglevel", "error", "-i", input, "-ss", a.toFixed(3), "-to", b.toFixed(3), "-c:a", "libmp3lame", "-q:a", "2", file], { stdio: "inherit" });
   if (r.status !== 0) throw new Error(`ffmpeg failed for cue ${i + 1}`);
-  console.log(`cue-${String(i + 1).padStart(2, "0")}  ${a.toFixed(2)}–${b.toFixed(2)} s  (${(b - a).toFixed(1)} s)`);
+  console.log(`lesson ${owner[i].lesson} cue ${String(owner[i].cue).padStart(2, "0")}  ${a.toFixed(2)}–${b.toFixed(2)} s  (${(b - a).toFixed(1)} s)`);
 });
