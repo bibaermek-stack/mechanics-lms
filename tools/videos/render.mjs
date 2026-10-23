@@ -158,7 +158,7 @@ async function renderLesson(lesson) {
     await rm(dir, { recursive: true, force: true });
     await mkdir(dir, { recursive: true });
     const self = fileURLToPath(import.meta.url);
-    const base = [self, "--lesson", String(lesson), "--fps", String(fps), "--width", String(width), "--dpr", String(dpr)];
+    const base = [self, "--lesson", String(lesson), "--fps", String(fps), "--width", String(width), "--dpr", String(dpr), "--dist", opt("dist", "tools/videos/dist")];
     if (frameRange) base.push("--frames", frameRange);
     const t0 = Date.now();
     await Promise.all(
