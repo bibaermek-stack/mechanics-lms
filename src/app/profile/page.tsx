@@ -2,7 +2,8 @@
 
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
+import { AchievementShelf } from "@/components/engagement/Achievements";
+import { useEngagement } from "@/components/engagement/useEngagement";
 import { useAuthStore } from "@/lib/authStore";
 import { Mail, Users, Calendar, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -11,6 +12,7 @@ export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const router = useRouter();
+  const { state } = useEngagement();
 
   return (
     <DashboardShell>
@@ -33,14 +35,19 @@ export default function ProfilePage() {
           </p>
         </Card>
 
-        {user?.badges && (
+        {user?.role !== "teacher" && (
           <Card>
-            <p className="mb-2 font-semibold">Жетістіктер мен бейджтер</p>
-            <div className="flex flex-wrap gap-2">
-              {user.badges.map((b) => (
-                <Badge key={b} variant="default">{b}</Badge>
-              ))}
-            </div>
+            <p className="mb-1 font-semibold">Жетістіктер</p>
+            {state ? (
+              <>
+                <p className="mb-3 text-sm text-slate-600 dark:text-slate-400">
+                  {state.level.level}-деңгей · {state.level.name} · <span className="data-num">{state.level.xp}</span> XP
+                </p>
+                <AchievementShelf achievements={state.achievements} />
+              </>
+            ) : (
+              <p className="text-sm text-slate-500 dark:text-slate-400">Жүктелуде…</p>
+            )}
           </Card>
         )}
 

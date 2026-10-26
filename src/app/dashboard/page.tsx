@@ -5,11 +5,11 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { Badge } from "@/components/ui/Badge";
 import { StatCard } from "@/components/ui/StatCard";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { LessonCard } from "@/components/ui/LessonCard";
 import { ActionList } from "@/components/ui/ActionList";
+import { EngagementCard } from "@/components/engagement/EngagementCard";
 import { LoadingBlock } from "@/components/ui/Skeleton";
 import { LessonScoreChart } from "@/components/charts/LessonScoreChart";
 import { ALL_MODULES } from "@/data/modules";
@@ -75,6 +75,8 @@ export default function StudentDashboard() {
             <ArrowRight size={18} className="shrink-0" />
           </Link>
         )}
+
+        <EngagementCard />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -172,18 +174,6 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {user?.badges && user.badges.length > 0 && (
-          <Card>
-            <p className="mb-3 text-h3">Жетістіктерің</p>
-            <div className="flex flex-wrap gap-2">
-              {user.badges.map((b, i) => (
-                <Badge key={b} variant="default" marker={String(i + 1)}>
-                  {b}
-                </Badge>
-              ))}
-            </div>
-          </Card>
-        )}
       </div>
     </DashboardShell>
   );

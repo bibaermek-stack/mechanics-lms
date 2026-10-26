@@ -9,16 +9,16 @@
 // board below is the same GameRouter the lesson uses, so a score earned here is
 // a score earned there.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Crosshair, Gamepad2, Swords } from "lucide-react";
+import { ArrowUpRight, CalendarCheck, Crosshair, Gamepad2, Swords } from "lucide-react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { GameRouter, GAME_LABELS, type GameMode } from "@/components/games/GameRouter";
+import { NewAchievements } from "@/components/engagement/Achievements";
+import { useEngagement } from "@/components/engagement/useEngagement";
 import { useLessons } from "@/components/providers/LessonsProvider";
-import { useAuthStore } from "@/lib/authStore";
-import { getGameResults } from "@/lib/dataStore";
-import type { GameResult } from "@/lib/types";
+import { isLessonGame } from "@/lib/engagement";
 
 const GAME_COUNT = Object.keys(GAME_LABELS).length;
 
@@ -35,10 +35,9 @@ function readLink(): { lesson?: number; game?: GameMode } {
 
 export default function GamesHubPage() {
   const { modules } = useLessons();
-  const user = useAuthStore((s) => s.user);
+  const { records, fresh, reload } = useEngagement();
   const [lessonId, setLessonId] = useState(2);
   const [initialMode, setInitialMode] = useState<GameMode | undefined>();
-  const [results, setResults] = useState<GameResult[]>([]);
   const boardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,23 +48,17 @@ export default function GamesHubPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const reload = useCallback(() => {
-    if (!user) return;
-    getGameResults(user.uid)
-      .then(setResults)
-      .catch(() => setResults([]));
-  }, [user]);
-  useEffect(reload, [reload]);
-
   const mod = modules.find((m) => m.id === lessonId) ?? modules[0];
 
+  // The daily challenge belongs to no lesson, so it is not one of the games tallied here.
   const tally = useMemo(() => {
+    const results = (records?.games ?? []).filter(isLessonGame);
     const plays = results.length;
     const kinds = new Set(results.map((r) => r.gameType)).size;
     const avg = plays ? Math.round(results.reduce((a, r) => a + r.score, 0) / plays) : 0;
     const best = plays ? Math.max(...results.map((r) => r.score)) : 0;
     return { plays, kinds, avg, best };
-  }, [results]);
+  }, [records]);
 
   function open(lesson: number, game: GameMode) {
     setLessonId(lesson);
@@ -84,6 +77,8 @@ export default function GamesHubPage() {
           description="Әр сабақтың өз ойындары бар: сөз табу, кроссворд, есеп-блиц, шын-өтірік, снаряд атысы және т.б. Ұпайың құзыреттілік бағасына қосылады."
         />
 
+        <NewAchievements fresh={fresh} />
+
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Ойын статистикасы">
           {[
             { label: "Ойналған ойын", value: tally.plays },
@@ -98,7 +93,7 @@ export default function GamesHubPage() {
           ))}
         </dl>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           <button
             onClick={() => open(2, "projectile")}
             className="surface-card flex flex-col items-start gap-2 text-left transition-colors hover:border-brand-400"
@@ -110,6 +105,18 @@ export default function GamesHubPage() {
               қашықтық қалай өзгереді?
             </span>
           </button>
+          <Link
+            href="/daily"
+            className="surface-card flex flex-col items-start gap-2 text-left transition-colors hover:border-brand-400"
+          >
+            <CalendarCheck className="text-brand-500" size={22} />
+            <span className="flex items-center gap-1 text-h3 text-slate-900 dark:text-white">
+              Күнделікті сынақ <ArrowUpRight size={14} />
+            </span>
+            <span className="text-body text-slate-600 dark:text-slate-400">
+              Күн сайын 5 жаңа сұрақ, әр сабақтан бір-бірден. Серия жина!
+            </span>
+          </Link>
           <Link
             href="/arena"
             className="surface-card flex flex-col items-start gap-2 text-left transition-colors hover:border-brand-400"

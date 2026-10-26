@@ -24,6 +24,7 @@ import {
   Settings,
   Calculator,
   Puzzle,
+  CalendarCheck,
 } from "lucide-react";
 
 const STUDENT_LINKS = [
@@ -31,6 +32,7 @@ const STUDENT_LINKS = [
   { href: "/diagnostic", label: "Диагностика", icon: ClipboardCheck },
   { href: "/modules", label: "Сабақтар", icon: BookOpen },
   { href: "/games", label: "Ойындар", icon: Puzzle },
+  { href: "/daily", label: "Күнделікті сынақ", icon: CalendarCheck },
   { href: "/labs", label: "Зертханалық жұмыстар", icon: FlaskConical },
   { href: "/problems", label: "Есеп шығару", icon: Calculator },
   { href: "/vr-lab", label: "VR/AR зертхана", icon: Headset },

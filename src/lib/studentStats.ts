@@ -19,9 +19,10 @@ import {
 } from "./dataStore";
 import { RUBRIC_CRITERIA, computePartialGrade, rubricLevelToPercent } from "./competency";
 import type { FinalGradeBreakdown, FinalGradeResult } from "./types";
+import { PASS_PERCENT, isLessonGame } from "./engagement";
 
 /** A lesson counts as done once its best quiz reaches this. */
-const PASS = 60;
+const PASS = PASS_PERCENT;
 
 export interface StudentStats {
   /** Best quiz % per lesson, module order. null = never attempted. */
@@ -104,7 +105,8 @@ export async function loadStudentStats(userId: string): Promise<StudentStats> {
       : null;
 
   const quizAverage = mean(scored);
-  const gameAverage = mean(games.map((g) => g.score));
+  // The daily challenge is practice, not coursework: it never feeds the final grade.
+  const gameAverage = mean(games.filter(isLessonGame).map((g) => g.score));
   const assignmentAverage = mean(gradedSubmissions.map((s) => s.grade!));
 
   // Only the components with a real source are offered to the grader. The rest
