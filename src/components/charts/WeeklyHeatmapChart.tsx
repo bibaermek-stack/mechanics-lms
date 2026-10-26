@@ -5,17 +5,6 @@ import { useState } from "react";
 const DAYS = ["Дүйсенбі", "Сейсенбі", "Сәрсенбі", "Бейсенбі", "Жұма", "Сенбі", "Жексенбі"];
 const HOURS = ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"];
 
-// Generate mock heat data (0 to 100 intensity)
-const HEAT_DATA: number[][] = [
-  [15, 35, 75, 90, 85, 60, 40, 20], // Mon
-  [20, 45, 80, 95, 90, 70, 50, 25], // Tue
-  [10, 30, 65, 85, 80, 65, 45, 15], // Wed
-  [25, 50, 85, 100, 95, 75, 55, 30], // Thu
-  [30, 60, 90, 80, 70, 50, 35, 10], // Fri
-  [5, 15, 40, 60, 55, 45, 30, 5],   // Sat
-  [0, 10, 25, 40, 50, 40, 25, 5],   // Sun
-];
-
 function getHeatColor(val: number): string {
   if (val === 0) return "bg-slate-100 dark:bg-slate-800/40 text-transparent";
   if (val < 25) return "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300";
@@ -24,7 +13,12 @@ function getHeatColor(val: number): string {
   return "bg-brand-600 text-white font-bold shadow-sm";
 }
 
-export function WeeklyHeatmapChart() {
+/**
+ * When the cohort works: weekday (Monday first) × two-hour slot from 08:00.
+ * `data[day][slot]` is 0–100, relative to the busiest slot, so the colours show
+ * the shape of the week and not an absolute count.
+ */
+export function WeeklyHeatmapChart({ data }: { data: number[][] }) {
   const [hoverInfo, setHoverInfo] = useState<{ day: string; hour: string; val: number } | null>(null);
 
   return (
@@ -47,7 +41,7 @@ export function WeeklyHeatmapChart() {
                   {day}
                 </div>
                 {HOURS.map((hour, hIdx) => {
-                  const val = HEAT_DATA[dIdx][hIdx];
+                  const val = data[dIdx]?.[hIdx] ?? 0;
                   return (
                     <div
                       key={hour}
@@ -70,7 +64,7 @@ export function WeeklyHeatmapChart() {
       {/* Legend & Hover Info */}
       <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-white/10 text-micro">
         <div className="flex items-center gap-2">
-          <span className="text-slate-500 dark:text-slate-400">Белсенділік деңгейі:</span>
+          <span className="text-slate-500 dark:text-slate-400">Белсенділік (ең белсенді ұяшық = 100%):</span>
           <span className="inline-block h-3 w-3 rounded bg-blue-100 dark:bg-blue-950/60" /> Low
           <span className="inline-block h-3 w-3 rounded bg-indigo-500" /> Mid
           <span className="inline-block h-3 w-3 rounded bg-brand-600" /> Peak

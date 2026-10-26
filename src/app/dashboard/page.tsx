@@ -18,6 +18,7 @@ import { useLessons } from "@/components/providers/LessonsProvider";
 import { useAuthStore } from "@/lib/authStore";
 import { buildStudentPlan, studentLessonScores } from "@/lib/studentPlan";
 import { loadStudentStats, type StudentStats } from "@/lib/studentStats";
+import { getDiagnosticAttempts } from "@/lib/dataStore";
 import type { ActionItem } from "@/lib/types";
 import { ArrowRight } from "lucide-react";
 
@@ -28,9 +29,14 @@ export default function StudentDashboard() {
   const [scores, setScores] = useState<(number | null)[] | null>(null);
   const [plan, setPlan] = useState<ActionItem[] | null>(null);
   const [stats, setStats] = useState<StudentStats | null>(null);
+  // `null` until known, so the banner does not flash up for someone who has already sat it.
+  const [needsPreTest, setNeedsPreTest] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) return;
+    getDiagnosticAttempts(user.uid)
+      .then((a) => setNeedsPreTest(!a.some((x) => x.phase === "pre")))
+      .catch(() => setNeedsPreTest(null));
     studentLessonScores(user.uid).then((s) => {
       setScores(s);
       setCompletedModuleIds(
@@ -56,6 +62,19 @@ export default function StudentDashboard() {
             </Link>
           }
         />
+
+        {needsPreTest && (
+          <Link
+            href="/diagnostic"
+            className="flex items-center justify-between gap-3 rounded-2xl border border-brand-400/40 bg-brand-500/10 px-4 py-3 text-body text-slate-800 transition-colors hover:bg-brand-500/15 dark:text-slate-100"
+          >
+            <span>
+              <strong>Бастапқы диагностиканы тапсырыңыз</strong> — курстың басындағы деңгейіңізді өлшейтін 20 сұрақ.
+              Оқуды бастамас бұрын тапсырған жөн.
+            </span>
+            <ArrowRight size={18} className="shrink-0" />
+          </Link>
+        )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard

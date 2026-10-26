@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { Environment, Html, OrbitControls } from "@react-three/drei";
-import { COHORT, LESSON_SHORT, type StudentRow } from "@/data/cohort";
+import { LESSON_SHORT, type StudentRow } from "@/data/cohort";
 import { Layers, BarChart3 } from "lucide-react";
 
 const CELL = 0.42; // spacing between bars
@@ -130,7 +130,7 @@ function TerrainMesh({ rows }: { rows: StudentRow[] }) {
   );
 }
 
-export function ScoreMatrix3D({ rows = COHORT }: { rows?: StudentRow[] }) {
+export function ScoreMatrix3D({ rows }: { rows: StudentRow[] }) {
   const [hover, setHover] = useState<{ student: string; lesson: number; score: number } | null>(null);
   const [viewMode, setViewMode] = useState<"bars" | "terrain">("bars");
 

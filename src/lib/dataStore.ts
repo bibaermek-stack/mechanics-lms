@@ -20,6 +20,7 @@ import type {
   GameResult,
   AssignmentSubmission,
   CompetencyAssessment,
+  DiagnosticAttempt,
   Certificate,
   LeaderboardEntry,
   Notification,
@@ -323,6 +324,72 @@ export async function getCompetencyAssessments(userId: string): Promise<Competen
   return lsGet<CompetencyAssessment[]>("competencyAssessments", []).filter(
     (c) => c.userId === userId
   );
+}
+
+// ---------------------------------------------------------------------------
+// Diagnostic (pre/post) attempts
+//
+// One sitting per student per phase, append-only — see migration 0011 for why.
+// The localStorage branch enforces the same two rules the database does, so the
+// demo cannot do something the real thing refuses.
+// ---------------------------------------------------------------------------
+export const DIAGNOSTIC_TAKEN_MESSAGE = "Бұл диагностика бұрын тапсырылған — қайта тапсыруға болмайды.";
+export const DIAGNOSTIC_NEEDS_PRE_MESSAGE =
+  "Қорытынды диагностика бастапқы диагностикадан кейін ғана тапсырылады.";
+
+function rowToDiagnostic(r: any): DiagnosticAttempt {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    phase: r.phase,
+    score: r.score,
+    total: r.total,
+    answers: r.answers ?? [],
+    takenAt: r.taken_at,
+  };
+}
+
+export async function saveDiagnosticAttempt(attempt: DiagnosticAttempt): Promise<void> {
+  if (live()) {
+    const { error } = await supabase!.from("diagnostic_attempts").insert({
+      user_id: attempt.userId,
+      phase: attempt.phase,
+      score: attempt.score,
+      total: attempt.total,
+      answers: attempt.answers,
+    });
+    if (error) {
+      const m = error.message.toLowerCase();
+      if (m.includes("duplicate key")) throw new Error(DIAGNOSTIC_TAKEN_MESSAGE);
+      if (m.includes("row-level security")) throw new Error(DIAGNOSTIC_NEEDS_PRE_MESSAGE);
+      throw new Error(error.message);
+    }
+    return;
+  }
+  const list = lsGet<DiagnosticAttempt[]>("diagnosticAttempts", []);
+  const mine = list.filter((a) => a.userId === attempt.userId);
+  if (mine.some((a) => a.phase === attempt.phase)) throw new Error(DIAGNOSTIC_TAKEN_MESSAGE);
+  if (attempt.phase === "post" && !mine.some((a) => a.phase === "pre")) {
+    throw new Error(DIAGNOSTIC_NEEDS_PRE_MESSAGE);
+  }
+  list.unshift(attempt);
+  lsSet("diagnosticAttempts", list);
+}
+
+/**
+ * With no `userId`: everything the caller may see — their own sittings as a
+ * student, every accepted student's as a teacher (the RLS policy decides).
+ */
+export async function getDiagnosticAttempts(userId?: string): Promise<DiagnosticAttempt[]> {
+  if (live()) {
+    let q = supabase!.from("diagnostic_attempts").select("*").order("taken_at", { ascending: false });
+    if (userId) q = q.eq("user_id", userId);
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(rowToDiagnostic);
+  }
+  const list = lsGet<DiagnosticAttempt[]>("diagnosticAttempts", []);
+  return userId ? list.filter((a) => a.userId === userId) : list;
 }
 
 // ---------------------------------------------------------------------------

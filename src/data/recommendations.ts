@@ -79,17 +79,20 @@ export function buildActions(rows: StudentRow[] = COHORT): ActionItem[] {
     });
   }
 
-  // 4. Students who have simply stopped showing up.
-  const stale = rows.filter((r) => r.daysSinceActive >= STALE_DAYS);
+  // 4. Students who have simply stopped showing up — or never started.
+  const stale = rows.filter((r) => r.daysSinceActive === null || r.daysSinceActive >= STALE_DAYS);
   if (stale.length > 0) {
+    const days = stale.map((r) => r.daysSinceActive).filter((d): d is number => d !== null);
+    const never = stale.length - days.length;
+    const parts: string[] = [];
+    if (days.length) parts.push(`Соңғы кіру: ${Math.min(...days)}–${Math.max(...days)} күн бұрын.`);
+    if (never) parts.push(`${never} студент әлі бірде-бір әрекет жасаған жоқ.`);
     items.push({
       id: "inactive",
       severity: "warning",
       kind: "Белсенділік",
       title: `${stale.length} студент бір аптадан бері кірмеген`,
-      evidence: `Соңғы кіру: ${Math.min(...stale.map((r) => r.daysSinceActive))}–${Math.max(
-        ...stale.map((r) => r.daysSinceActive)
-      )} күн бұрын.`,
+      evidence: parts.join(" "),
       action: "Хабарландыру жібер, себебін анықта.",
       href: "/teacher/students",
       names: stale.map((r) => r.fullName),
@@ -97,7 +100,9 @@ export function buildActions(rows: StudentRow[] = COHORT): ActionItem[] {
   }
 
   // 5. The lab is the platform's main differentiator; unused, it is wasted.
-  const noSim = rows.filter((r) => !r.openedSimulation);
+  //    Only students *known* not to have opened it: live data does not record
+  //    that, and "unknown" is not "no".
+  const noSim = rows.filter((r) => r.openedSimulation === false);
   if (noSim.length > 0) {
     items.push({
       id: "no-simulation",
@@ -111,7 +116,28 @@ export function buildActions(rows: StudentRow[] = COHORT): ActionItem[] {
     });
   }
 
-  // 6. Where the cohort stops in the course — the drop-off point.
+  // 6. The pre-test is only a baseline if it is taken before the course. A
+  //    student who has already worked through lessons without one cannot be
+  //    compared with themselves later, so this is worth chasing early.
+  const noPre = rows.filter((r) => r.pre === null || r.pre === undefined);
+  if (noPre.length > 0) {
+    const started = noPre.filter((r) => r.scores.some((s) => s !== null)).length;
+    items.push({
+      id: "no-pre-test",
+      severity: started > 0 ? "warning" : "info",
+      kind: "Диагностика",
+      title: `${noPre.length} студент бастапқы диагностиканы тапсырмаған`,
+      evidence:
+        started > 0
+          ? `${started} студент сабақты бастап қойған — олардың «бастапқы» нәтижесі енді таза болмайды.`
+          : "Бастапқы нәтиже оқуды бастамас бұрын алынғанда ғана салыстыруға жарайды.",
+      action: "Студенттерге «Диагностика» бөлімін тапсыруды ескерт.",
+      href: "/teacher/analytics",
+      names: noPre.map((r) => r.fullName),
+    });
+  }
+
+  // 7. Where the cohort stops in the course — the drop-off point.
   const dropIndex = completion.findIndex((c, i) => i > 0 && c < completion[0] * 0.5);
   if (dropIndex > 0) {
     items.push({

@@ -19,6 +19,7 @@ import {
   UserPlus,
   Users,
   ClipboardList,
+  ClipboardCheck,
   Video,
   Settings,
   Calculator,
@@ -26,6 +27,7 @@ import {
 
 const STUDENT_LINKS = [
   { href: "/dashboard", label: "Басты бет", icon: LayoutDashboard },
+  { href: "/diagnostic", label: "Диагностика", icon: ClipboardCheck },
   { href: "/modules", label: "Сабақтар", icon: BookOpen },
   { href: "/labs", label: "Зертханалық жұмыстар", icon: FlaskConical },
   { href: "/problems", label: "Есеп шығару", icon: Calculator },

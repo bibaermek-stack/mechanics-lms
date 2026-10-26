@@ -200,6 +200,20 @@ export interface CompetencyAssessment {
   assessorType: "self" | "ai" | "teacher";
 }
 
+/** `pre` is taken before the course, `post` after it — the same instrument both times. */
+export type DiagnosticPhase = "pre" | "post";
+
+/** One sitting of the diagnostic test. A student has at most one per phase. */
+export interface DiagnosticAttempt {
+  id: string;
+  userId: string;
+  phase: DiagnosticPhase;
+  score: number; // correct answers
+  total: number;
+  answers: { questionId: string; chosenIndex: number; correct: boolean }[];
+  takenAt: string;
+}
+
 export interface FinalGradeBreakdown {
   video: number; // %
   quiz: number;
