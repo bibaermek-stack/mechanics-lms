@@ -39,7 +39,7 @@ One ownership rule, applied to every learning table:
 | Table | Holds | Notes | Migration |
 |---|---|---|---|
 | `quiz_attempts` | `module_id`, `score`, `total`, `answers` (jsonb), `taken_at` | Retakes allowed; the platform counts the **best** per lesson. | 0008 |
-| `game_results` | `module_id`, `game_type`, `score` 0–100, `completed_at` | | 0008 |
+| `game_results` | `module_id`, `game_type`, `score` 0–100, `completed_at` | `game_type` is free text (the game's mode name, e.g. `blitz`, `projectile`). The daily challenge is stored here as `game_type = 'daily'`, `module_id = 0` (it belongs to no lesson); streaks and achievements are derived from this table and its siblings, never stored | 0008 |
 | `assignment_submissions` | БӨЖ work: `type`, `content`, `status` (`pending` / `reviewed`), `grade`, `teacher_feedback`, `graded_by` | The one table two people write to. A trigger decides which *columns* each may change: the student owns the work, the teacher owns the mark. | 0008 |
 | `competency_assessments` | the 10-criterion rubric: `scores` (jsonb), `average_level`, `percent`, `assessor_type` (self / ai / teacher) | | 0008 |
 | `certificates` | `id`, `course_name`, `qr_data`, `verify_url` | `verify_certificate(id)` is public so a printed QR code resolves for someone with no account. | 0008 |
