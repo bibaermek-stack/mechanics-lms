@@ -6,12 +6,18 @@ import { LoadingScreen } from "@/components/fx/LoadingScreen";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { ObjectStageProvider } from "@/components/three/ObjectStage";
 import { PageTransition } from "@/components/motion/PageTransition";
+import { PwaSupport } from "@/components/pwa/PwaSupport";
 
 export const metadata: Metadata = {
   title: "Механика AI LMS — Ақпараттық-коммуникативтік құзыреттілік платформасы",
   description:
     "Механиканы қашықтықтан оқыту жағдайында студенттердің ақпараттық-коммуникативтік құзыреттілігін қалыптастыруға арналған жасанды интеллект негізіндегі білім беру платформасы",
   manifest: "/manifest.json",
+  applicationName: "Механика AI",
+  // iOS ignores the manifest for most of this; without it "Add to Home Screen"
+  // opens the site in a Safari tab with browser chrome.
+  appleWebApp: { capable: true, title: "Механика AI", statusBarStyle: "black" },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -37,6 +43,7 @@ export default function RootLayout({
           <SceneBackground />
           <SmoothScroll />
           <LoadingScreen />
+          <PwaSupport />
           <ObjectStageProvider>
             <PageTransition>{children}</PageTransition>
           </ObjectStageProvider>

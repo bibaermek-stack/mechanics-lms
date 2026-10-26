@@ -1,14 +1,25 @@
 {
+  "id": "/",
   "name": "Механика AI LMS",
   "short_name": "Механика AI",
-  "description": "Механиканы қашықтықтан оқыту платформасы",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0b1120",
-  "theme_color": "#1f47e6",
+  "description": "Механиканы қашықтықтан оқыту платформасы: 3D зертханалар, AI тьютор, диагностика",
   "lang": "kk",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#05070f",
+  "theme_color": "#05070f",
+  "categories": ["education"],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Сабақтар", "url": "/modules", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Диагностика", "url": "/diagnostic", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "VR/AR зертхана", "url": "/vr-lab", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
   ]
 }
