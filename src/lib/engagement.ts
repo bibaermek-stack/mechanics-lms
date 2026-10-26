@@ -15,6 +15,7 @@ import type {
   DiagnosticAttempt,
   GameResult,
   PredictionAttempt,
+  SensorResult,
   QuizAttempt,
 } from "./types";
 import { firstAttempts } from "./misconceptions";
@@ -114,6 +115,8 @@ export interface EngagementRecords {
   diagnostics: DiagnosticAttempt[];
   /** Left out by callers that predate predictions. */
   predictions?: PredictionAttempt[];
+  /** Left out by callers that predate the phone laboratory. */
+  sensors?: SensorResult[];
 }
 
 /** Every day on which the student did *something* that left a record. */
@@ -125,6 +128,7 @@ export function activityDays(r: EngagementRecords): Set<string> {
     ...r.assessments.map((x) => x.assessedAt),
     ...r.diagnostics.map((x) => x.takenAt),
     ...(r.predictions ?? []).map((x) => x.createdAt),
+    ...(r.sensors ?? []).map((x) => x.createdAt),
   ];
   const days = new Set<string>();
   for (const s of stamps) {
@@ -335,6 +339,14 @@ const DEFS: Def[] = [
     icon: "Eye",
     target: 8,
     measure: (c) => firstAttempts(c.predictions ?? []).filter((p) => p.correct).length,
+  },
+  {
+    id: "phone-scientist",
+    title: "Телефон зерттеуші",
+    description: "Өз телефоныңмен үш түрлі өлшем жаса: g, секіру, маятник немесе лифт.",
+    icon: "Smartphone",
+    target: 3,
+    measure: (c) => new Set((c.sensors ?? []).map((x) => x.kind)).size,
   },
   {
     id: "streak-3",

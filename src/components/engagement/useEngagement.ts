@@ -8,6 +8,7 @@ import {
   getDiagnosticAttempts,
   getGameResults,
   getPredictions,
+  getSensorResults,
   getQuizAttempts,
 } from "@/lib/dataStore";
 import { computeEngagement, dayKey, type Achievement, type EngagementRecords, type EngagementState } from "@/lib/engagement";
@@ -49,14 +50,15 @@ export function useEngagement(): UseEngagement {
       getCompetencyAssessments(uid),
       getDiagnosticAttempts(uid),
       getPredictions(uid),
+      getSensorResults(uid),
     ])
-      .then(([quizzes, games, submissions, assessments, diagnostics, predictions]) => {
-        setRecords({ quizzes, games, submissions, assessments, diagnostics, predictions });
+      .then(([quizzes, games, submissions, assessments, diagnostics, predictions, sensors]) => {
+        setRecords({ quizzes, games, submissions, assessments, diagnostics, predictions, sensors });
         setToday(dayKey(new Date()));
       })
       .catch(() => {
         // Offline or a table missing: show an honest empty shelf, not a spinner forever.
-        setRecords({ quizzes: [], games: [], submissions: [], assessments: [], diagnostics: [], predictions: [] });
+        setRecords({ quizzes: [], games: [], submissions: [], assessments: [], diagnostics: [], predictions: [], sensors: [] });
         setToday(dayKey(new Date()));
       });
   }, [user]);

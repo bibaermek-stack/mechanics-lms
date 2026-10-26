@@ -237,6 +237,19 @@ export interface PredictionAttempt {
   createdAt: string;
 }
 
+export type SensorKind = "rest-g" | "jump" | "pendulum" | "elevator";
+
+/** A measurement made with the phone's own sensors (src/lib/sensors/analysis.ts). */
+export interface SensorResult {
+  id: string;
+  userId: string;
+  kind: SensorKind;
+  value: number;
+  unit: string;
+  details: Record<string, unknown>;
+  createdAt: string;
+}
+
 export interface FinalGradeBreakdown {
   video: number; // %
   quiz: number;

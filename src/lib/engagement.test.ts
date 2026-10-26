@@ -18,7 +18,7 @@ import {
   type Achievement,
   type EngagementRecords,
 } from "./engagement";
-import type { AssignmentSubmission, CompetencyAssessment, DiagnosticAttempt, GameResult, PredictionAttempt, QuizAttempt } from "./types";
+import type { AssignmentSubmission, CompetencyAssessment, DiagnosticAttempt, GameResult, PredictionAttempt, QuizAttempt, SensorKind, SensorResult } from "./types";
 
 // Timestamps are built from the *local* calendar and read back through it, so none
 // of this depends on the time zone the tests happen to run in.
@@ -300,6 +300,21 @@ describe("achievements", () => {
     const p: PredictionAttempt = { id: "p", userId: "u", itemId: "x", optionId: "y", correct: true, misconception: null, confidence: 1, createdAt: at("2026-10-26") };
     expect([...activityDays(rec({ predictions: [p] }))]).toEqual(["2026-10-26"]);
     expect(activityDays(rec({})).size).toBe(0);
+  });
+
+  it("phone scientist needs three different kinds of measurement, however many of one", () => {
+    const sens = (kind: SensorKind, day = "2026-10-26"): SensorResult =>
+      ({ id: kind + day, userId: "u", kind, value: 1, unit: "m", details: {}, createdAt: at(day) });
+    expect(ach(state(rec({})), "phone-scientist")).toMatchObject({ progress: 0, unlocked: false });
+    const many = Array.from({ length: 6 }, (_, i) => sens("jump", shiftDay("2026-10-01", i)));
+    expect(ach(state(rec({ sensors: many })), "phone-scientist")).toMatchObject({ progress: 1, unlocked: false });
+    expect(ach(state(rec({ sensors: [sens("jump"), sens("rest-g")] })), "phone-scientist").unlocked).toBe(false);
+    expect(ach(state(rec({ sensors: [sens("jump"), sens("rest-g"), sens("pendulum")] })), "phone-scientist").unlocked).toBe(true);
+  });
+
+  it("a phone measurement is a day of study", () => {
+    const m: SensorResult = { id: "s", userId: "u", kind: "rest-g", value: 9.8, unit: "m/s²", details: {}, createdAt: at("2026-10-25") };
+    expect([...activityDays(rec({ sensors: [m] }))]).toEqual(["2026-10-25"]);
   });
 
   it("25 games is 25: 24 does not do", () => {

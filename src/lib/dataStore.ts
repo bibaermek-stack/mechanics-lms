@@ -22,6 +22,7 @@ import type {
   CompetencyAssessment,
   DiagnosticAttempt,
   PredictionAttempt,
+  SensorResult,
   Certificate,
   LeaderboardEntry,
   Notification,
@@ -447,6 +448,57 @@ export async function getPredictions(userId?: string): Promise<PredictionAttempt
     return out;
   }
   const list = lsGet<PredictionAttempt[]>("predictions", []);
+  return userId ? list.filter((a) => a.userId === userId) : list;
+}
+
+// ---------------------------------------------------------------------------
+// Phone-sensor measurements
+// ---------------------------------------------------------------------------
+function rowToSensor(r: any): SensorResult {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    kind: r.kind,
+    value: Number(r.value),
+    unit: r.unit,
+    details: r.details ?? {},
+    createdAt: r.created_at,
+  };
+}
+
+export async function saveSensorResult(r: SensorResult): Promise<void> {
+  if (live()) {
+    const { error } = await supabase!.from("sensor_results").insert({
+      user_id: r.userId,
+      kind: r.kind,
+      value: r.value,
+      unit: r.unit,
+      details: r.details,
+    });
+    if (error) throw new Error(error.message);
+    return;
+  }
+  const list = lsGet<SensorResult[]>("sensorResults", []);
+  list.unshift(r);
+  lsSet("sensorResults", list);
+}
+
+/** With no `userId`: everything the caller may see (a teacher: their accepted students'). */
+export async function getSensorResults(userId?: string): Promise<SensorResult[]> {
+  if (live()) {
+    const out: SensorResult[] = [];
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      let q = supabase!.from("sensor_results").select("*").order("created_at", { ascending: false }).order("id");
+      if (userId) q = q.eq("user_id", userId);
+      const { data, error } = await q.range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      out.push(...(data ?? []).map(rowToSensor));
+      if (!data || data.length < PAGE) break;
+    }
+    return out;
+  }
+  const list = lsGet<SensorResult[]>("sensorResults", []);
   return userId ? list.filter((a) => a.userId === userId) : list;
 }
 

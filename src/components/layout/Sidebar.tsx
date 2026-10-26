@@ -29,6 +29,7 @@ import {
   Sparkles,
   Eye,
   Lightbulb,
+  Smartphone,
 } from "lucide-react";
 
 const STUDENT_LINKS = [
@@ -39,6 +40,7 @@ const STUDENT_LINKS = [
   { href: "/games", label: "Ойындар", icon: Puzzle },
   { href: "/daily", label: "Күнделікті сынақ", icon: CalendarCheck },
   { href: "/myths", label: "Миф па, шындық па?", icon: Sparkles },
+  { href: "/sensors", label: "Телефон зертханасы", icon: Smartphone },
   { href: "/labs", label: "Зертханалық жұмыстар", icon: FlaskConical },
   { href: "/problems", label: "Есеп шығару", icon: Calculator },
   { href: "/vr-lab", label: "VR/AR зертхана", icon: Headset },
