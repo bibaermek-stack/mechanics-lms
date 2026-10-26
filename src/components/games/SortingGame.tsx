@@ -94,7 +94,7 @@ export function SortingGame({
       </div>
 
       {/* Category buckets */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {board.categories.map((cat) => {
           const mine = board.items.filter((i) => placed[i.term] === cat);
           return (

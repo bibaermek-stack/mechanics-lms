@@ -57,7 +57,7 @@ export default function StudentDashboard() {
           }
         />
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Аяқталған сабақтар"
             value={`${completedModuleIds.length}/${ALL_MODULES.length}`}
@@ -139,7 +139,7 @@ export default function StudentDashboard() {
 
         <div>
           <SectionHeader title="Оқу сабақтары" />
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {modules.map((m) => (
               <LessonCard
                 key={m.id}

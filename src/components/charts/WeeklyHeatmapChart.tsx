@@ -81,7 +81,10 @@ export function WeeklyHeatmapChart() {
               {hoverInfo.day}, {hoverInfo.hour} · Белсенділік: <span className="font-bold text-brand-600 dark:text-brand-400">{hoverInfo.val}%</span>
             </span>
           ) : (
-            <span>Ұяшықты меңзеп уақыт жүктемесін қараңыз</span>
+            <span>
+              <span className="[@media(pointer:coarse)]:hidden">Ұяшықты меңзеп уақыт жүктемесін қараңыз</span>
+              <span className="hidden [@media(pointer:coarse)]:inline">Ұяшықты түртіп уақыт жүктемесін қараңыз</span>
+            </span>
           )}
         </div>
       </div>

@@ -45,11 +45,11 @@ export function SiteNav() {
           solid ? "glass glass-lit" : "border border-transparent"
         }`}
       >
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="relative flex h-9 w-9 items-center justify-center rounded-xl2 bg-aurora-brand font-bold text-white shadow-glow-brand">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl2 bg-aurora-brand font-bold text-white shadow-glow-brand">
             М
           </span>
-          <span className="text-h3 text-slate-900 dark:text-white">Механика AI</span>
+          <span className="truncate text-h3 text-slate-900 dark:text-white">Механика AI</span>
         </Link>
 
         <div className="hidden items-center gap-1 md:flex">
@@ -64,7 +64,7 @@ export function SiteNav() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <Link
             href="/login"
             className="hidden rounded-xl2 px-4 py-2 text-body font-semibold text-slate-600 transition-colors hover:text-slate-900 sm:inline-flex dark:text-slate-300 dark:hover:text-white"
@@ -72,8 +72,12 @@ export function SiteNav() {
             Кіру
           </Link>
           <Magnetic strength={0.25}>
-            <Link href="/dashboard" className="btn-primary px-4 py-2 text-sm">
-              Платформаға өту <ArrowRight size={15} />
+            {/* The full label plus the logo is wider than a 320 px phone and
+                pushed the whole page sideways; the short one fits. */}
+            <Link href="/dashboard" className="btn-primary whitespace-nowrap px-4 py-2 text-sm">
+              <span className="hidden min-[400px]:inline">Платформаға өту</span>
+              <span className="min-[400px]:hidden">Бастау</span>
+              <ArrowRight size={15} />
             </Link>
           </Magnetic>
         </div>

@@ -125,7 +125,7 @@ export function FormulaSolver({ formula, topic }: { formula: Formula; topic: str
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {needed.map((v) => (
           <label key={v.sym} className="block">
             <span className="text-micro text-slate-500 dark:text-slate-400">

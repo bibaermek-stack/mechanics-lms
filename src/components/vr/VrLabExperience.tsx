@@ -237,7 +237,7 @@ export function VrLabExperience({ experiment }: { experiment: VrExperiment }) {
           </>
         }
         data={
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
             <Panel title="Өлшеу нәтижелері">
               <Readout items={readoutItems} />
             </Panel>
@@ -305,7 +305,7 @@ function XrBanner({ support }: { support: ReturnType<typeof useXrSupport> }) {
   ];
 
   return (
-    <div className="grid gap-2 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
       {items.map((it) => {
         const Icon = it.icon;
         return (

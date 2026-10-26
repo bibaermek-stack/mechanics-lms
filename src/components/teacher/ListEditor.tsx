@@ -166,7 +166,7 @@ export function QuizEditor({
                   checked={q.correctIndex === oi}
                   onChange={() => set(i, { correctIndex: oi })}
                   aria-label={`${i + 1}-сұрақтың ${oi + 1}-нұсқасы дұрыс`}
-                  className="shrink-0 accent-brand-500"
+                  className="h-6 w-6 shrink-0 accent-brand-500"
                 />
                 <input
                   value={opt}

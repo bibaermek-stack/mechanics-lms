@@ -176,7 +176,7 @@ export default function ModuleDetailPage() {
             </Card>
             <Card>
               <p className="mb-3 flex items-center gap-2 text-h3"><Brain size={16} /> Блум таксономиясы бойынша нәтижелер</p>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {Object.entries({
                   "Есте сақтау": mod.bloom.remember,
                   "Түсіну": mod.bloom.understand,
@@ -220,7 +220,7 @@ export default function ModuleDetailPage() {
         )}
 
         {tab === "glossary" && (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {mod.glossary.map((g) => (
               <Card key={g.term}>
                 <p className="text-h3 text-brand-700 dark:text-brand-300">{g.term}</p>

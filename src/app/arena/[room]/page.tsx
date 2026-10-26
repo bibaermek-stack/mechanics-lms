@@ -143,7 +143,7 @@ export default function ArenaRoomPage({ params }: { params: { room: string } }) 
           <p className="mb-3 flex items-center gap-2 text-label uppercase text-slate-500 dark:text-slate-400">
             <Users size={13} /> Ойыншылар ({room.members.length})
           </p>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {([0, 1] as Team[]).map((t) => (
               <div key={t} className="rounded-xl border border-slate-200 p-3 dark:border-white/10">
                 <p className="mb-2 text-label font-semibold" style={{ color: TEAM_COLORS[t] }}>

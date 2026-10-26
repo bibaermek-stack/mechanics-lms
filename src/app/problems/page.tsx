@@ -87,7 +87,7 @@ export default function ProblemsPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
           {/* Reference ----------------------------------------------------- */}
           {/* self-start so a topic with two formulas does not leave a tall
               empty card beside the solver. */}

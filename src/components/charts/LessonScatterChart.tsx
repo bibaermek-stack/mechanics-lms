@@ -102,7 +102,7 @@ export function LessonScatterChart() {
       </div>
 
       {/* Detail info box */}
-      <div className="rounded-lg bg-white p-3 border border-slate-200 dark:border-white/10 dark:bg-slate-900 text-micro flex items-center justify-between">
+      <div className="rounded-lg bg-white p-3 border border-slate-200 dark:border-white/10 dark:bg-slate-900 text-micro flex flex-wrap items-center justify-between gap-2">
         {hovered ? (
           <div>
             <span className="font-bold text-slate-900 dark:text-white">
@@ -119,7 +119,7 @@ export function LessonScatterChart() {
             Сабақтың күрделілігі мен жұмсалған уақыт көрсеткішін көру үшін шарды басыңыз немесе нұсқаңыз
           </span>
         )}
-        <div className="flex items-center gap-3 text-[10px] text-slate-500">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500">
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500"/> Жоғары меңгерілу</span>
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500"/> Орташа</span>
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500"/> Қиын тақырып</span>

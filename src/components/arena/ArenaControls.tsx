@@ -98,7 +98,7 @@ export function ArenaControls({ keymap, bind, reset, active }: ArenaControlsProp
         </div>
       </div>
 
-      <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
+      <div className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
         {ACTIONS.map((action) => {
           const codes = keymap[action];
           const isListening = listening === action;

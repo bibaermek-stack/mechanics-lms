@@ -71,7 +71,7 @@ export function PascoShowcase() {
         </div>
       </Reveal>
 
-      <Stagger className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" gap={0.09}>
+      <Stagger className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" gap={0.09}>
         {DEVICES.map((d) => {
           const spec = PASCO[d.key];
           return (

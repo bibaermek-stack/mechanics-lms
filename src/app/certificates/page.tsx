@@ -68,7 +68,7 @@ export default function CertificatesPage() {
         </div>
 
         {/* Status Bar */}
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="surface-card flex items-center gap-3 p-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
               <ShieldCheck size={22} />
@@ -118,7 +118,7 @@ export default function CertificatesPage() {
             </button>
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {certs.map((c) => (
               <CertificateCard
                 key={c.id}

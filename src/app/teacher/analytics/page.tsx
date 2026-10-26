@@ -127,7 +127,7 @@ export default function TeacherAnalyticsPage() {
         </section>
 
         {/* Key Metrics Stats Grid */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Орташа курс прогресі"
             value={summary.avgProgress}
@@ -158,7 +158,7 @@ export default function TeacherAnalyticsPage() {
         </div>
 
         {/* 3D Visualizations Section ----------------------------------------- */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* 3D Score Matrix */}
           <Card>
             <SectionHeader
@@ -183,7 +183,7 @@ export default function TeacherAnalyticsPage() {
         </div>
 
         {/* Advanced 2D Charts Grid ------------------------------------------- */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Time Series Trend Line Chart */}
           <Card>
             <SectionHeader

@@ -43,11 +43,11 @@ export function TrendLineChart() {
   return (
     <div className="space-y-3">
       {/* Metric Selector Tabs */}
-      <div className="flex items-center justify-between">
-        <div className="flex gap-1.5 rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-white/10 dark:bg-white/5">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex flex-wrap gap-1.5 rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-white/10 dark:bg-white/5">
           <button
             onClick={() => setActiveMetric("score")}
-            className={`rounded-md px-3 py-1 text-micro font-medium transition-colors ${
+            className={`rounded-md px-3 py-1.5 text-micro font-medium transition-colors ${
               activeMetric === "score"
                 ? "bg-white text-brand-600 shadow-xs dark:bg-slate-800 dark:text-brand-400"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -57,7 +57,7 @@ export function TrendLineChart() {
           </button>
           <button
             onClick={() => setActiveMetric("progress")}
-            className={`rounded-md px-3 py-1 text-micro font-medium transition-colors ${
+            className={`rounded-md px-3 py-1.5 text-micro font-medium transition-colors ${
               activeMetric === "progress"
                 ? "bg-white text-brand-600 shadow-xs dark:bg-slate-800 dark:text-brand-400"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -67,7 +67,7 @@ export function TrendLineChart() {
           </button>
           <button
             onClick={() => setActiveMetric("activeHours")}
-            className={`rounded-md px-3 py-1 text-micro font-medium transition-colors ${
+            className={`rounded-md px-3 py-1.5 text-micro font-medium transition-colors ${
               activeMetric === "activeHours"
                 ? "bg-white text-brand-600 shadow-xs dark:bg-slate-800 dark:text-brand-400"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"

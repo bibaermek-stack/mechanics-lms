@@ -185,7 +185,7 @@ export default function TeacherLessonsPage() {
                   className="input-glow mt-1 w-full"
                 />
               </label>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="block text-micro uppercase tracking-wider text-slate-500">
                   Бейне сілтемесі (MP4 / WebM)
                   <input

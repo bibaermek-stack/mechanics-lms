@@ -20,7 +20,7 @@ export default function TeacherDashboard() {
           <p className="text-body text-slate-600 dark:text-slate-400">Студенттерді, сабақтарды және тапсырмаларды осында басқарыңыз.</p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STAT_CARDS.map((c) => (
             <Card key={c.label}>
               <c.icon className="mb-2 text-brand-500" />
@@ -30,7 +30,7 @@ export default function TeacherDashboard() {
           ))}
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Link href="/teacher/students" className="surface-card">
             <Users className="mb-2 text-brand-500" />
             <p className="font-semibold">Студенттерді басқару</p>

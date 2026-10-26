@@ -58,7 +58,7 @@ export function SiteFooter() {
         <ParticleField density={0.00004} />
 
         <div className="relative mx-auto max-w-6xl px-6 py-14">
-          <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_auto]">
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.4fr_1fr_1fr_auto]">
             <div>
               <div className="flex items-center gap-2.5">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl2 bg-aurora-brand font-bold text-white shadow-glow-brand">

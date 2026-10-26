@@ -81,7 +81,7 @@ export function QuizEngine({ moduleId }: { moduleId: number }) {
             <p className="mb-3 font-semibold">
               {idx + 1}. {q.question}
             </p>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {q.options.map((opt, i) => {
                 const selected = chosen === i;
                 let stateClasses = "border-slate-200 dark:border-white/10 hover:border-brand-300";
