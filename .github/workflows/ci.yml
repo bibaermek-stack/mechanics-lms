@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch makes the older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  checks:
+    name: Typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Physics, statistics, the formula bank, the cohort builder, CSV.
+      - name: Unit tests
+        run: npm test
+
+      # Builds in demo mode: no Supabase keys, which the build only warns about.
+      - name: Build
+        run: npm run build
+
+      - name: Upload the build for the smoke test
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: .next
+          include-hidden-files: true
+          retention-days: 1
+
+  mobile-smoke:
+    name: Mobile smoke test
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next
+
+      - name: Install Chromium
+        run: npx playwright-core install --with-deps chromium
+
+      - name: Serve the production build
+        run: |
+          npx next start -p 3000 &
+          for i in $(seq 1 60); do
+            curl -fs http://localhost:3000/offline.html >/dev/null && exit 0
+            sleep 1
+          done
+          echo "server did not come up" >&2
+          exit 1
+
+      # Every page at 320 and 375 px: no sideways scroll, no uncaught errors.
+      - name: Mobile smoke test
+        run: npm run smoke:mobile
