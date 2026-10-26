@@ -11,7 +11,7 @@ import { useCallback, useMemo, useState } from "react";
 import clsx from "clsx";
 import { Calculator, Loader2, Sparkles } from "lucide-react";
 import { askAi } from "@/lib/aiClient";
-import { G, type Formula } from "@/data/formulas";
+import { G, displaySymbol, type Formula } from "@/data/formulas";
 
 /** Physical constants worth pre-filling, so g is not typed on every problem. */
 const PREFILL: Record<string, number> = { g: G };
@@ -61,7 +61,7 @@ export function FormulaSolver({ formula, topic }: { formula: Formula; topic: str
   const targetVar = formula.vars.find((v) => v.sym === target)!;
 
   const given = needed
-    .map((v) => `${v.sym} = ${known[v.sym] !== undefined ? show(known[v.sym]) : "?"}${v.unit ? " " + v.unit : ""}`)
+    .map((v) => `${displaySymbol(v.sym)} = ${known[v.sym] !== undefined ? show(known[v.sym]) : "?"}${v.unit ? " " + v.unit : ""}`)
     .join(", ");
 
   const ask = useCallback(
@@ -118,7 +118,7 @@ export function FormulaSolver({ formula, topic }: { formula: Formula; topic: str
                       : "cursor-not-allowed bg-slate-50 text-slate-300 dark:bg-white/[0.02] dark:text-slate-600"
                 )}
               >
-                {v.sym} — {v.name}
+                {displaySymbol(v.sym)} — {v.name}
               </button>
             );
           })}
@@ -129,7 +129,7 @@ export function FormulaSolver({ formula, topic }: { formula: Formula; topic: str
         {needed.map((v) => (
           <label key={v.sym} className="block">
             <span className="text-micro text-slate-500 dark:text-slate-400">
-              {v.name} ({v.sym}){v.unit && `, ${v.unit}`}
+              {v.name} ({displaySymbol(v.sym)}){v.unit && `, ${v.unit}`}
             </span>
             <input
               inputMode="decimal"

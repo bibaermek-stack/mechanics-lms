@@ -13,7 +13,7 @@
 //     that is right for the numbers in (1) by luck.
 
 import { describe, expect, it } from "vitest";
-import { FORMULAS, formulasForModule, modulesWithFormulas, type Formula } from "./formulas";
+import { FORMULAS, displaySymbol, formulasForModule, modulesWithFormulas, type Formula } from "./formulas";
 
 /** One consistent set of values per formula: every variable satisfies the equation. */
 const sin30 = 0.5;
@@ -104,6 +104,22 @@ describe("the formula bank is well formed", () => {
     // F = m·a is filed under both lessons, as its comment says.
     expect(formulasForModule(3).map((f) => f.id)).toContain("newton-second");
     expect(formulasForModule(4).map((f) => f.id)).toContain("newton-second");
+  });
+});
+
+describe("variable symbols", () => {
+  it("every variable is written on the screen the way the formula writes it", () => {
+    for (const f of FORMULAS) {
+      for (const v of f.vars) {
+        expect(f.expr, `${f.id}: "${displaySymbol(v.sym)}" is not in "${f.expr}"`).toContain(displaySymbol(v.sym));
+      }
+    }
+  });
+
+  it("leaves a symbol it has no special form for alone", () => {
+    expect(displaySymbol("m")).toBe("m");
+    expect(displaySymbol("eta")).toBe("η");
+    expect(displaySymbol("v0")).toBe("v₀");
   });
 });
 

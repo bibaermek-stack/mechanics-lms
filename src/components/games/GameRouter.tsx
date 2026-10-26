@@ -1,11 +1,12 @@
 "use client";
 
-// Ten games over one lesson.
+// The games over one lesson.
 //
-// Five are driven by the lesson's authored `game.pairs` and quiz; five are
-// derived from its glossary by src/data/gameContent.ts. Everything the derived
-// half needs is a pure function of (module, seed), which is what lets a duel
-// hand a friend the identical board — see the `seed` prop.
+// Some are driven by the lesson's authored `game.pairs` and quiz; the rest are
+// derived from its glossary, quiz bank, film chapters and formulas by
+// src/data/gameContent.ts and src/data/moreGames.ts. Everything the derived half
+// needs is a pure function of (module, seed), which is what lets a duel hand a
+// friend the identical board — see the `seed` prop.
 //
 // A mode is only offered when its board could actually be built. Showing a
 // tenth tab that opens an empty grid would be worse than showing nine.
@@ -23,6 +24,7 @@ import {
   buildSpeedQuiz,
   buildWordSearch,
 } from "@/data/gameContent";
+import { buildBlitz, buildOrder, buildTrueFalse } from "@/data/moreGames";
 import { MatchingGame } from "./MatchingGame";
 import { DragDropGame } from "./DragDropGame";
 import { MemoryGame } from "./MemoryGame";
@@ -33,6 +35,9 @@ import { WordSearchGame } from "./WordSearchGame";
 import { FillBlankGame } from "./FillBlankGame";
 import { SortingGame } from "./SortingGame";
 import { SpeedQuizGame } from "./SpeedQuizGame";
+import { TrueFalseGame } from "./TrueFalseGame";
+import { OrderGame } from "./OrderGame";
+import { BlitzGame } from "./BlitzGame";
 import { ARENA_LESSONS, ArenaGame } from "@/components/arena/ArenaGame";
 
 export type GameMode =
@@ -46,6 +51,9 @@ export type GameMode =
   | "fillblank"
   | "sorting"
   | "speedquiz"
+  | "truefalse"
+  | "order"
+  | "blitz"
   | "arena";
 
 export const GAME_LABELS: Record<GameMode, string> = {
@@ -59,6 +67,9 @@ export const GAME_LABELS: Record<GameMode, string> = {
   fillblank: "Бос орынды толтыр",
   sorting: "Сұрыптау",
   speedquiz: "Жылдам жауап",
+  truefalse: "Шын ба, өтірік пе?",
+  order: "Ретке келтір",
+  blitz: "Есеп-блиц",
   arena: "Арена — физикалық футбол",
 };
 
@@ -74,6 +85,9 @@ const GAME_HINTS: Record<GameMode, string> = {
   fillblank: "Анықтамадағы жетіспейтін терминді таңда.",
   sorting: "Әр терминді өз санатына орналастыр.",
   speedquiz: "Уақыт біткенше жауап бер — жылдамдық та ұпай әкеледі.",
+  truefalse: "Сұраққа берілген жауап дұрыс па? Шешім қабылдауға 12 секунд.",
+  order: "Бейнедәрістің оқиғаларын айтылу ретімен орналастыр.",
+  blitz: "Формула бойынша есепті жылдам шығар: 8 есеп, әрқайсысына 40 секунд.",
   arena: "Боттарға қарсы ойна: әр соқтығыстың импульсі мен энергиясы экранда есептеледі.",
 };
 
@@ -106,6 +120,9 @@ export function GameRouter({
       fillblank: buildBlanks(mod, boardSeed),
       sorting: buildSorting(mod, boardSeed),
       speedquiz: buildSpeedQuiz(mod, boardSeed),
+      truefalse: buildTrueFalse(mod, boardSeed),
+      order: buildOrder(mod, boardSeed),
+      blitz: buildBlitz(mod, boardSeed),
     }),
     [mod, boardSeed]
   );
@@ -120,6 +137,9 @@ export function GameRouter({
     if (boards.fillblank) list.push("fillblank");
     if (boards.sorting) list.push("sorting");
     if (boards.speedquiz) list.push("speedquiz");
+    if (boards.truefalse) list.push("truefalse");
+    if (boards.order) list.push("order");
+    if (boards.blitz) list.push("blitz");
     // Only where the collisions are the lesson — see ARENA_LESSONS.
     if (ARENA_LESSONS.includes(mod.id)) list.push("arena");
     return only ? list.filter((m) => m === only) : list;
@@ -201,6 +221,15 @@ export function GameRouter({
       )}
       {mode === "speedquiz" && boards.speedquiz && (
         <SpeedQuizGame key={key} board={boards.speedquiz} onComplete={handleComplete} />
+      )}
+      {mode === "truefalse" && boards.truefalse && (
+        <TrueFalseGame key={key} board={boards.truefalse} onComplete={handleComplete} />
+      )}
+      {mode === "order" && boards.order && (
+        <OrderGame key={key} board={boards.order} onComplete={handleComplete} />
+      )}
+      {mode === "blitz" && boards.blitz && (
+        <BlitzGame key={key} board={boards.blitz} onComplete={handleComplete} />
       )}
       {mode === "arena" && <ArenaGame key={key} moduleId={mod.id} onComplete={handleComplete} />}
 

@@ -97,6 +97,12 @@ export type GameType =
   | "spinwheel"
   | "sorting"
   | "conceptmap"
+  | "speedquiz"
+  | "truefalse"
+  | "order"
+  | "blitz"
+  | "projectile"
+  | "daily"
   | "arena";
 
 export interface GamePair {

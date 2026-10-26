@@ -25,6 +25,9 @@ import type { PersonSummary } from "@/lib/types";
 /** Games that make a fair duel: same board, same rules, a score out of 100. */
 const DUEL_GAMES: GameMode[] = [
   "speedquiz",
+  "truefalse",
+  "blitz",
+  "order",
   "crossword",
   "wordsearch",
   "fillblank",

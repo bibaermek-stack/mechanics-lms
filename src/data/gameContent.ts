@@ -13,6 +13,7 @@
 import type { LessonModule, QuizQuestion } from "@/lib/types";
 import { seededPick, seededRandom, seededShuffle } from "@/lib/rng";
 import { lessonGlossary } from "./glossaryExtra";
+import { buildBlitz, buildOrder, buildTrueFalse } from "./moreGames";
 
 // ---------------------------------------------------------------------------
 // Term classification — the one thing the lesson data cannot imply
@@ -440,7 +441,10 @@ export type BuildableGame =
   | "wordsearch"
   | "fillblank"
   | "sorting"
-  | "speedquiz";
+  | "speedquiz"
+  | "truefalse"
+  | "order"
+  | "blitz";
 
 /**
  * Which of the derived games this lesson has enough material for. The router
@@ -453,5 +457,8 @@ export function availableDerivedGames(mod: LessonModule, seed: number): Buildabl
   if (buildBlanks(mod, seed)) out.push("fillblank");
   if (buildSorting(mod, seed)) out.push("sorting");
   if (buildSpeedQuiz(mod, seed)) out.push("speedquiz");
+  if (buildTrueFalse(mod, seed)) out.push("truefalse");
+  if (buildOrder(mod, seed)) out.push("order");
+  if (buildBlitz(mod, seed)) out.push("blitz");
   return out;
 }
