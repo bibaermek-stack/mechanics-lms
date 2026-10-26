@@ -2,8 +2,10 @@
 // Modules 1-2 are fully authored (thesis demo depth). Modules 3-10 use the
 // same schema with lighter-but-real content — an administrator/teacher can
 // extend them later from the Teacher Dashboard without touching code.
-import type { LessonModule } from "@/lib/types";
+import type { LessonModule, QuizQuestion } from "@/lib/types";
+import { seededShuffle } from "@/lib/rng";
 import { lessonVideoSeconds, lessonVideoSrc } from "./lessonVideos";
+import { EXTRA_QUIZ_SEEDS } from "./quizBank";
 
 export const MODULES: LessonModule[] = [
   // ==========================================================
@@ -465,10 +467,35 @@ function buildTemplateModule(seed: TemplateSeed): LessonModule {
   };
 }
 
+/**
+ * The lesson with the extra questions of src/data/quizBank.ts appended to the
+ * ones it was written with. They are numbered on from the last existing id, so
+ * an id never changes meaning if the bank is extended later.
+ */
+function withQuizBank(m: LessonModule): LessonModule {
+  const extra = EXTRA_QUIZ_SEEDS[m.id] ?? [];
+  if (extra.length === 0) return m;
+  return {
+    ...m,
+    quiz: [
+      ...m.quiz,
+      ...extra.map((qs, idx) => ({
+        id: `m${m.id}q${m.quiz.length + idx + 1}`,
+        question: qs.q,
+        options: [qs.correct, ...qs.wrong],
+        correctIndex: 0,
+        explanation: qs.explanation,
+      })),
+    ],
+  };
+}
+
 export const ALL_MODULES: LessonModule[] = [
   ...MODULES,
   ...TEMPLATE_SEEDS.map(buildTemplateModule),
-].sort((a, b) => a.id - b.id);
+]
+  .map(withQuizBank)
+  .sort((a, b) => a.id - b.id);
 
 export function getModuleById(id: number): LessonModule | undefined {
   return ALL_MODULES.find((m) => m.id === id);
@@ -488,18 +515,46 @@ export function shuffle<T>(arr: T[]): T[] {
   return copy;
 }
 
-// Also shuffles each question's option order (keeping correctIndex accurate).
+/** How many questions one sitting of a lesson quiz has. */
+export const QUIZ_LENGTH = 10;
+
+/** How many questions a quiz sitting made from `bank` will have. */
+export function quizLength(bank: readonly unknown[]): number {
+  return Math.min(QUIZ_LENGTH, bank.length);
+}
+
+/**
+ * One sitting of a quiz: `count` questions picked at random from the bank, each
+ * with its options in a new order (correctIndex kept accurate).
+ *
+ * A lesson now carries a bank of fifteen questions and a sitting is ten of them,
+ * so a retry is a different quiz and not the same questions reshuffled. A bank
+ * of ten or fewer — lessons a teacher has rewritten — is used whole.
+ *
+ * `rnd` is injectable so the draw can be tested; it defaults to Math.random.
+ */
+export function drawQuiz(
+  bank: readonly QuizQuestion[],
+  count: number = QUIZ_LENGTH,
+  rnd: () => number = Math.random
+): QuizQuestion[] {
+  return seededShuffle(bank, rnd)
+    .slice(0, count)
+    .map((q) => {
+      const shuffled = seededShuffle(
+        q.options.map((opt, i) => ({ opt, i })),
+        rnd
+      );
+      return {
+        ...q,
+        options: shuffled.map((o) => o.opt),
+        correctIndex: shuffled.findIndex((o) => o.i === q.correctIndex),
+      };
+    });
+}
+
+/** A sitting of the lesson as it ships. The quiz page draws from the (teacher-edited) lesson instead. */
 export function randomizeQuiz(moduleId: number) {
   const mod = getModuleById(moduleId);
-  if (!mod) return [];
-  return shuffle(mod.quiz).map((q) => {
-    const optionsWithIndex = q.options.map((opt, i) => ({ opt, i }));
-    const shuffled = shuffle(optionsWithIndex);
-    const newCorrectIndex = shuffled.findIndex((o) => o.i === q.correctIndex);
-    return {
-      ...q,
-      options: shuffled.map((o) => o.opt),
-      correctIndex: newCorrectIndex,
-    };
-  });
+  return mod ? drawQuiz(mod.quiz) : [];
 }

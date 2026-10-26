@@ -234,7 +234,7 @@ export default function ModuleDetailPage() {
 
         {tab === "simulation" && <LessonSimulations lessonId={mod.id} />}
 
-        {tab === "quiz" && <QuizEngine moduleId={mod.id} />}
+        {tab === "quiz" && <QuizEngine mod={mod} />}
 
         {tab === "game" && <GameRouter mod={mod} />}
 
