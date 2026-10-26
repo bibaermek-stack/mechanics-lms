@@ -283,6 +283,13 @@ describe("achievements", () => {
     expect(ach(only, "game-25").progress).toBe(0);
   });
 
+  it("coaster engineer is earned at 67 points of the coaster game, which counts as a lesson game", () => {
+    expect(ach(state(rec({ games: [game("coaster", 66)] })), "coaster-engineer")).toMatchObject({ progress: 66, unlocked: false });
+    expect(ach(state(rec({ games: [game("coaster", 40), game("coaster", 67)] })), "coaster-engineer").unlocked).toBe(true);
+    expect(ach(state(rec({ games: [game("blitz", 100)] })), "coaster-engineer").progress).toBe(0);
+    expect(ach(state(rec({ games: [game("coaster", 10)] })), "first-game").unlocked).toBe(true);
+  });
+
   it("predictor counts only FIRST predictions that were right, eight of them", () => {
     const pred = (item: string, correct: boolean, day: string, id = item + day): PredictionAttempt =>
       ({ id, userId: "u", itemId: item, optionId: "x", correct, misconception: correct ? null : "m", confidence: 2, createdAt: at(day === "0" ? "2026-10-26" : "2026-10-27") });

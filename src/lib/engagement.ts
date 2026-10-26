@@ -317,6 +317,14 @@ const DEFS: Def[] = [
     measure: (c) => bestOf(scoresOf(c, "projectile")),
   },
   {
+    id: "coaster-engineer",
+    title: "Коастер инженері",
+    description: "«Роллер-коастер» ойынында 18 жұлдыздың 12-сін жина (67 ұпай).",
+    icon: "TrainTrack",
+    target: 67,
+    measure: (c) => bestOf(scoresOf(c, "coaster")),
+  },
+  {
     id: "blitz-75",
     title: "Жылдам есепші",
     description: "«Есеп-блицтен» кемінде 75 ұпай жина.",

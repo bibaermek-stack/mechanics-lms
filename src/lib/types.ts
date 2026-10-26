@@ -102,6 +102,7 @@ export type GameType =
   | "order"
   | "blitz"
   | "projectile"
+  | "coaster"
   | "daily"
   | "myth"
   | "arena";

@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CalendarCheck, Crosshair, Gamepad2, Sparkles, Swords } from "lucide-react";
+import { ArrowUpRight, CalendarCheck, Crosshair, Gamepad2, Sparkles, Swords, TrainTrack } from "lucide-react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { GameRouter, GAME_LABELS, type GameMode } from "@/components/games/GameRouter";
@@ -103,6 +103,16 @@ export default function GamesHubPage() {
             <span className="text-body text-slate-600 dark:text-slate-400">
               Бұрыш пен жылдамдықты таңда: Жерде, Айда, Марста және Юпитерде нысанаға ат. Ауырлық күші өзгергенде
               қашықтық қалай өзгереді?
+            </span>
+          </button>
+          <button
+            onClick={() => open(5, "coaster")}
+            className="surface-card flex flex-col items-start gap-2 text-left transition-colors hover:border-brand-400"
+          >
+            <TrainTrack className="text-brand-500" size={22} />
+            <span className="text-h3 text-slate-900 dark:text-white">Роллер-коастер</span>
+            <span className="text-body text-slate-600 dark:text-slate-400">
+              Рельсті өзің жаса: биіктік жылдамдыққа, ал үйкеліс жылуға қалай айналады? Алты деңгей: төбеден асу, дәл тоқтау, салмақсыздық.
             </span>
           </button>
           <Link

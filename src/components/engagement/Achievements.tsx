@@ -18,6 +18,7 @@ import {
   Puzzle,
   Rocket,
   Smartphone,
+  TrainTrack,
   Sparkles,
   Star,
   TrendingUp,
@@ -29,7 +30,7 @@ import type { Achievement } from "@/lib/engagement";
 
 const ICONS: Record<string, LucideIcon> = {
   Brain, CalendarCheck, CheckCircle2, ClipboardCheck, Crosshair, Eye, FileText, Flame, Footprints,
-  Gamepad2, GraduationCap, Medal, Puzzle, Rocket, Smartphone, Sparkles, Star, TrendingUp, Trophy, Zap,
+  Gamepad2, GraduationCap, Medal, Puzzle, Rocket, Smartphone, Sparkles, Star, TrainTrack, TrendingUp, Trophy, Zap,
 };
 
 export function AchievementIcon({ name, size = 20 }: { name: string; size?: number }) {

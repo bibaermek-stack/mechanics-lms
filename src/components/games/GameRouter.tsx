@@ -39,6 +39,8 @@ import { TrueFalseGame } from "./TrueFalseGame";
 import { OrderGame } from "./OrderGame";
 import { BlitzGame } from "./BlitzGame";
 import { ProjectileGame } from "./ProjectileGame";
+import { CoasterGame } from "./CoasterGame";
+import { COASTER_LESSONS } from "@/lib/coasterLevels";
 import { PROJECTILE_LESSONS, buildProjectile } from "@/lib/projectile";
 import { ARENA_LESSONS, ArenaGame } from "@/components/arena/ArenaGame";
 
@@ -57,6 +59,7 @@ export type GameMode =
   | "order"
   | "blitz"
   | "projectile"
+  | "coaster"
   | "arena";
 
 export const GAME_LABELS: Record<GameMode, string> = {
@@ -74,6 +77,7 @@ export const GAME_LABELS: Record<GameMode, string> = {
   order: "Ретке келтір",
   blitz: "Есеп-блиц",
   projectile: "Снаряд атысы",
+  coaster: "Роллер-коастер",
   arena: "Арена — физикалық футбол",
 };
 
@@ -93,6 +97,7 @@ const GAME_HINTS: Record<GameMode, string> = {
   order: "Бейнедәрістің оқиғаларын айтылу ретімен орналастыр.",
   blitz: "Формула бойынша есепті жылдам шығар: 8 есеп, әрқайсысына 40 секунд.",
   projectile: "Бұрыш пен жылдамдықты таңда: Жерде, Айда, Марста және Юпитерде нысанаға ат. Әр раундта 4 атыс.",
+  coaster: "Роллер-коастер рельсін жаса: энергия биіктіктен жылдамдыққа және жылуға қалай айналатынын көр. Алты деңгей және еркін режим.",
   arena: "Боттарға қарсы ойна: әр соқтығыстың импульсі мен энергиясы экранда есептеледі.",
 };
 
@@ -153,6 +158,7 @@ export function GameRouter({
     if (boards.order) list.push("order");
     if (boards.blitz) list.push("blitz");
     if (boards.projectile) list.push("projectile");
+    if (COASTER_LESSONS.includes(mod.id)) list.push("coaster");
     // Only where the collisions are the lesson — see ARENA_LESSONS.
     if (ARENA_LESSONS.includes(mod.id)) list.push("arena");
     return only ? list.filter((m) => m === only) : list;
@@ -247,6 +253,7 @@ export function GameRouter({
       {mode === "blitz" && boards.blitz && (
         <BlitzGame key={key} board={boards.blitz} onComplete={handleComplete} />
       )}
+      {mode === "coaster" && <CoasterGame key={key} onComplete={handleComplete} />}
       {mode === "projectile" && boards.projectile && (
         <ProjectileGame key={key} board={boards.projectile} onComplete={handleComplete} />
       )}
