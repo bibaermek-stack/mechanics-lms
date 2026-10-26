@@ -17,9 +17,14 @@ import { useReducedMotion } from "@/lib/useReducedMotion";
  * old page at once and lets the new one animate in, which is the part the eye
  * follows anyway.
  *
- * The first paint is not animated (the server HTML must not start invisible), and
- * the key is the pathname only, not the search params — a filter change should
- * not replay the whole transition.
+ * The wrapper itself is not animated on the first paint (the server HTML must not
+ * start invisible). Scroll-reveals inside a page now start hidden on a first load
+ * too, as designed: under the old `AnimatePresence initial={false}` every motion
+ * component inside skipped its starting state on the first render, though not
+ * after a client-side navigation.
+ *
+ * Keyed on pathname only, not search params — a filter change should not replay
+ * the whole transition.
  */
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -34,6 +39,10 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       key={pathname}
+      // A scroll-reveal waits off to one side (x: ±32px) until it is seen. Left alone, that
+      // widens the page on a phone; `clip` (unlike `hidden`) makes no scroll container,
+      // so sticky headers inside still work.
+      className="overflow-x-clip"
       initial={firstPaint.current ? false : { opacity: 0, y: 14, scale: 0.994, filter: "blur(8px)" }}
       animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
       transition={{ duration: 0.56, ease: [0.22, 1, 0.36, 1] }}
