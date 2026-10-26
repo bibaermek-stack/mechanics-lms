@@ -23,12 +23,14 @@ import {
   Video,
   Settings,
   Calculator,
+  Puzzle,
 } from "lucide-react";
 
 const STUDENT_LINKS = [
   { href: "/dashboard", label: "Басты бет", icon: LayoutDashboard },
   { href: "/diagnostic", label: "Диагностика", icon: ClipboardCheck },
   { href: "/modules", label: "Сабақтар", icon: BookOpen },
+  { href: "/games", label: "Ойындар", icon: Puzzle },
   { href: "/labs", label: "Зертханалық жұмыстар", icon: FlaskConical },
   { href: "/problems", label: "Есеп шығару", icon: Calculator },
   { href: "/vr-lab", label: "VR/AR зертхана", icon: Headset },

@@ -27,6 +27,7 @@ const DUEL_GAMES: GameMode[] = [
   "speedquiz",
   "truefalse",
   "blitz",
+  "projectile",
   "order",
   "crossword",
   "wordsearch",

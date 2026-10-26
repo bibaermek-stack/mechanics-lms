@@ -14,6 +14,7 @@ import type { LessonModule, QuizQuestion } from "@/lib/types";
 import { seededPick, seededRandom, seededShuffle } from "@/lib/rng";
 import { lessonGlossary } from "./glossaryExtra";
 import { buildBlitz, buildOrder, buildTrueFalse } from "./moreGames";
+import { PROJECTILE_LESSONS } from "@/lib/projectile";
 
 // ---------------------------------------------------------------------------
 // Term classification — the one thing the lesson data cannot imply
@@ -444,7 +445,8 @@ export type BuildableGame =
   | "speedquiz"
   | "truefalse"
   | "order"
-  | "blitz";
+  | "blitz"
+  | "projectile";
 
 /**
  * Which of the derived games this lesson has enough material for. The router
@@ -460,5 +462,6 @@ export function availableDerivedGames(mod: LessonModule, seed: number): Buildabl
   if (buildTrueFalse(mod, seed)) out.push("truefalse");
   if (buildOrder(mod, seed)) out.push("order");
   if (buildBlitz(mod, seed)) out.push("blitz");
+  if (PROJECTILE_LESSONS.includes(mod.id)) out.push("projectile");
   return out;
 }

@@ -38,6 +38,8 @@ import { SpeedQuizGame } from "./SpeedQuizGame";
 import { TrueFalseGame } from "./TrueFalseGame";
 import { OrderGame } from "./OrderGame";
 import { BlitzGame } from "./BlitzGame";
+import { ProjectileGame } from "./ProjectileGame";
+import { PROJECTILE_LESSONS, buildProjectile } from "@/lib/projectile";
 import { ARENA_LESSONS, ArenaGame } from "@/components/arena/ArenaGame";
 
 export type GameMode =
@@ -54,6 +56,7 @@ export type GameMode =
   | "truefalse"
   | "order"
   | "blitz"
+  | "projectile"
   | "arena";
 
 export const GAME_LABELS: Record<GameMode, string> = {
@@ -70,6 +73,7 @@ export const GAME_LABELS: Record<GameMode, string> = {
   truefalse: "Шын ба, өтірік пе?",
   order: "Ретке келтір",
   blitz: "Есеп-блиц",
+  projectile: "Снаряд атысы",
   arena: "Арена — физикалық футбол",
 };
 
@@ -88,6 +92,7 @@ const GAME_HINTS: Record<GameMode, string> = {
   truefalse: "Сұраққа берілген жауап дұрыс па? Шешім қабылдауға 12 секунд.",
   order: "Бейнедәрістің оқиғаларын айтылу ретімен орналастыр.",
   blitz: "Формула бойынша есепті жылдам шығар: 8 есеп, әрқайсысына 40 секунд.",
+  projectile: "Бұрыш пен жылдамдықты таңда: Жерде, Айда, Марста және Юпитерде нысанаға ат. Әр раундта 4 атыс.",
   arena: "Боттарға қарсы ойна: әр соқтығыстың импульсі мен энергиясы экранда есептеледі.",
 };
 
@@ -102,11 +107,17 @@ export function GameRouter({
   onScore,
   /** Restrict the picker to one game — a duel is about a single agreed board. */
   only,
+  /** Which tab opens first, if this lesson has it (a deep link from the games hub). */
+  initialMode,
+  /** Called once the result is stored, so a page showing the totals can refresh them. */
+  onSaved,
 }: {
   mod: LessonModule;
   seed?: number;
   onScore?: (score: number) => void;
   only?: GameMode;
+  initialMode?: GameMode;
+  onSaved?: () => void;
 }) {
   const user = useAuthStore((s) => s.user);
   const boardSeed = seed ?? mod.id * 7919;
@@ -123,6 +134,7 @@ export function GameRouter({
       truefalse: buildTrueFalse(mod, boardSeed),
       order: buildOrder(mod, boardSeed),
       blitz: buildBlitz(mod, boardSeed),
+      projectile: PROJECTILE_LESSONS.includes(mod.id) ? buildProjectile(boardSeed) : null,
     }),
     [mod, boardSeed]
   );
@@ -140,12 +152,15 @@ export function GameRouter({
     if (boards.truefalse) list.push("truefalse");
     if (boards.order) list.push("order");
     if (boards.blitz) list.push("blitz");
+    if (boards.projectile) list.push("projectile");
     // Only where the collisions are the lesson — see ARENA_LESSONS.
     if (ARENA_LESSONS.includes(mod.id)) list.push("arena");
     return only ? list.filter((m) => m === only) : list;
   }, [mod, boards, only]);
 
-  const [mode, setMode] = useState<GameMode>(() => only ?? available[0] ?? "matching");
+  const [mode, setMode] = useState<GameMode>(
+    () => only ?? (initialMode && available.includes(initialMode) ? initialMode : available[0]) ?? "matching"
+  );
   const [lastScore, setLastScore] = useState<number | null>(null);
 
   async function handleComplete(score: number) {
@@ -160,6 +175,7 @@ export function GameRouter({
       score,
       completedAt: new Date().toISOString(),
     });
+    onSaved?.();
   }
 
   // Remounting on every mode or seed change resets each game's internal state.
@@ -230,6 +246,9 @@ export function GameRouter({
       )}
       {mode === "blitz" && boards.blitz && (
         <BlitzGame key={key} board={boards.blitz} onComplete={handleComplete} />
+      )}
+      {mode === "projectile" && boards.projectile && (
+        <ProjectileGame key={key} board={boards.projectile} onComplete={handleComplete} />
       )}
       {mode === "arena" && <ArenaGame key={key} moduleId={mod.id} onComplete={handleComplete} />}
 
