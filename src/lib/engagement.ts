@@ -325,6 +325,14 @@ const DEFS: Def[] = [
     measure: (c) => bestOf(scoresOf(c, "coaster")),
   },
   {
+    id: "folk-master",
+    title: "Дала ойындарының шебері",
+    description: "Садақ, асық, арқан тарту және Байқоңыр ойындарының әрқайсысынан кемінде 60 ұпай жина.",
+    icon: "Target",
+    target: 4,
+    measure: (c) => ["bow", "asyq", "tug", "rocket"].filter((t) => bestOf(scoresOf(c, t)) >= 60).length,
+  },
+  {
     id: "blitz-75",
     title: "Жылдам есепші",
     description: "«Есеп-блицтен» кемінде 75 ұпай жина.",

@@ -103,6 +103,10 @@ export type GameType =
   | "blitz"
   | "projectile"
   | "coaster"
+  | "bow"
+  | "asyq"
+  | "tug"
+  | "rocket"
   | "daily"
   | "myth"
   | "arena";

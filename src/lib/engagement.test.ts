@@ -283,6 +283,14 @@ describe("achievements", () => {
     expect(ach(only, "game-25").progress).toBe(0);
   });
 
+  it("the folk-games master needs all four traditional games at 60 or more, each counted once", () => {
+    const four = ["bow", "asyq", "tug", "rocket"].map((k) => game(k, 60));
+    expect(ach(state(rec({ games: four.slice(0, 3) })), "folk-master")).toMatchObject({ progress: 3, unlocked: false });
+    expect(ach(state(rec({ games: four })), "folk-master").unlocked).toBe(true);
+    expect(ach(state(rec({ games: [...four.slice(0, 3), game("bow", 100), game("bow", 90), game("rocket", 59)] })), "folk-master").progress).toBe(3);
+    expect(ach(state(rec({ games: [game("blitz", 100), game("projectile", 100)] })), "folk-master").progress).toBe(0);
+  });
+
   it("coaster engineer is earned at 67 points of the coaster game, which counts as a lesson game", () => {
     expect(ach(state(rec({ games: [game("coaster", 66)] })), "coaster-engineer")).toMatchObject({ progress: 66, unlocked: false });
     expect(ach(state(rec({ games: [game("coaster", 40), game("coaster", 67)] })), "coaster-engineer").unlocked).toBe(true);

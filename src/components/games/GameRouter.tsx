@@ -40,6 +40,8 @@ import { OrderGame } from "./OrderGame";
 import { BlitzGame } from "./BlitzGame";
 import { ProjectileGame } from "./ProjectileGame";
 import { CoasterGame } from "./CoasterGame";
+import { FolkGame } from "./FolkGame";
+import { FOLK_LESSONS, type FolkKind } from "@/lib/folk";
 import { COASTER_LESSONS } from "@/lib/coasterLevels";
 import { PROJECTILE_LESSONS, buildProjectile } from "@/lib/projectile";
 import { ARENA_LESSONS, ArenaGame } from "@/components/arena/ArenaGame";
@@ -60,6 +62,10 @@ export type GameMode =
   | "blitz"
   | "projectile"
   | "coaster"
+  | "bow"
+  | "asyq"
+  | "tug"
+  | "rocket"
   | "arena";
 
 export const GAME_LABELS: Record<GameMode, string> = {
@@ -78,6 +84,10 @@ export const GAME_LABELS: Record<GameMode, string> = {
   blitz: "Есеп-блиц",
   projectile: "Снаряд атысы",
   coaster: "Роллер-коастер",
+  bow: "Садақ ату",
+  asyq: "Асық ату",
+  tug: "Арқан тарту",
+  rocket: "Байқоңыр: ұшыру",
   arena: "Арена — физикалық футбол",
 };
 
@@ -98,6 +108,10 @@ const GAME_HINTS: Record<GameMode, string> = {
   blitz: "Формула бойынша есепті жылдам шығар: 8 есеп, әрқайсысына 40 секунд.",
   projectile: "Бұрыш пен жылдамдықты таңда: Жерде, Айда, Марста және Юпитерде нысанаға ат. Әр раундта 4 атыс.",
   coaster: "Роллер-коастер рельсін жаса: энергия биіктіктен жылдамдыққа және жылуға қалай айналатынын көр. Алты деңгей және еркін режим.",
+  bow: "Ұлттық ойын: садақтың серпімділік энергиясы жебенің жылдамдығына айналады. Тарту ұзындығы мен бұрышты таңдап, нысанаға ат.",
+  asyq: "Ұлттық ойын: сақа үйкелістен тоқтайды, d = v²/(2μg). Асықтардың қасына дәл тоқтат.",
+  tug: "Ұлттық ойын: арқанды тарту күші аяқтың үйкелісімен шектеледі, F = μMg. Күштерді теңестір.",
+  rocket: "Байқоңыр: Циолковский формуласы бойынша зымыранның жылдамдығын есепте. Керек болса, екі сатылы жаса.",
   arena: "Боттарға қарсы ойна: әр соқтығыстың импульсі мен энергиясы экранда есептеледі.",
 };
 
@@ -159,6 +173,7 @@ export function GameRouter({
     if (boards.blitz) list.push("blitz");
     if (boards.projectile) list.push("projectile");
     if (COASTER_LESSONS.includes(mod.id)) list.push("coaster");
+    for (const k of ["bow", "asyq", "tug", "rocket"] as const) if (FOLK_LESSONS[k].includes(mod.id)) list.push(k);
     // Only where the collisions are the lesson — see ARENA_LESSONS.
     if (ARENA_LESSONS.includes(mod.id)) list.push("arena");
     return only ? list.filter((m) => m === only) : list;
@@ -254,6 +269,9 @@ export function GameRouter({
         <BlitzGame key={key} board={boards.blitz} onComplete={handleComplete} />
       )}
       {mode === "coaster" && <CoasterGame key={key} onComplete={handleComplete} />}
+      {(mode === "bow" || mode === "asyq" || mode === "tug" || mode === "rocket") && (
+        <FolkGame key={key} kind={mode as FolkKind} seed={boardSeed} onComplete={handleComplete} />
+      )}
       {mode === "projectile" && boards.projectile && (
         <ProjectileGame key={key} board={boards.projectile} onComplete={handleComplete} />
       )}

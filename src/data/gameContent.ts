@@ -16,6 +16,7 @@ import { lessonGlossary } from "./glossaryExtra";
 import { buildBlitz, buildOrder, buildTrueFalse } from "./moreGames";
 import { PROJECTILE_LESSONS } from "@/lib/projectile";
 import { COASTER_LESSONS } from "@/lib/coasterLevels";
+import { FOLK_LESSONS } from "@/lib/folk";
 
 // ---------------------------------------------------------------------------
 // Term classification — the one thing the lesson data cannot imply
@@ -448,7 +449,11 @@ export type BuildableGame =
   | "order"
   | "blitz"
   | "projectile"
-  | "coaster";
+  | "coaster"
+  | "bow"
+  | "asyq"
+  | "tug"
+  | "rocket";
 
 /**
  * Which of the derived games this lesson has enough material for. The router
@@ -466,5 +471,6 @@ export function availableDerivedGames(mod: LessonModule, seed: number): Buildabl
   if (buildBlitz(mod, seed)) out.push("blitz");
   if (PROJECTILE_LESSONS.includes(mod.id)) out.push("projectile");
   if (COASTER_LESSONS.includes(mod.id)) out.push("coaster");
+  for (const k of ["bow", "asyq", "tug", "rocket"] as const) if (FOLK_LESSONS[k].includes(mod.id)) out.push(k);
   return out;
 }

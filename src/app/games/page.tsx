@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CalendarCheck, Crosshair, Gamepad2, Sparkles, Swords, TrainTrack } from "lucide-react";
+import { ArrowUpRight, CalendarCheck, Crosshair, Gamepad2, Sparkles, Swords, Target, TrainTrack } from "lucide-react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { GameRouter, GAME_LABELS, type GameMode } from "@/components/games/GameRouter";
@@ -115,6 +115,24 @@ export default function GamesHubPage() {
               Рельсті өзің жаса: биіктік жылдамдыққа, ал үйкеліс жылуға қалай айналады? Алты деңгей: төбеден асу, дәл тоқтау, салмақсыздық.
             </span>
           </button>
+          <div className="surface-card flex flex-col items-start gap-2">
+            <Target className="text-brand-500" size={22} />
+            <span className="text-h3 text-slate-900 dark:text-white">Ұлттық ойындар физикасы</span>
+            <span className="text-body text-slate-600 dark:text-slate-400">
+              Садақ, асық, арқан тарту және Байқоңыр: ата-бабаларымыздың ойындарының артындағы энергия, үйкеліс және импульс.
+            </span>
+            <span className="mt-1 flex flex-wrap gap-2">
+              {([["bow", "Садақ", 5], ["asyq", "Асық", 3], ["tug", "Арқан", 4], ["rocket", "Байқоңыр", 6]] as const).map(([game, label, lesson]) => (
+                <button
+                  key={game}
+                  onClick={() => open(lesson, game)}
+                  className="min-h-[36px] rounded-full bg-slate-100 px-3 text-xs font-semibold text-slate-700 hover:bg-brand-50 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15"
+                >
+                  {label}
+                </button>
+              ))}
+            </span>
+          </div>
           <Link
             href="/daily"
             className="surface-card flex flex-col items-start gap-2 text-left transition-colors hover:border-brand-400"
