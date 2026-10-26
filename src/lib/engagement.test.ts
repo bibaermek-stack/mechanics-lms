@@ -185,8 +185,9 @@ describe("streaks", () => {
 });
 
 describe("the daily challenge among the records", () => {
-  it("is not a lesson game", () => {
+  it("is not a lesson game — nor is the myth game", () => {
     expect(isLessonGame(game("daily", 80))).toBe(false);
+    expect(isLessonGame(game("myth", 80))).toBe(false);
     expect(isLessonGame(game("blitz", 80))).toBe(true);
   });
 
@@ -269,6 +270,17 @@ describe("achievements", () => {
     expect(ach(onlyDaily, "game-25").progress).toBe(0);
     expect(ach(onlyDaily, "daily-1").unlocked).toBe(true);
     expect(ach(onlyDaily, "daily-perfect").unlocked).toBe(true);
+  });
+
+  it("the myth game earns its own award at 75, and counts as no lesson game at all", () => {
+    expect(ach(state(rec({ games: [game("myth", 74)] })), "myth-hunter").unlocked).toBe(false);
+    expect(ach(state(rec({ games: [game("myth", 50), game("myth", 75)] })), "myth-hunter").unlocked).toBe(true);
+    expect(ach(state(rec({ games: [game("blitz", 100)] })), "myth-hunter").progress).toBe(0);
+    const only = state(rec({ games: [game("myth", 100)] }));
+    expect(ach(only, "first-game").unlocked).toBe(false);
+    expect(ach(only, "game-perfect").unlocked).toBe(false);
+    expect(ach(only, "game-variety").progress).toBe(0);
+    expect(ach(only, "game-25").progress).toBe(0);
   });
 
   it("25 games is 25: 24 does not do", () => {

@@ -32,6 +32,13 @@ describe("the student's figures for the final grade", () => {
     });
   });
 
+  it("leave out the myth game too: it is practice, not coursework", () => {
+    withRecords({ gameResults: [game("blitz", 40), game("myth", 100, 0), game("daily", 100, 0)] });
+    return loadStudentStats("u1").then((s) => {
+      expect(s.gameAverage).toBe(40);
+    });
+  });
+
   it("leave the games mark absent, not zero, for someone who has only done the daily challenge", () => {
     withRecords({ gameResults: [game("daily", 80, 0)] });
     return loadStudentStats("u1").then((s) => {

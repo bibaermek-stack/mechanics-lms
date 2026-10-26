@@ -10,6 +10,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { LessonCard } from "@/components/ui/LessonCard";
 import { ActionList } from "@/components/ui/ActionList";
 import { EngagementCard } from "@/components/engagement/EngagementCard";
+import { DailyFact } from "@/components/engagement/DailyFact";
 import { LoadingBlock } from "@/components/ui/Skeleton";
 import { LessonScoreChart } from "@/components/charts/LessonScoreChart";
 import { ALL_MODULES } from "@/data/modules";
@@ -77,6 +78,8 @@ export default function StudentDashboard() {
         )}
 
         <EngagementCard />
+
+        <DailyFact />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard

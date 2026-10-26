@@ -103,6 +103,7 @@ export type GameType =
   | "blitz"
   | "projectile"
   | "daily"
+  | "myth"
   | "arena";
 
 export interface GamePair {

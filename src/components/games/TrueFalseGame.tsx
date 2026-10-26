@@ -4,6 +4,28 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Flame, Timer, X } from "lucide-react";
 import type { TrueFalseBoard } from "@/data/moreGames";
 
+export interface TrueFalseLabels {
+  /** Heading over the context line. */
+  prompt: string;
+  /** Heading over the statement being judged. */
+  claim: string;
+  trueButton: string;
+  falseButton: string;
+  /** What is said once the card is answered. */
+  verdict: (isTrue: boolean) => string;
+  /** The summary line under the score at the end. */
+  best: string;
+}
+
+export const DEFAULT_LABELS: TrueFalseLabels = {
+  prompt: "Сұрақ",
+  claim: "Ұсынылған жауап",
+  trueButton: "Шын",
+  falseButton: "Өтірік",
+  verdict: (isTrue) => `Бұл жауап — ${isTrue ? "шын" : "өтірік"}.`,
+  best: "Ең ұзақ серия",
+};
+
 /**
  * A question and an answer to it — right or wrong, half the deck each way — and
  * the player has twelve seconds to say which. Streaks are shown because a streak
@@ -16,9 +38,12 @@ import type { TrueFalseBoard } from "@/data/moreGames";
 export function TrueFalseGame({
   board,
   onComplete,
+  labels = DEFAULT_LABELS,
 }: {
   board: TrueFalseBoard;
   onComplete: (score: number) => void;
+  /** Wording, for decks that are not quiz answers (see the myths page). */
+  labels?: TrueFalseLabels;
 }) {
   const total = board.cards.length;
   const [index, setIndex] = useState(0);
@@ -107,7 +132,7 @@ export function TrueFalseGame({
           {correct}/{total}
         </p>
         <p className="mt-1 text-label text-slate-600 dark:text-slate-400">
-          Ең ұзақ серия: <span className="data-num font-semibold">{best}</span> · {pct}% дұрыс
+          {labels.best}: <span className="data-num font-semibold">{best}</span> · {pct}% дұрыс
         </p>
         <p className="mt-3 text-body text-slate-600 dark:text-slate-400">
           {pct >= 90
@@ -157,12 +182,12 @@ export function TrueFalseGame({
 
       <div className="space-y-4 rounded-2xl border border-slate-200/70 p-5 dark:border-white/10">
         <div>
-          <p className="text-micro uppercase tracking-wider text-slate-500 dark:text-slate-400">Сұрақ</p>
+          <p className="text-micro uppercase tracking-wider text-slate-500 dark:text-slate-400">{labels.prompt}</p>
           <p className="mt-1 text-body font-medium text-slate-900 dark:text-white">{card.prompt}</p>
         </div>
         <div className="rounded-xl bg-brand-500/10 p-4">
-          <p className="text-micro uppercase tracking-wider text-brand-500 dark:text-brand-300">Ұсынылған жауап</p>
-          <p className="mt-1 text-h3 text-slate-900 dark:text-white">«{card.claim}»</p>
+          <p className="text-micro uppercase tracking-wider text-brand-500 dark:text-brand-300">{labels.claim}</p>
+          <p className="mt-1 text-h3 text-slate-900 dark:text-white">{labels === DEFAULT_LABELS ? `«${card.claim}»` : card.claim}</p>
         </div>
       </div>
 
@@ -183,7 +208,7 @@ export function TrueFalseGame({
                   : verdict.right
                     ? "Дұрыс! "
                     : "Қате. "}
-                Бұл жауап — {card.isTrue ? "шын" : "өтірік"}.
+                {labels.verdict(card.isTrue)}
               </p>
               <p>{card.explanation}</p>
             </div>
@@ -198,19 +223,19 @@ export function TrueFalseGame({
             onClick={() => settle(false)}
             className="flex min-h-[56px] items-center justify-center gap-2 rounded-xl border border-rose-400/50 bg-rose-500/10 px-4 py-3 text-body font-semibold text-rose-700 transition-colors hover:bg-rose-500/20 dark:text-rose-200"
           >
-            <X size={18} /> Өтірік
+            <X size={18} /> {labels.falseButton}
           </button>
           <button
             onClick={() => settle(true)}
             className="flex min-h-[56px] items-center justify-center gap-2 rounded-xl border border-emerald-400/50 bg-emerald-500/10 px-4 py-3 text-body font-semibold text-emerald-700 transition-colors hover:bg-emerald-500/20 dark:text-emerald-200"
           >
-            <Check size={18} /> Шын
+            <Check size={18} /> {labels.trueButton}
           </button>
         </div>
       )}
 
       <p className="text-micro text-slate-500 dark:text-slate-400 [@media(pointer:coarse)]:hidden">
-        Пернетақта: ← өтірік · → шын · Enter — келесі
+        Пернетақта: ← {labels.falseButton.toLowerCase()} · → {labels.trueButton.toLowerCase()} · Enter — келесі
       </p>
     </div>
   );

@@ -166,8 +166,11 @@ export function streakOf(days: ReadonlySet<string>, today: string): Streak {
 // The daily challenge's place in the records
 // ---------------------------------------------------------------------------
 
-/** A game that belongs to a lesson. The daily challenge belongs to none, and must not count as one. */
-export const isLessonGame = (g: Pick<GameResult, "gameType">) => g.gameType !== "daily";
+/** Games that belong to no lesson: practice, not coursework. They never reach the final grade or the "kinds of game" tally. */
+const OFF_COURSE_GAMES: ReadonlySet<string> = new Set(["daily", "myth"]);
+
+/** A game that belongs to a lesson. The daily challenge and the myth game belong to none, and must not count as one. */
+export const isLessonGame = (g: Pick<GameResult, "gameType">) => !OFF_COURSE_GAMES.has(g.gameType);
 
 const dailyResults = (games: GameResult[]) => games.filter((g) => g.gameType === "daily");
 
@@ -311,6 +314,14 @@ const DEFS: Def[] = [
     icon: "Zap",
     target: 75,
     measure: (c) => bestOf(scoresOf(c, "blitz")),
+  },
+  {
+    id: "myth-hunter",
+    title: "Миф аңшысы",
+    description: "«Миф па, шындық па?» ойынынан кемінде 75 ұпай жина (8-ден 6 дұрыс).",
+    icon: "Sparkles",
+    target: 75,
+    measure: (c) => bestOf(scoresOf(c, "myth")),
   },
   {
     id: "streak-3",

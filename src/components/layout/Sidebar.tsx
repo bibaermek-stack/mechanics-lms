@@ -25,6 +25,8 @@ import {
   Calculator,
   Puzzle,
   CalendarCheck,
+  Flag,
+  Sparkles,
 } from "lucide-react";
 
 const STUDENT_LINKS = [
@@ -33,6 +35,7 @@ const STUDENT_LINKS = [
   { href: "/modules", label: "Сабақтар", icon: BookOpen },
   { href: "/games", label: "Ойындар", icon: Puzzle },
   { href: "/daily", label: "Күнделікті сынақ", icon: CalendarCheck },
+  { href: "/myths", label: "Миф па, шындық па?", icon: Sparkles },
   { href: "/labs", label: "Зертханалық жұмыстар", icon: FlaskConical },
   { href: "/problems", label: "Есеп шығару", icon: Calculator },
   { href: "/vr-lab", label: "VR/AR зертхана", icon: Headset },
@@ -43,6 +46,7 @@ const STUDENT_LINKS = [
   { href: "/analytics", label: "Аналитика", icon: BarChart3 },
   { href: "/certificates", label: "Сертификаттар", icon: Award },
   { href: "/leaderboard", label: "Көшбасшылар кестесі", icon: Trophy },
+  { href: "/league", label: "Топтар лигасы", icon: Flag },
   { href: "/profile", label: "Профиль", icon: User },
 ];
 

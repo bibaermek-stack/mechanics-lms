@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CalendarCheck, Crosshair, Gamepad2, Swords } from "lucide-react";
+import { ArrowUpRight, CalendarCheck, Crosshair, Gamepad2, Sparkles, Swords } from "lucide-react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { GameRouter, GAME_LABELS, type GameMode } from "@/components/games/GameRouter";
@@ -93,7 +93,7 @@ export default function GamesHubPage() {
           ))}
         </dl>
 
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           <button
             onClick={() => open(2, "projectile")}
             className="surface-card flex flex-col items-start gap-2 text-left transition-colors hover:border-brand-400"
@@ -115,6 +115,18 @@ export default function GamesHubPage() {
             </span>
             <span className="text-body text-slate-600 dark:text-slate-400">
               Күн сайын 5 жаңа сұрақ, әр сабақтан бір-бірден. Серия жина!
+            </span>
+          </Link>
+          <Link
+            href="/myths"
+            className="surface-card flex flex-col items-start gap-2 text-left transition-colors hover:border-brand-400"
+          >
+            <Sparkles className="text-brand-500" size={22} />
+            <span className="flex items-center gap-1 text-h3 text-slate-900 dark:text-white">
+              Миф па, шындық па? <ArrowUpRight size={14} />
+            </span>
+            <span className="text-body text-slate-600 dark:text-slate-400">
+              Киноның, ойынның және интернеттің физикасын тексер: оқ, ракета, лифт, көлік.
             </span>
           </Link>
           <Link

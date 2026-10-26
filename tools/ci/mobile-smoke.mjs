@@ -26,7 +26,7 @@ const HEIGHT = 800;
 
 const STUDENT_ROUTES = [
   "/", "/login", "/dashboard", "/diagnostic", "/modules", "/modules/1", "/labs", "/problems",
-  "/ai-tutor", "/analytics", "/arena", "/certificates", "/connections", "/daily", "/duels", "/games", "/leaderboard",
+  "/ai-tutor", "/analytics", "/arena", "/certificates", "/connections", "/daily", "/duels", "/games", "/leaderboard", "/league", "/myths",
   "/profile", "/vr-lab", "/verify/demo",
 ];
 const TEACHER_ROUTES = ["/teacher", "/teacher/analytics", "/teacher/assignments", "/teacher/lessons", "/teacher/students"];
