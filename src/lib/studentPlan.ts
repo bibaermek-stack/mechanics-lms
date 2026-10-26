@@ -2,7 +2,7 @@
 // the same idea as the teacher's cohort-wide recommendations
 // (src/data/recommendations.ts), but built from that student's real quiz
 // attempts and assignment submissions (via dataStore, so it works against
-// either localStorage mock data or a real Firestore backend without change)
+// either localStorage mock data or the real Supabase backend without change)
 // rather than the synthetic class-wide dataset in src/data/cohort.ts. A
 // student must never be shown numbers that do not match their own dashboard.
 

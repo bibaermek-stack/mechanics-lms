@@ -16,7 +16,8 @@
     "dev:server": "npm run build:server && npm run start:server",
     "videos:build": "node tools/videos/build.mjs",
     "videos:narrate": "node tools/videos/narrate.mjs",
-    "videos:render": "node tools/videos/build.mjs && node tools/videos/render.mjs"
+    "videos:render": "node tools/videos/build.mjs && node tools/videos/render.mjs",
+    "videos:upload": "node --env-file=.env.local tools/videos/upload.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.114.3",

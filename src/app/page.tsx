@@ -49,7 +49,7 @@ const STACK = [
   {
     kind: "circuit" as StemObjectKind,
     title: "Ашық архитектура",
-    desc: "Next.js, three.js және Firebase. Мок режимінде кілтсіз жұмыс істейді, нақты бэкендке бір қадамда көшеді.",
+    desc: "Next.js, three.js және Supabase. Мок режимінде кілтсіз жұмыс істейді, нақты бэкендке кілттерді қосу арқылы көшеді.",
   },
 ];
 

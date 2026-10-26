@@ -26,9 +26,9 @@
 |---|---|
 | Frontend | Next.js 14 (App Router), React 18, TypeScript |
 | Стиль | TailwindCSS, glassmorphism дизайн жүйесі, Dark Mode |
-| Дерекқор | Firebase Firestore (мок fallback-пен) |
-| Аутентификация | Firebase Auth + Google OAuth (мок fallback-пен) |
-| Файл сақтау | Firebase Storage / Google Drive API |
+| Дерекқор | Supabase (PostgreSQL + RLS); кілт жоқ болса — `localStorage` мок fallback |
+| Аутентификация | Supabase Auth (email + Google OAuth); кілт жоқ болса — демо кіру |
+| Файл сақтау | Supabase Storage (сабақ бейнелері, міндетті емес) / Google Drive API |
 | Жасанды интеллект | OpenAI GPT-5.5 немесе Google Gemini (детерминистік қазақша мок fallback-пен) |
 | Google Workspace | Google Forms, Google Sheets, Google Drive, Google Calendar |
 | 3D графика | three.js + @react-three/fiber (сабақтардағы симуляциялар) |
@@ -36,7 +36,8 @@
 | Арена (2D ойын) | Canvas 2D, өз физика қозғалтқышы; онлайн бөлмелер — Supabase Realtime |
 | Графиктер | Chart.js / react-chartjs-2 (радар, столбиктік, шеңберлік) |
 | Күй басқару | Zustand |
-| PWA | manifest.json, responsive дизайн |
+| PWA | `manifest.json`, иконкалар, service worker (офлайн), responsive дизайн |
+| Тесттер | Vitest (физика, формулалар, статистика, аналитика); Playwright (мобильді смоук); GitHub Actions CI |
 
 ## Жобаны іске қосу
 
@@ -51,7 +52,7 @@ npm run dev
 
 > **Кеңес:** егер `npm run build` кезінде түсініксіз қатеге (мыс., "Bus error" немесе бос output) тап болсаңыз, бұл әдетте желі/диск проблемасынан кейбір пакеттің (жиі `@next/swc-*`) жартылай жүктелуінен туындайды. Шешімі: `rm -rf node_modules package-lock.json && npm install` арқылы толық қайта орнатыңыз.
 
-Өндірістік құрастыру (жоба Next.js 14 + React 18 + TypeScript негізінде толық тексеріліп, сәтті құрастырылғанын растадық — барлық 20 маршрут қатесіз компиляцияланады):
+Өндірістік құрастыру (CI оны әр өзгерістен кейін тексереді):
 
 ```bash
 npm run build
@@ -60,9 +61,9 @@ npm run start
 
 ## Мок режим vs. нақты сервистер
 
-Жоба **"нақты SDK кодтары + мок fallback"** тәсілімен құрылған (`src/lib/firebase.ts`, `src/lib/dataStore.ts`, `src/lib/ai.ts`, `src/lib/googleWorkspace.ts`):
+Жоба **"нақты SDK кодтары + мок fallback"** тәсілімен құрылған (`src/lib/supabase/client.ts`, `src/lib/dataStore.ts`, `src/lib/ai.ts`, `src/lib/googleWorkspace.ts`):
 
-- **Firebase:** `NEXT_PUBLIC_FIREBASE_*` айнымалылары толтырылып, `NEXT_PUBLIC_USE_MOCK_BACKEND=false` қойылса, барлық CRUD операциялары Firestore-ға жазылады. Әйтпесе — браузердің `localStorage`-іне.
+- **Supabase:** `NEXT_PUBLIC_SUPABASE_URL` және `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` толтырылса, тіркелгілер, рөлдер, оқытушы↔студент байланысы және барлық оқу жазбалары (викторина, ойын, БӨЖ, бағалау, сертификат, диагностика) Supabase-те сақталады; қолжетімділікті дерекқордың RLS саясаттары басқарады (`supabase/migrations/`, 0001–0011, қадамдар — `supabase/README.md`). Кілттер жоқ болса — браузердің `localStorage`-і. Бұл режимде оқытушы аналитикасы **демо топты** көрсетеді және экранда бұл анық жазылады.
 - **AI:** `NEXT_PUBLIC_AI_PROVIDER=openai` немесе `gemini` қойып, тиісті API кілтін (`OPENAI_API_KEY` / `GEMINI_API_KEY`) толтырсаңыз, сұраулар нақты моделге жіберіледі. Кілт жоқ болса немесе провайдер қатесі болса, жүйе автоматты түрде дайын қазақша жауаптарға (mock) ауысады — демо ешқашан "бұзылмайды".
 - **Google Workspace:** `GOOGLE_CLIENT_ID`/`SECRET` толтырылса, OAuth логин, Sheets оқу және Drive тізімдеу нақты жұмыс істейді (`src/lib/googleWorkspace.ts`, `/api/auth/google/callback`, `/api/google/sheets`). Кілттер жоқ болса — мок жолдар қайтарылады.
 
@@ -173,6 +174,34 @@ Vercel-де тұра алмайды (serverless функциялар жадта 
 заң, энергия және импульс. Қалған сабақтарда көрсетілмейді: онда соқтығыс физикасының
 оқытатыны жоқ.
 
+## Зерттеу аналитикасы: бастапқы және қорытынды диагностика
+
+Диссертацияның тезисі — өзгеріс: студенттер курстан кейін курстың алдынан гөрі көбірек біледі. Өзгерісті өлшеу үшін бір тест екі рет тапсырылады.
+
+- **Тест** (`/diagnostic`, сұрақтар — `src/data/diagnostic.ts`): 20 сұрақ, әр сабақ тақырыбынан екеуі, бастапқы және қорытынды кезеңде **бірдей**. Сұрақтар сабақ викториналарының сұрақтары емес — викторинаны дұрыс болғанша қайта тапсыруға болады, сондықтан олармен өлшесек, курс материалын жаттағанды өлшер едік. Дұрыс жауап көрсетілмейді.
+- **Ережелер** (дерекқор деңгейінде, `0011_diagnostics.sql`): әр кезеңге бір тапсыру; жазбаны өзгертуге болмайды; қорытынды тест бастапқысынсыз жазылмайды. Қорытынды тест студент 8 сабақтың викторинасын тапсырғаннан кейін ашылады (`POST_UNLOCK_LESSONS`).
+- **Оқытушыға** `/teacher/analytics` бетінде — топ бойынша бастапқы және қорытынды орташа ± SD, өсім, Hake нормаланған өсімі, жұптасқан t-критерийі, Cohen d_z; эксперименттік және бақылау топтарын таңдап салыстыру (Welch t-критерийі, өсімнің айырмасы, топтардың бастапқы деңгейін тексеру). Нәтижені Excel-ге CSV ретінде жүктеуге болады.
+- **Назар аударыңыз:** сұрақтарды бірінші студент бастапқы тестті тапсырмай тұрып өзгертіңіз — кейін өзгертсеңіз, бұрынғы және кейінгі ұпайлар салыстырылмайды. Топтар кездейсоқ бөлінбесе және студент саны аз болса, p-мән — алдын ала көрсеткіш қана.
+- Сервер қосылмаған (демо) режимде бет **ойдан құрастырылған топты** көрсетеді және бұл экранда жазылады; оны зерттеу нәтижесі ретінде пайдалануға болмайды.
+
+Формулалар `src/lib/stats.ts` ішінде, `src/lib/stats.test.ts` тесттері тәуелсіз есептелген мәндермен салыстырады.
+
+## Офлайн режим (PWA)
+
+Сайтты телефонның басты экранына қосуға болады (manifest + иконкалар). `public/sw.js` қолданбаның кодын және студент ашқан беттерді сақтайды — олар интернетсіз де ашылады, ал ашылмаған бет үшін «Интернет жоқ» беті шығады. Supabase-тен келетін деректер, AI жауаптары және сабақ бейнелері кэшке **түспейді**: офлайн ашылған бетте жаңа деректер жүктелмейді. Service worker тек production құрастыруда тіркеледі.
+
+## Тесттер және CI
+
+```bash
+npm test               # бірлік тесттер (Vitest): физика, формулалар, статистика, аналитика, CSV
+npm run typecheck      # tsc --noEmit
+npm run smoke:mobile   # әр бет 320 және 375 px-те: жанына айналмауы, қате шықпауы тиіс (production сервер қажет)
+```
+
+- `src/lib/arena/physics.test.ts` — соқтығыстар оқулықтағы формулалармен, импульстің сақталуы 500 кездейсоқ жағдайда, тебудің үшінші заңы, экспоненциалды үйкеліс, қабырғалар, гол.
+- `src/data/formulas.test.ts` — есеп шығару бетіндегі 32 формуланың әрқайсысы қолмен есептелген мысалмен және кездейсоқ кері түрлендірумен тексеріледі. Бет студентке «формуланың кері түрлендіруі автоматты сынақпен тексерілген» дейді — енді бұл шын.
+- `.github/workflows/ci.yml` — typecheck, тесттер, build және мобильді смоук-тест, әр pull request пен `main`-ге жіберілімде.
+
 ## Педагогикалық негіз
 
 - **ADDIE моделі:** Analysis (қажеттілікті талдау) → Design (Блум таксономиясы бойынша нәтижелер, рубрика) → Development (10 сабақ, AI, ойындар) → Implementation (Next.js платформа) → Evaluation (құзыреттілік бағалау, аналитика).
@@ -194,11 +223,12 @@ Vercel-де тұра алмайды (serverless функциялар жадта 
 | AI тьютор (14 тапсырма түрі, тек қазақша) | `src/lib/ai.ts`, `src/components/ai/AiTutorWidget.tsx` |
 | Google Workspace интеграциясы | `src/lib/googleWorkspace.ts`, `/api/google/sheets`, `/api/auth/google/callback` |
 | Құзыреттілік рубрикасы + автобағалау | `src/lib/competency.ts`, `src/components/assessment/RubricAssessment.tsx` |
-| Аналитика (радар, столбиктік, шеңберлік, экспорт) | `src/app/analytics/page.tsx`, `src/components/charts/*` |
+| Аналитика: студентке — радар, столбиктік, шеңберлік; оқытушыға — нақты деректер бойынша топ аналитикасы, CSV экспорт | `src/app/analytics/page.tsx`, `src/app/teacher/analytics/page.tsx`, `src/lib/analytics/*`, `src/components/charts/*` |
+| Диагностика (pre/post) және зерттеу статистикасы | `src/app/diagnostic`, `src/data/diagnostic.ts`, `src/lib/stats.ts`, `src/lib/analytics/research.ts`, `src/components/analytics/ResearchPanel.tsx` |
 | Сертификат + QR верификация | `src/components/certificate/CertificateCard.tsx`, `/verify/[id]` |
 | Көшбасшылар кестесі, бейджтер, XP | `src/app/leaderboard/page.tsx`, `src/lib/authStore.ts` |
 | Студент/оқытушы дашбордтары | `src/app/dashboard`, `src/app/teacher/*` |
-| Dark Mode, PWA, responsive | `globals.css`, `public/manifest.json`, Tailwind `dark:` кластары |
+| Dark Mode, PWA (офлайн), responsive | `globals.css`, `public/manifest.json`, `public/sw.js`, Tailwind `dark:` кластары |
 
 ## Жоба құрылымы
 
@@ -223,17 +253,21 @@ mechanics-lms/
 │   ├── data/modules.ts       # 10 сабақтың толық контенті
 │   ├── lib/vr/               # three.js модельдері, физика rig-тері, canvas панельдер
 │   ├── lib/arena/            # Ойын физикасы, боттар, Supabase Realtime бөлмелері
-│   └── lib/                  # Firebase, AI, Google, competency, dataStore
-├── docs/firestore-schema.md, docs/3d-references.md
-├── tools/videos/         # Бейнені рендерлеу құралы (README.md)
-├── public/videos/        # Дайын lesson-NN.mp4 / .vtt / .jpg
+│   └── lib/                  # Supabase, AI, Google, competency, dataStore, stats, analytics
+├── docs/database-schema.md, docs/3d-references.md
+├── supabase/migrations/  # 0001–0011: схема мен RLS (supabase/README.md)
+├── tools/videos/         # Бейнені рендерлеу және Storage-ға жүктеу құралы (README.md)
+├── tools/ci/             # Мобильді смоук-тест
+├── .github/workflows/    # CI: typecheck, тесттер, build, смоук
+├── public/videos/        # Дайын lesson-NN.mp4 / .vtt / .jpg (немесе Storage — DEPLOYMENT.md §6)
+├── public/sw.js          # Офлайн үшін service worker
 ├── README.md / DEPLOYMENT.md
 └── .env.local.example
 ```
 
 ## Деректер қоры
 
-Firestore коллекциялары толық сипатталған: `docs/firestore-schema.md`.
+Кестелер, олардың иелері және RLS ережелері: [`docs/database-schema.md`](docs/database-schema.md); схеманы орнату — [`supabase/README.md`](supabase/README.md).
 
 ## Пайдалану нұсқаулықтары
 
