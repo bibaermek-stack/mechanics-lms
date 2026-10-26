@@ -4,10 +4,10 @@ import { useRef } from "react";
 import {
   motion,
   useMotionValue,
-  useReducedMotion,
   useSpring,
   useTransform,
 } from "framer-motion";
+import { useReducedMotion } from "@/lib/useReducedMotion";
 
 /**
  * Magnetic hover: the element leans toward the cursor while it is inside a
