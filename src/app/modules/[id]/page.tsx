@@ -14,12 +14,14 @@ import {
   Brain,
   Boxes,
   Orbit,
+  Eye,
 } from "lucide-react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card } from "@/components/ui/Card";
 import { VideoPlayer } from "@/components/video/VideoPlayer";
 import { QuizEngine } from "@/components/quiz/QuizEngine";
 import { GameRouter } from "@/components/games/GameRouter";
+import { PredictPanel } from "@/components/predict/PredictPanel";
 import { RubricAssessment } from "@/components/assessment/RubricAssessment";
 import { BOZhSubmissionForm } from "@/components/assignment/BOZhSubmissionForm";
 import { AiTutorWidget } from "@/components/ai/AiTutorWidget";
@@ -44,6 +46,7 @@ const TABS = [
   { key: "lecture", label: "Дәріс", icon: BookOpen },
   { key: "scene", label: "3D сахна", icon: Orbit },
   { key: "simulation", label: "3D Симуляция", icon: Boxes },
+  { key: "predict", label: "Болжам", icon: Eye },
   { key: "glossary", label: "Глоссарий", icon: ListChecks },
   { key: "quiz", label: "Викторина", icon: HelpCircle },
   { key: "game", label: "Ойын", icon: Gamepad2 },
@@ -233,6 +236,8 @@ export default function ModuleDetailPage() {
         {tab === "scene" && <LiveScene moduleId={mod.id} />}
 
         {tab === "simulation" && <LessonSimulations lessonId={mod.id} />}
+
+        {tab === "predict" && <PredictPanel lesson={mod.id} />}
 
         {tab === "quiz" && <QuizEngine mod={mod} />}
 

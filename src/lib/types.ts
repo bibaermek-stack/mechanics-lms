@@ -221,6 +221,22 @@ export interface DiagnosticAttempt {
   takenAt: string;
 }
 
+/** How sure the student said they were before seeing the measurement: 1 = no idea, 2 = fairly, 3 = certain. */
+export type Confidence = 1 | 2 | 3;
+
+/** One prediction made before looking (src/data/predictions.ts). Append-only, like the diagnostic. */
+export interface PredictionAttempt {
+  id: string;
+  userId: string;
+  itemId: string;
+  optionId: string;
+  correct: boolean;
+  /** The misconception the chosen option expresses; null when it was right. */
+  misconception: string | null;
+  confidence: Confidence;
+  createdAt: string;
+}
+
 export interface FinalGradeBreakdown {
   video: number; // %
   quiz: number;

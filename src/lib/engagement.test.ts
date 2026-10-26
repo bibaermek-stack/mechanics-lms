@@ -18,7 +18,7 @@ import {
   type Achievement,
   type EngagementRecords,
 } from "./engagement";
-import type { AssignmentSubmission, CompetencyAssessment, DiagnosticAttempt, GameResult, QuizAttempt } from "./types";
+import type { AssignmentSubmission, CompetencyAssessment, DiagnosticAttempt, GameResult, PredictionAttempt, QuizAttempt } from "./types";
 
 // Timestamps are built from the *local* calendar and read back through it, so none
 // of this depends on the time zone the tests happen to run in.
@@ -281,6 +281,25 @@ describe("achievements", () => {
     expect(ach(only, "game-perfect").unlocked).toBe(false);
     expect(ach(only, "game-variety").progress).toBe(0);
     expect(ach(only, "game-25").progress).toBe(0);
+  });
+
+  it("predictor counts only FIRST predictions that were right, eight of them", () => {
+    const pred = (item: string, correct: boolean, day: string, id = item + day): PredictionAttempt =>
+      ({ id, userId: "u", itemId: item, optionId: "x", correct, misconception: correct ? null : "m", confidence: 2, createdAt: at(day === "0" ? "2026-10-26" : "2026-10-27") });
+    const right = (n: number) => Array.from({ length: n }, (_, i) => pred(`item-${i}`, true, "0"));
+    expect(ach(state(rec({ predictions: right(7) })), "predictor")).toMatchObject({ progress: 7, unlocked: false });
+    expect(ach(state(rec({ predictions: right(8) })), "predictor").unlocked).toBe(true);
+    // a retake that got it right does not repair a first attempt that was wrong
+    const retaken = [pred("a", false, "0"), pred("a", true, "1"), ...right(7).map((p, i) => ({ ...p, itemId: `b${i}` }))];
+    expect(ach(state(rec({ predictions: retaken })), "predictor").progress).toBe(7);
+    // and the same item right twice counts once
+    expect(ach(state(rec({ predictions: [pred("a", true, "0"), pred("a", true, "1")] })), "predictor").progress).toBe(1);
+  });
+
+  it("a prediction is a day of study, whatever else was done", () => {
+    const p: PredictionAttempt = { id: "p", userId: "u", itemId: "x", optionId: "y", correct: true, misconception: null, confidence: 1, createdAt: at("2026-10-26") };
+    expect([...activityDays(rec({ predictions: [p] }))]).toEqual(["2026-10-26"]);
+    expect(activityDays(rec({})).size).toBe(0);
   });
 
   it("25 games is 25: 24 does not do", () => {

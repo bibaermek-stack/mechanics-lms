@@ -6,6 +6,7 @@ import {
   CalendarCheck,
   CheckCircle2,
   ClipboardCheck,
+  Eye,
   Crosshair,
   FileText,
   Flame,
@@ -26,7 +27,7 @@ import {
 import type { Achievement } from "@/lib/engagement";
 
 const ICONS: Record<string, LucideIcon> = {
-  Brain, CalendarCheck, CheckCircle2, ClipboardCheck, Crosshair, FileText, Flame, Footprints,
+  Brain, CalendarCheck, CheckCircle2, ClipboardCheck, Crosshair, Eye, FileText, Flame, Footprints,
   Gamepad2, GraduationCap, Medal, Puzzle, Rocket, Sparkles, Star, TrendingUp, Trophy, Zap,
 };
 

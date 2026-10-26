@@ -27,12 +27,15 @@ import {
   CalendarCheck,
   Flag,
   Sparkles,
+  Eye,
+  Lightbulb,
 } from "lucide-react";
 
 const STUDENT_LINKS = [
   { href: "/dashboard", label: "Басты бет", icon: LayoutDashboard },
   { href: "/diagnostic", label: "Диагностика", icon: ClipboardCheck },
   { href: "/modules", label: "Сабақтар", icon: BookOpen },
+  { href: "/predict", label: "Болжам", icon: Eye },
   { href: "/games", label: "Ойындар", icon: Puzzle },
   { href: "/daily", label: "Күнделікті сынақ", icon: CalendarCheck },
   { href: "/myths", label: "Миф па, шындық па?", icon: Sparkles },
@@ -60,6 +63,7 @@ const TEACHER_LINKS = [
   { href: "/arena", label: "Арена", icon: Gamepad2 },
   { href: "/teacher/assignments", label: "Тапсырмаларды тексеру", icon: ClipboardList },
   { href: "/teacher/analytics", label: "Есептер мен аналитика", icon: BarChart3 },
+  { href: "/teacher/misconceptions", label: "Қате түсініктер", icon: Lightbulb },
   { href: "/profile", label: "Профиль", icon: Settings },
 ];
 

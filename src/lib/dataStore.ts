@@ -21,6 +21,7 @@ import type {
   AssignmentSubmission,
   CompetencyAssessment,
   DiagnosticAttempt,
+  PredictionAttempt,
   Certificate,
   LeaderboardEntry,
   Notification,
@@ -389,6 +390,63 @@ export async function getDiagnosticAttempts(userId?: string): Promise<Diagnostic
     return (data ?? []).map(rowToDiagnostic);
   }
   const list = lsGet<DiagnosticAttempt[]>("diagnosticAttempts", []);
+  return userId ? list.filter((a) => a.userId === userId) : list;
+}
+
+// ---------------------------------------------------------------------------
+// Predictions ("predict, then look")
+// ---------------------------------------------------------------------------
+function rowToPrediction(r: any): PredictionAttempt {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    itemId: r.item_id,
+    optionId: r.option_id,
+    correct: Boolean(r.correct),
+    misconception: r.misconception ?? null,
+    confidence: r.confidence,
+    createdAt: r.created_at,
+  };
+}
+
+export async function savePrediction(a: PredictionAttempt): Promise<void> {
+  if (live()) {
+    const { error } = await supabase!.from("prediction_attempts").insert({
+      user_id: a.userId,
+      item_id: a.itemId,
+      option_id: a.optionId,
+      correct: a.correct,
+      misconception: a.misconception,
+      confidence: a.confidence,
+    });
+    if (error) throw new Error(error.message);
+    return;
+  }
+  const list = lsGet<PredictionAttempt[]>("predictions", []);
+  list.unshift(a);
+  lsSet("predictions", list);
+}
+
+/**
+ * With no `userId`: everything the caller may see — their own as a student, every
+ * accepted student's as a teacher (the RLS policy decides). Paged, because the
+ * API returns at most a thousand rows a request and says nothing when it cuts one off.
+ */
+export async function getPredictions(userId?: string): Promise<PredictionAttempt[]> {
+  if (live()) {
+    const out: PredictionAttempt[] = [];
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      let q = supabase!.from("prediction_attempts").select("*").order("created_at", { ascending: false }).order("id");
+      if (userId) q = q.eq("user_id", userId);
+      const { data, error } = await q.range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      out.push(...(data ?? []).map(rowToPrediction));
+      if (!data || data.length < PAGE) break;
+    }
+    return out;
+  }
+  const list = lsGet<PredictionAttempt[]>("predictions", []);
   return userId ? list.filter((a) => a.userId === userId) : list;
 }
 

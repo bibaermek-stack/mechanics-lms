@@ -14,8 +14,10 @@ import type {
   CompetencyAssessment,
   DiagnosticAttempt,
   GameResult,
+  PredictionAttempt,
   QuizAttempt,
 } from "./types";
+import { firstAttempts } from "./misconceptions";
 
 /** The lesson id under which the daily challenge is stored: it belongs to no lesson. */
 export const DAILY_MODULE_ID = 0;
@@ -110,6 +112,8 @@ export interface EngagementRecords {
   submissions: AssignmentSubmission[];
   assessments: CompetencyAssessment[];
   diagnostics: DiagnosticAttempt[];
+  /** Left out by callers that predate predictions. */
+  predictions?: PredictionAttempt[];
 }
 
 /** Every day on which the student did *something* that left a record. */
@@ -120,6 +124,7 @@ export function activityDays(r: EngagementRecords): Set<string> {
     ...r.submissions.map((x) => x.submittedAt),
     ...r.assessments.map((x) => x.assessedAt),
     ...r.diagnostics.map((x) => x.takenAt),
+    ...(r.predictions ?? []).map((x) => x.createdAt),
   ];
   const days = new Set<string>();
   for (const s of stamps) {
@@ -322,6 +327,14 @@ const DEFS: Def[] = [
     icon: "Sparkles",
     target: 75,
     measure: (c) => bestOf(scoresOf(c, "myth")),
+  },
+  {
+    id: "predictor",
+    title: "Болжаушы",
+    description: "Сегіз болжамды бірінші рет дұрыс айт («Болжам» табы).",
+    icon: "Eye",
+    target: 8,
+    measure: (c) => firstAttempts(c.predictions ?? []).filter((p) => p.correct).length,
   },
   {
     id: "streak-3",
