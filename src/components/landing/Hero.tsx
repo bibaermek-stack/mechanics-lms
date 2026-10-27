@@ -79,15 +79,6 @@ export function Hero() {
       )}
 
       <motion.div style={reduced ? undefined : { y, opacity }} className="relative z-10 mx-auto max-w-3xl text-center">
-        <motion.span
-          className="badge mb-6 inline-flex"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-        >
-          Магистрлік зерттеу жобасы · Ахмет Ясауи университеті
-        </motion.span>
-
         <motion.h1
           className="text-display text-slate-900 dark:text-white"
           initial={{ opacity: 0, y: 26, filter: "blur(14px)" }}
