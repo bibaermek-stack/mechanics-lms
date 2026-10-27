@@ -293,6 +293,17 @@ describe("achievements", () => {
     expect(ach(state(rec({ quizzes: Array.from({ length: 5 }, (_, i) => q(i + 1, 9)), games: Array.from({ length: 5 }, (_, i) => game("memory", 90, "2026-10-02", i + 1)) })), "campaign-stars").unlocked).toBe(true);
   });
 
+  it("a contribution is a day of study; approved ones earn the gallery and author badges, waiting or rejected ones do not", () => {
+    const item = (status: string, day = "2026-10-26") => ({ status, createdAt: at(day) });
+    expect([...activityDays(rec({ showcases: [item("pending", "2026-10-20")], questions: [item("rejected", "2026-10-21")] }))].sort()).toEqual(["2026-10-20", "2026-10-21"]);
+    expect(ach(state(rec({ showcases: [item("pending"), item("rejected")] })), "showcase-1")).toMatchObject({ progress: 0, unlocked: false });
+    expect(ach(state(rec({ showcases: [item("rejected"), item("approved")] })), "showcase-1").unlocked).toBe(true);
+    expect(ach(state(rec({ questions: [item("approved"), item("approved"), item("pending")] })), "question-author")).toMatchObject({ progress: 2, unlocked: false });
+    expect(ach(state(rec({ questions: [item("approved"), item("approved"), item("approved")] })), "question-author").unlocked).toBe(true);
+    // a showcase post is not a question, and the other way round
+    expect(ach(state(rec({ showcases: [item("approved"), item("approved"), item("approved")] })), "question-author").progress).toBe(0);
+  });
+
   it("the folk-games master needs all four traditional games at 60 or more, each counted once", () => {
     const four = ["bow", "asyq", "tug", "rocket"].map((k) => game(k, 60));
     expect(ach(state(rec({ games: four.slice(0, 3) })), "folk-master")).toMatchObject({ progress: 3, unlocked: false });

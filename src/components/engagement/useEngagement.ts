@@ -12,6 +12,7 @@ import {
   getQuizAttempts,
 } from "@/lib/dataStore";
 import { computeEngagement, dayKey, type Achievement, type EngagementRecords, type EngagementState } from "@/lib/engagement";
+import { listMyQuestions, listMyShowcase } from "@/lib/communityData";
 import { useLessons } from "@/components/providers/LessonsProvider";
 
 export interface UseEngagement {
@@ -51,14 +52,17 @@ export function useEngagement(): UseEngagement {
       getDiagnosticAttempts(uid),
       getPredictions(uid),
       getSensorResults(uid),
+      // optional: a database without the community tables must not blank the rest
+      listMyShowcase(uid).catch(() => []),
+      listMyQuestions(uid).catch(() => []),
     ])
-      .then(([quizzes, games, submissions, assessments, diagnostics, predictions, sensors]) => {
-        setRecords({ quizzes, games, submissions, assessments, diagnostics, predictions, sensors });
+      .then(([quizzes, games, submissions, assessments, diagnostics, predictions, sensors, showcases, questions]) => {
+        setRecords({ quizzes, games, submissions, assessments, diagnostics, predictions, sensors, showcases, questions });
         setToday(dayKey(new Date()));
       })
       .catch(() => {
         // Offline or a table missing: show an honest empty shelf, not a spinner forever.
-        setRecords({ quizzes: [], games: [], submissions: [], assessments: [], diagnostics: [], predictions: [], sensors: [] });
+        setRecords({ quizzes: [], games: [], submissions: [], assessments: [], diagnostics: [], predictions: [], sensors: [], showcases: [], questions: [] });
         setToday(dayKey(new Date()));
       });
   }, [user]);

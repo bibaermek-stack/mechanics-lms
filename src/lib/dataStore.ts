@@ -33,7 +33,7 @@ import type {
 
 const LS_PREFIX = "mechanics-lms:";
 
-function lsGet<T>(key: string, fallback: T): T {
+export function lsGet<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
     const raw = window.localStorage.getItem(LS_PREFIX + key);
@@ -43,7 +43,7 @@ function lsGet<T>(key: string, fallback: T): T {
   }
 }
 
-function lsSet<T>(key: string, value: T) {
+export function lsSet<T>(key: string, value: T) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(LS_PREFIX + key, JSON.stringify(value));
 }

@@ -117,6 +117,9 @@ export interface EngagementRecords {
   predictions?: PredictionAttempt[];
   /** Left out by callers that predate the phone laboratory. */
   sensors?: SensorResult[];
+  /** The student's own gallery posts and questions; left out by callers that predate the community. */
+  showcases?: { status: string; createdAt: string }[];
+  questions?: { status: string; createdAt: string }[];
 }
 
 /** Every day on which the student did *something* that left a record. */
@@ -129,6 +132,8 @@ export function activityDays(r: EngagementRecords): Set<string> {
     ...r.diagnostics.map((x) => x.takenAt),
     ...(r.predictions ?? []).map((x) => x.createdAt),
     ...(r.sensors ?? []).map((x) => x.createdAt),
+    ...(r.showcases ?? []).map((x) => x.createdAt),
+    ...(r.questions ?? []).map((x) => x.createdAt),
   ];
   const days = new Set<string>();
   for (const s of stamps) {
@@ -320,6 +325,22 @@ const DEFS: Def[] = [
     icon: "Star",
     target: 15,
     measure: (c) => [...starsByLesson(c).values()].reduce((a, b) => a + b, 0),
+  },
+  {
+    id: "showcase-1",
+    title: "Көрмеші",
+    description: "Үйде жасаған тәжірибеңді сынып галереясына жібер және мұғалімнің мақұлдауын ал.",
+    icon: "MessagesSquare",
+    target: 1,
+    measure: (c) => (c.showcases ?? []).filter((x) => x.status === "approved").length,
+  },
+  {
+    id: "question-author",
+    title: "Сұрақ авторы",
+    description: "Сыныптастарыңа жазған үш сұрағың мұғалімнен мақұлдансын.",
+    icon: "Lightbulb",
+    target: 3,
+    measure: (c) => (c.questions ?? []).filter((x) => x.status === "approved").length,
   },
   {
     id: "first-game",

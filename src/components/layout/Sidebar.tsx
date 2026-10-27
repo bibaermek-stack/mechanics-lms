@@ -31,6 +31,7 @@ import {
   Lightbulb,
   Smartphone,
   Map as MapIcon,
+  MessagesSquare,
 } from "lucide-react";
 
 const STUDENT_LINKS = [
@@ -54,6 +55,7 @@ const STUDENT_LINKS = [
   { href: "/certificates", label: "Сертификаттар", icon: Award },
   { href: "/leaderboard", label: "Көшбасшылар кестесі", icon: Trophy },
   { href: "/league", label: "Топтар лигасы", icon: Flag },
+  { href: "/community", label: "Сынып қауымдастығы", icon: MessagesSquare },
   { href: "/profile", label: "Профиль", icon: User },
 ];
 
@@ -68,6 +70,7 @@ const TEACHER_LINKS = [
   { href: "/teacher/assignments", label: "Тапсырмаларды тексеру", icon: ClipboardList },
   { href: "/teacher/analytics", label: "Есептер мен аналитика", icon: BarChart3 },
   { href: "/teacher/misconceptions", label: "Қате түсініктер", icon: Lightbulb },
+  { href: "/teacher/community", label: "Модерация", icon: MessagesSquare },
   { href: "/profile", label: "Профиль", icon: Settings },
 ];
 
