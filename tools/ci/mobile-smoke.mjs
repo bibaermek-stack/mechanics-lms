@@ -26,10 +26,10 @@ const HEIGHT = 800;
 
 const STUDENT_ROUTES = [
   "/", "/login", "/dashboard", "/diagnostic", "/modules", "/modules/1", "/labs", "/problems",
-  "/ai-tutor", "/analytics", "/arena", "/certificates", "/community", "/connections", "/daily", "/duels", "/games", "/leaderboard", "/league", "/map", "/myths", "/predict", "/sensors",
+  "/ai-tutor", "/analytics", "/arena", "/certificates", "/community", "/connections", "/daily", "/duels", "/games", "/leaderboard", "/league", "/live", "/map", "/myths", "/predict", "/sensors",
   "/profile", "/vr-lab", "/verify/demo",
 ];
-const TEACHER_ROUTES = ["/teacher", "/teacher/analytics", "/teacher/assignments", "/teacher/community", "/teacher/lessons", "/teacher/misconceptions", "/teacher/students"];
+const TEACHER_ROUTES = ["/teacher", "/teacher/analytics", "/teacher/assignments", "/teacher/community", "/teacher/lessons", "/teacher/live", "/teacher/misconceptions", "/teacher/students"];
 
 const ONLY = process.env.SMOKE_ONLY?.split(",").map((r) => r.trim()).filter(Boolean);
 const wanted = (routes) => (ONLY ? routes.filter((r) => ONLY.includes(r)) : routes);
