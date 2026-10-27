@@ -33,6 +33,7 @@ import {
   Map as MapIcon,
   MessagesSquare,
   Radio,
+  Target,
 } from "lucide-react";
 
 const STUDENT_LINKS = [
@@ -42,6 +43,7 @@ const STUDENT_LINKS = [
   { href: "/map", label: "Сапар картасы", icon: MapIcon },
   { href: "/predict", label: "Болжам", icon: Eye },
   { href: "/games", label: "Ойындар", icon: Puzzle },
+  { href: "/asyq", label: "Асық ату 3D", icon: Target },
   { href: "/daily", label: "Күнделікті сынақ", icon: CalendarCheck },
   { href: "/myths", label: "Миф па, шындық па?", icon: Sparkles },
   { href: "/sensors", label: "Телефон зертханасы", icon: Smartphone },

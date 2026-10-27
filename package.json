@@ -12,6 +12,8 @@
     "test:watch": "vitest",
     "smoke:mobile": "node tools/ci/mobile-smoke.mjs",
     "test:db": "bash tools/db-test/run.sh",
+    "asyq:model": "node tools/asyq/build-model.mjs",
+    "asyq:model:check": "node tools/asyq/build-model.mjs --check",
     "build:server": "tsc -p tsconfig.server.json",
     "start:server": "node dist-server/server/index.js",
     "dev:server": "npm run build:server && npm run start:server",
@@ -21,6 +23,7 @@
     "videos:upload": "node --env-file=.env.local tools/videos/upload.mjs"
   },
   "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.21.0",
     "@react-three/drei": "^9.114.3",
     "@react-three/fiber": "^8.17.10",
     "@supabase/ssr": "^0.12.4",

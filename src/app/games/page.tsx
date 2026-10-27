@@ -134,6 +134,18 @@ export default function GamesHubPage() {
             </span>
           </div>
           <Link
+            href="/asyq"
+            className="surface-card flex flex-col items-start gap-2 text-left transition-colors hover:border-brand-400"
+          >
+            <Target className="text-brand-500" size={22} />
+            <span className="flex items-center gap-1 text-h3 text-slate-900 dark:text-white">
+              Асық ату 3D <ArrowUpRight size={14} />
+            </span>
+            <span className="text-body text-slate-600 dark:text-slate-400">
+              Нақты 3D физикамен ойналатын толық ойын: сақаны лақтыр, асықтарды шеңберден шығар, қай қырымен түскенін көр. 1–4 ойыншы, ережені өзің баптайсың.
+            </span>
+          </Link>
+          <Link
             href="/daily"
             className="surface-card flex flex-col items-start gap-2 text-left transition-colors hover:border-brand-400"
           >
