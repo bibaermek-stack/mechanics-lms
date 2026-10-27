@@ -30,12 +30,14 @@ import {
   Eye,
   Lightbulb,
   Smartphone,
+  Map as MapIcon,
 } from "lucide-react";
 
 const STUDENT_LINKS = [
   { href: "/dashboard", label: "Басты бет", icon: LayoutDashboard },
   { href: "/diagnostic", label: "Диагностика", icon: ClipboardCheck },
   { href: "/modules", label: "Сабақтар", icon: BookOpen },
+  { href: "/map", label: "Сапар картасы", icon: MapIcon },
   { href: "/predict", label: "Болжам", icon: Eye },
   { href: "/games", label: "Ойындар", icon: Puzzle },
   { href: "/daily", label: "Күнделікті сынақ", icon: CalendarCheck },

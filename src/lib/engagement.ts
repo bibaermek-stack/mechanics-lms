@@ -244,6 +244,43 @@ interface Def {
 }
 
 const pct = (a: Pick<QuizAttempt, "score" | "total">) => (a.total > 0 ? Math.round((100 * a.score) / a.total) : 0);
+
+/** A quiz at or above this is not just a pass but command of the lesson. */
+export const MASTERY_PERCENT = 90;
+
+export interface LessonProgress {
+  /** Best quiz result, %, or null if the lesson's quiz was never taken. */
+  quizBest: number | null;
+  /** Best result in any of the lesson's games, or null. */
+  gameBest: number | null;
+  /**
+   * 1 for a passed quiz; 2 as well for a lesson game passed (≥ 60); 3 as well for a mastered
+   * quiz (≥ 90). Cumulative: a game played before the quiz is passed earns nothing yet.
+   */
+  stars: 0 | 1 | 2 | 3;
+}
+
+export function lessonProgress(records: Pick<EngagementRecords, "quizzes" | "games">, moduleId: number): LessonProgress {
+  const quizzes = records.quizzes.filter((q) => q.moduleId === moduleId);
+  const games = records.games.filter((g) => g.moduleId === moduleId && isLessonGame(g));
+  const quizBest = quizzes.length ? Math.max(...quizzes.map(pct)) : null;
+  const gameBest = games.length ? Math.max(...games.map((g) => g.score)) : null;
+  let stars: 0 | 1 | 2 | 3 = 0;
+  if (quizBest !== null && quizBest >= PASS_PERCENT) {
+    stars = 1;
+    if (gameBest !== null && gameBest >= PASS_PERCENT) {
+      stars = 2;
+      if (quizBest >= MASTERY_PERCENT) stars = 3;
+    }
+  }
+  return { quizBest, gameBest, stars };
+}
+
+/** Every lesson the records mention, with its stars. */
+export function starsByLesson(records: Pick<EngagementRecords, "quizzes" | "games">): Map<number, number> {
+  const ids = new Set<number>([...records.quizzes.map((q) => q.moduleId), ...records.games.filter(isLessonGame).map((g) => g.moduleId)]);
+  return new Map([...ids].map((id) => [id, lessonProgress(records, id).stars]));
+}
 const bestOf = (xs: number[]) => (xs.length ? Math.max(...xs) : 0);
 const scoresOf = (c: Context, type: string) => c.games.filter((g) => g.gameType === type).map((g) => g.score);
 
@@ -275,6 +312,14 @@ const DEFS: Def[] = [
       for (const q of c.quizzes) best.set(q.moduleId, Math.max(best.get(q.moduleId) ?? 0, pct(q)));
       return [...best.values()].filter((p) => p >= PASS_PERCENT).length;
     },
+  },
+  {
+    id: "campaign-stars",
+    title: "Жұлдызды сапар",
+    description: "Сапар картасында барлығы 15 жұлдыз жина (әр сабақтан ең көбі 3).",
+    icon: "Star",
+    target: 15,
+    measure: (c) => [...starsByLesson(c).values()].reduce((a, b) => a + b, 0),
   },
   {
     id: "first-game",

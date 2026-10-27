@@ -283,6 +283,16 @@ describe("achievements", () => {
     expect(ach(only, "game-25").progress).toBe(0);
   });
 
+  it("the journey's stars add up across lessons, and a game without a passed quiz adds none", () => {
+    const q = (m: number, score: number) => ({ id: `q${m}${score}`, moduleId: m, userId: "u", score, total: 10, answers: [], takenAt: at("2026-10-01") });
+    const stars = (r: Partial<EngagementRecords>) => ach(state(rec(r)), "campaign-stars").progress;
+    expect(stars({})).toBe(0);
+    expect(stars({ quizzes: [q(1, 7)] })).toBe(1);
+    expect(stars({ quizzes: [q(1, 9), q(2, 6)], games: [game("memory", 80, "2026-10-02", 1)] })).toBe(4); // 1: quiz+game+mastery = 3, 2: quiz = 1
+    expect(stars({ games: [game("memory", 100, "2026-10-02", 1)] })).toBe(0);
+    expect(ach(state(rec({ quizzes: Array.from({ length: 5 }, (_, i) => q(i + 1, 9)), games: Array.from({ length: 5 }, (_, i) => game("memory", 90, "2026-10-02", i + 1)) })), "campaign-stars").unlocked).toBe(true);
+  });
+
   it("the folk-games master needs all four traditional games at 60 or more, each counted once", () => {
     const four = ["bow", "asyq", "tug", "rocket"].map((k) => game(k, 60));
     expect(ach(state(rec({ games: four.slice(0, 3) })), "folk-master")).toMatchObject({ progress: 3, unlocked: false });
