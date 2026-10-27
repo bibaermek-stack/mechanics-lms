@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "smoke:mobile": "node tools/ci/mobile-smoke.mjs",
+    "test:db": "bash tools/db-test/run.sh",
     "build:server": "tsc -p tsconfig.server.json",
     "start:server": "node dist-server/server/index.js",
     "dev:server": "npm run build:server && npm run start:server",

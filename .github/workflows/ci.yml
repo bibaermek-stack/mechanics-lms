@@ -51,8 +51,10 @@ jobs:
   # The migrations and the row-level-security rules, run for real on PostgreSQL 16:
   # every file in supabase/migrations applied in order to an empty database, then
   # every test in supabase/tests (who may read whose records, the XP rule, the
-  # diagnostic rules, the weekly league). tools/db-test/stub.sql stands in for the
-  # parts of Supabase the migrations lean on (auth.users, auth.uid(), the roles).
+  # diagnostic rules, the weekly league, predictions, sensor results, and the
+  # moderation of the gallery and student questions). tools/db-test/stub.sql
+  # stands in for the parts of Supabase the migrations lean on (auth.users,
+  # auth.uid(), the roles).
   database:
     name: Migrations and RLS tests
     runs-on: ubuntu-latest

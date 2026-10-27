@@ -16,15 +16,18 @@ does.
 
 ## 2. Supabase setup
 
-Accounts, roles, the teacher↔student graph, every quiz/game/assignment record and
-the pre/post diagnostic live in Supabase. Firebase is no longer used and nothing
+Accounts, roles, the teacher↔student graph, every quiz/game/assignment record,
+the pre/post diagnostic, the weekly league, predictions, sensor results and the
+class gallery and student questions live in Supabase. Firebase is no longer used and nothing
 reads `FIREBASE_*` variables.
 
 1. https://supabase.com → **New project**. Pick a region close to the students.
 2. **SQL Editor** → run the files in `supabase/migrations/` **in order, 0001 to
-   0011**, each one pasted whole and run once. Do not skip one: `0003` fixes Google
-   sign-up, `0008` creates the learning-record tables the teacher pages read, and
-   `0011` creates the diagnostic table.
+   0016**, each one pasted whole and run once. Do not skip one: `0003` fixes Google
+   sign-up, `0008` creates the learning-record tables the teacher pages read, `0011`
+   creates the diagnostic table, and `0012`–`0016` back the league, predictions,
+   phone lab, gallery and student questions (without them those pages cannot
+   save or load their data).
 
    | File | Adds |
    |---|---|
@@ -34,6 +37,11 @@ reads `FIREBASE_*` variables.
    | 0008 | quiz, game, assignment, rubric and certificate records |
    | 0009 | XP, derived from those records |
    | 0011 | pre/post diagnostic (append-only, one per student per phase) |
+   | 0012 | weekly group league (`league_week()`) |
+   | 0013 | "predict, then see" attempts (append-only) |
+   | 0014 | phone-lab results (append-only) and the anonymous class jump distribution |
+   | 0015 | home-experiment gallery: text only, pending until a teacher approves |
+   | 0016 | student-written questions, same moderation |
 
    What each file does and why is in [`supabase/README.md`](supabase/README.md); the
    tables and who may read them are in [`docs/database-schema.md`](docs/database-schema.md).
@@ -56,6 +64,11 @@ Check it worked: in the SQL Editor, `select count(*) from public.diagnostic_atte
 should return `0`, not an error. Then register two accounts (a teacher and a
 student), link them, and open `/teacher/analytics` as the teacher — it should say
 the class has no data yet instead of showing the demo banner.
+
+Gallery posts and student questions are **pending until the author's own teacher
+approves them** (`/teacher/community`), so a student whose teacher has not
+accepted them can post but nobody else will ever see it. Tell teachers to check that
+page. Posts are text only by design.
 
 Row-level security does the access control, not the app: a teacher's queries
 return only their accepted students' rows because the *database* says so. Do not
@@ -275,6 +288,18 @@ leaves. Nothing to configure — it turns on with the Supabase keys.
 
 Practice against bots still works everywhere, including the demo build.
 
+### The live class quiz (`/teacher/live`, `/live`)
+
+Not part of the arena. The teacher's browser runs the game and the students'
+phones talk to it through Supabase Realtime **Broadcast** (so it needs the
+Supabase keys and Realtime enabled on the project); with no keys the same pages
+run over `BroadcastChannel`, which only connects tabs of one browser — enough for
+a demo on one computer, **not** for a class. Nothing is stored. The room code is
+the only barrier to entry, so treat a room like a classroom door, not a vault. If
+the teacher closes the page the game ends. This path has been tested in-browser
+and in unit tests but not yet against a live Supabase project; try a room with
+two real phones before you rely on it in a lesson.
+
 ## 8. Offline use, tests and CI
 
 **Offline / install.** `public/sw.js` is a small service worker, registered in
@@ -289,21 +314,29 @@ cached pages after a deploy, change `VERSION` at the top of `public/sw.js`. The
 manifest and icons make the site installable ("Add to Home Screen").
 
 **Tests.** `npm test` runs the unit tests (physics, the formula bank, statistics,
-the cohort builder, CSV); `npm run typecheck` runs `tsc`. `npm run smoke:mobile`
-opens every page at 320 and 375 px against a running production server and fails
-if one scrolls sideways or throws.
+the cohort builder, CSV, the games, sensors, community rules, live quiz);
+`npm run typecheck` runs `tsc`. `npm run smoke:mobile` opens every page at 320
+and 375 px against a running production server and fails if one scrolls sideways
+or throws. `npm run test:db` applies all migrations to an empty **PostgreSQL 15+**
+(standard `PG*` variables) and runs `supabase/tests/*.sql` against the row-level
+security rules — worth running against a scratch database before you change a
+migration.
 
 **CI.** `.github/workflows/ci.yml` runs typecheck, tests and a production build on
-every pull request and on `main`, then the mobile smoke test against that build.
-It needs no secrets: the build runs in demo mode.
+every pull request and on `main`, the database tests against a `postgres:16`
+service, and the mobile smoke test against the built site. It needs no secrets:
+the build runs in demo mode.
 
 ## 9. Post-deploy checklist
 
-- [ ] All eleven migrations ran, in order, with no error
+- [ ] All sixteen migrations ran, in order, with no error
 - [ ] Email sign-up works for a student and a teacher; Google sign-in works if enabled
 - [ ] A student's link request reaches the teacher, and accepting it fills the teacher's roster
 - [ ] `/teacher/analytics` shows **no** demo banner once a student is linked
 - [ ] A student can take the pre-test once and is refused a second sitting
+- [ ] `/league` lists the teacher's students; a student's gallery post appears in `/teacher/community` and reaches classmates only after approval
+- [ ] `/sensors` works on a real phone over HTTPS (iOS asks for motion permission)
+- [ ] A live-quiz room opens from `/teacher/live` and a second device joins with the code
 - [ ] AI tutor returns real model responses (not mock) when a key is set — and see the warning in §3
 - [ ] Google Sheets grade sync returns real rows (if used)
 - [ ] Certificate QR codes resolve to `/verify/[id]` on the deployed domain

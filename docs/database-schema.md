@@ -2,7 +2,7 @@
 
 The platform's database is **Supabase (PostgreSQL)**. The source of truth is
 [`supabase/migrations/`](../supabase/migrations) — run the files in order, 0001
-to 0011 (see [`supabase/README.md`](../supabase/README.md)). This page is the
+to 0016 (see [`supabase/README.md`](../supabase/README.md)). This page is the
 map; the migrations carry the reasoning behind every rule.
 
 > This file used to describe Firestore collections. The project moved to
@@ -44,6 +44,8 @@ One ownership rule, applied to every learning table:
 | `competency_assessments` | the 10-criterion rubric: `scores` (jsonb), `average_level`, `percent`, `assessor_type` (self / ai / teacher) | | 0008 |
 | `certificates` | `id`, `course_name`, `qr_data`, `verify_url` | `verify_certificate(id)` is public so a printed QR code resolves for someone with no account. | 0008 |
 | `diagnostic_attempts` | the pre/post test: `phase` (`pre` / `post`), `score`, `total`, `answers`, `taken_at` | **One per student per phase, append-only** (no UPDATE or DELETE policy), and a `post` cannot exist without a `pre`. See *Research data* below. | 0011 |
+| `prediction_attempts` | one "predict, then see" answer: `item_id`, `option_id`, `correct`, `misconception` (the id of the wrong idea the option expresses), `confidence` 1–3 | **Append-only.** Retakes add rows; the teacher's statistics count only each student's *first* attempt per item (`src/lib/misconceptions.ts`), because only that one says what they believed before being told. A correct answer carries no misconception (a CHECK). | 0013 |
+| `sensor_results` | a phone-lab measurement: `kind` (`rest-g` / `jump` / `pendulum` / `elevator`), `value`, `unit`, `details` (jsonb, < 4 kB) | **Append-only; the recording itself is never stored**, only the result. CHECKs refuse what no phone could have measured (a 40 m jump, a g of 90). | 0014 |
 
 ## Functions the app calls
 
@@ -55,6 +57,51 @@ One ownership rule, applied to every learning table:
 | `my_lesson_overrides()` | the patches that apply to the signed-in student |
 | `compute_xp(uid)` / `refresh_my_xp()` | XP is **derived** from the records above (best quiz per lesson, best game result, graded work, duels, rubric), never incremented, so it cannot drift |
 | `verify_certificate(id)` | public certificate lookup |
+| `league_week(week_start)` | the weekly group league: for the caller and the students of the caller's accepted teachers, **participation points** (a fixed number per record, whatever its score; at most 40 a day) and active days. No marks, no record contents. The rule is duplicated in `src/lib/league.ts` and the two are tested against each other. |
+| `class_jump_bests()` | each classmate's best jump as a bare number plus `is_me` — no id, no name, no ordering that could identify anyone |
+| `are_classmates(a, b)` | same student, or two students accepted by one teacher |
+| `showcase_feed()` | the approved gallery posts of the caller's class, with the author's name, like counts and `liked_by_me` |
+| `review_showcase(id, approve)` | the **only** way a gallery post changes status; allowed only to a teacher who has accepted the post's author |
+| `peer_questions(lesson)` | the approved classmates' questions for a lesson, **without** the author |
+| `review_question(id, approve)` | the same, for student-written questions |
+| `question_options_ok(options)` | validates a question's four options (used by a CHECK) |
+
+## Community content (gallery and student questions)
+
+Written for children, so the surface is deliberately small:
+
+| Table | Holds | Migration |
+|---|---|---|
+| `showcase_posts` | a home experiment: `title`, `what`, `physics`, `materials`, `lesson_id`, `status`, `reviewed_by`, `reviewed_at` | 0015 |
+| `showcase_likes` | one like per (post, student) | 0015 |
+| `student_questions` | a question a student wrote: `question`, four `options` (`text[]`), `correct_index`, `explanation`, `status`, `reviewed_*` | 0016 |
+
+- **Text only.** No images and no links — nothing to host, and nothing that can
+  show a face, a home or a stranger's website. If images are ever added they need
+  storage and a moderation path first.
+- **Pending by default.** Insert requires `status = 'pending'` (and no reviewer);
+  there is **no UPDATE policy**, so neither words nor status change from the
+  client. A student may delete their own post.
+- **Approval** happens through `review_showcase()` / `review_question()`
+  (security definer), which require the caller to be a teacher who has **accepted**
+  the author. A teacher of another class cannot approve it.
+- **Reading.** The author and their accepted teachers read the table. Classmates
+  read only through `showcase_feed()` / `peer_questions()`, which return approved
+  items of their own class; a question's author is not returned. Likes are
+  single, by classmates, on approved posts of others.
+- **Limits.** At most 5 posts and 10 questions may wait for review at once, so a
+  teacher's queue cannot be flooded.
+- The same rules are implemented for demo mode in `src/lib/community.ts`;
+  `community.test.ts` replays the SQL tests' scenario against it and reads the
+  limits out of the migrations to confirm they agree.
+
+## Live quiz (no tables)
+
+The live class quiz (`/teacher/live`, `/live`) stores **nothing** in the database
+and has no effect on grades. A teacher's browser acts as the game server; players
+join with a 6-character room code. Messages travel over `BroadcastChannel`
+(demo) or Supabase Realtime **Broadcast** (live; make sure Realtime is enabled
+for the project), see `src/lib/liveQuizTransport.ts`. No migration is involved.
 
 ## Research data (pre/post)
 
@@ -87,5 +134,16 @@ keys) everything is local.
 
 `localStorage` keys, all prefixed `mechanics-lms:`: `mockSession`, `users`,
 `quizAttempts`, `gameResults`, `assignmentSubmissions`, `competencyAssessments`,
-`diagnosticAttempts`, `certificates`, `notifications`, `finalGrades`,
-`darkMode`, `researchArms:<teacher id>`.
+`diagnosticAttempts`, `predictions`, `sensorResults`, `showcasePosts`,
+`showcaseLikes`, `studentQuestions`, `certificates`, `notifications`,
+`finalGrades`, `darkMode`, `researchArms:<teacher id>`.
+
+## Testing the rules
+
+`supabase/tests/*.sql` run the rules above against a **real PostgreSQL**:
+`tools/db-test/run.sh` applies every migration to an empty database, then each
+test file (as different users, by setting the request setting `auth.uid()` reads). A
+stub (`tools/db-test/stub.sql`) stands in for Supabase's `auth` schema and API
+roles. CI runs the same script in its `database` job. Each file is a series of
+checks that raise an exception when one fails, and each was verified by
+deliberately breaking the rule it covers.
