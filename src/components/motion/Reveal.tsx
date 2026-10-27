@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
+import { useReducedMotion } from "@/lib/useReducedMotion";
 
 type RevealKind = "up" | "blur" | "scale" | "rotate3d" | "left" | "right";
 

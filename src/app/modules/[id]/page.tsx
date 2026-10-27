@@ -14,12 +14,14 @@ import {
   Brain,
   Boxes,
   Orbit,
+  Eye,
 } from "lucide-react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card } from "@/components/ui/Card";
 import { VideoPlayer } from "@/components/video/VideoPlayer";
 import { QuizEngine } from "@/components/quiz/QuizEngine";
 import { GameRouter } from "@/components/games/GameRouter";
+import { PredictPanel } from "@/components/predict/PredictPanel";
 import { RubricAssessment } from "@/components/assessment/RubricAssessment";
 import { BOZhSubmissionForm } from "@/components/assignment/BOZhSubmissionForm";
 import { AiTutorWidget } from "@/components/ai/AiTutorWidget";
@@ -44,6 +46,7 @@ const TABS = [
   { key: "lecture", label: "Дәріс", icon: BookOpen },
   { key: "scene", label: "3D сахна", icon: Orbit },
   { key: "simulation", label: "3D Симуляция", icon: Boxes },
+  { key: "predict", label: "Болжам", icon: Eye },
   { key: "glossary", label: "Глоссарий", icon: ListChecks },
   { key: "quiz", label: "Викторина", icon: HelpCircle },
   { key: "game", label: "Ойын", icon: Gamepad2 },
@@ -176,7 +179,7 @@ export default function ModuleDetailPage() {
             </Card>
             <Card>
               <p className="mb-3 flex items-center gap-2 text-h3"><Brain size={16} /> Блум таксономиясы бойынша нәтижелер</p>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {Object.entries({
                   "Есте сақтау": mod.bloom.remember,
                   "Түсіну": mod.bloom.understand,
@@ -220,7 +223,7 @@ export default function ModuleDetailPage() {
         )}
 
         {tab === "glossary" && (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {mod.glossary.map((g) => (
               <Card key={g.term}>
                 <p className="text-h3 text-brand-700 dark:text-brand-300">{g.term}</p>
@@ -234,7 +237,9 @@ export default function ModuleDetailPage() {
 
         {tab === "simulation" && <LessonSimulations lessonId={mod.id} />}
 
-        {tab === "quiz" && <QuizEngine moduleId={mod.id} />}
+        {tab === "predict" && <PredictPanel lesson={mod.id} />}
+
+        {tab === "quiz" && <QuizEngine mod={mod} />}
 
         {tab === "game" && <GameRouter mod={mod} />}
 

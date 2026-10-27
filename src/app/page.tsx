@@ -49,7 +49,7 @@ const STACK = [
   {
     kind: "circuit" as StemObjectKind,
     title: "Ашық архитектура",
-    desc: "Next.js, three.js және Firebase. Мок режимінде кілтсіз жұмыс істейді, нақты бэкендке бір қадамда көшеді.",
+    desc: "Next.js, three.js және Supabase. Мок режимінде кілтсіз жұмыс істейді, нақты бэкендке кілттерді қосу арқылы көшеді.",
   },
 ];
 
@@ -83,7 +83,7 @@ export default function LandingPage() {
             </div>
           </Reveal>
 
-          <Stagger className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" gap={0.07}>
+          <Stagger className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" gap={0.07}>
             {ALL_MODULES.map((m) => {
               const meta = LAB_OBJECT[m.id];
               return (

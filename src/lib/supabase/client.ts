@@ -2,7 +2,7 @@
 
 // Browser-side Supabase client.
 //
-// Like the Firebase module before it, this is optional: with no keys in
+// This is optional: with no keys in
 // .env.local the export is null and every caller falls back to the localStorage
 // mock, so the project still demos on a machine with no backend at all. The one
 // difference is that Supabase is now the *primary* backend — accounts, roles and

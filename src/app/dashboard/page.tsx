@@ -5,11 +5,12 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { Badge } from "@/components/ui/Badge";
 import { StatCard } from "@/components/ui/StatCard";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { LessonCard } from "@/components/ui/LessonCard";
 import { ActionList } from "@/components/ui/ActionList";
+import { EngagementCard } from "@/components/engagement/EngagementCard";
+import { DailyFact } from "@/components/engagement/DailyFact";
 import { LoadingBlock } from "@/components/ui/Skeleton";
 import { LessonScoreChart } from "@/components/charts/LessonScoreChart";
 import { ALL_MODULES } from "@/data/modules";
@@ -18,6 +19,7 @@ import { useLessons } from "@/components/providers/LessonsProvider";
 import { useAuthStore } from "@/lib/authStore";
 import { buildStudentPlan, studentLessonScores } from "@/lib/studentPlan";
 import { loadStudentStats, type StudentStats } from "@/lib/studentStats";
+import { getDiagnosticAttempts } from "@/lib/dataStore";
 import type { ActionItem } from "@/lib/types";
 import { ArrowRight } from "lucide-react";
 
@@ -28,9 +30,14 @@ export default function StudentDashboard() {
   const [scores, setScores] = useState<(number | null)[] | null>(null);
   const [plan, setPlan] = useState<ActionItem[] | null>(null);
   const [stats, setStats] = useState<StudentStats | null>(null);
+  // `null` until known, so the banner does not flash up for someone who has already sat it.
+  const [needsPreTest, setNeedsPreTest] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) return;
+    getDiagnosticAttempts(user.uid)
+      .then((a) => setNeedsPreTest(!a.some((x) => x.phase === "pre")))
+      .catch(() => setNeedsPreTest(null));
     studentLessonScores(user.uid).then((s) => {
       setScores(s);
       setCompletedModuleIds(
@@ -57,7 +64,24 @@ export default function StudentDashboard() {
           }
         />
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {needsPreTest && (
+          <Link
+            href="/diagnostic"
+            className="flex items-center justify-between gap-3 rounded-2xl border border-brand-400/40 bg-brand-500/10 px-4 py-3 text-body text-slate-800 transition-colors hover:bg-brand-500/15 dark:text-slate-100"
+          >
+            <span>
+              <strong>Бастапқы диагностиканы тапсырыңыз</strong> — курстың басындағы деңгейіңізді өлшейтін 20 сұрақ.
+              Оқуды бастамас бұрын тапсырған жөн.
+            </span>
+            <ArrowRight size={18} className="shrink-0" />
+          </Link>
+        )}
+
+        <EngagementCard />
+
+        <DailyFact />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Аяқталған сабақтар"
             value={`${completedModuleIds.length}/${ALL_MODULES.length}`}
@@ -139,7 +163,7 @@ export default function StudentDashboard() {
 
         <div>
           <SectionHeader title="Оқу сабақтары" />
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {modules.map((m) => (
               <LessonCard
                 key={m.id}
@@ -153,18 +177,6 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {user?.badges && user.badges.length > 0 && (
-          <Card>
-            <p className="mb-3 text-h3">Жетістіктерің</p>
-            <div className="flex flex-wrap gap-2">
-              {user.badges.map((b, i) => (
-                <Badge key={b} variant="default" marker={String(i + 1)}>
-                  {b}
-                </Badge>
-              ))}
-            </div>
-          </Card>
-        )}
       </div>
     </DashboardShell>
   );

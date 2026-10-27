@@ -129,7 +129,7 @@ export default function ArenaLobbyPage() {
         </div>
 
         {/* Online ------------------------------------------------------------ */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="surface p-5">
             <p className="flex items-center gap-2 text-label uppercase text-slate-500 dark:text-slate-400">
               <Users size={13} /> Бөлме ашу

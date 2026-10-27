@@ -13,6 +13,10 @@
 import type { LessonModule, QuizQuestion } from "@/lib/types";
 import { seededPick, seededRandom, seededShuffle } from "@/lib/rng";
 import { lessonGlossary } from "./glossaryExtra";
+import { buildBlitz, buildOrder, buildTrueFalse } from "./moreGames";
+import { PROJECTILE_LESSONS } from "@/lib/projectile";
+import { COASTER_LESSONS } from "@/lib/coasterLevels";
+import { FOLK_LESSONS } from "@/lib/folk";
 
 // ---------------------------------------------------------------------------
 // Term classification — the one thing the lesson data cannot imply
@@ -440,7 +444,16 @@ export type BuildableGame =
   | "wordsearch"
   | "fillblank"
   | "sorting"
-  | "speedquiz";
+  | "speedquiz"
+  | "truefalse"
+  | "order"
+  | "blitz"
+  | "projectile"
+  | "coaster"
+  | "bow"
+  | "asyq"
+  | "tug"
+  | "rocket";
 
 /**
  * Which of the derived games this lesson has enough material for. The router
@@ -453,5 +466,11 @@ export function availableDerivedGames(mod: LessonModule, seed: number): Buildabl
   if (buildBlanks(mod, seed)) out.push("fillblank");
   if (buildSorting(mod, seed)) out.push("sorting");
   if (buildSpeedQuiz(mod, seed)) out.push("speedquiz");
+  if (buildTrueFalse(mod, seed)) out.push("truefalse");
+  if (buildOrder(mod, seed)) out.push("order");
+  if (buildBlitz(mod, seed)) out.push("blitz");
+  if (PROJECTILE_LESSONS.includes(mod.id)) out.push("projectile");
+  if (COASTER_LESSONS.includes(mod.id)) out.push("coaster");
+  for (const k of ["bow", "asyq", "tug", "rocket"] as const) if (FOLK_LESSONS[k].includes(mod.id)) out.push(k);
   return out;
 }

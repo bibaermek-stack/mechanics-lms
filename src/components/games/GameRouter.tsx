@@ -1,11 +1,12 @@
 "use client";
 
-// Ten games over one lesson.
+// The games over one lesson.
 //
-// Five are driven by the lesson's authored `game.pairs` and quiz; five are
-// derived from its glossary by src/data/gameContent.ts. Everything the derived
-// half needs is a pure function of (module, seed), which is what lets a duel
-// hand a friend the identical board — see the `seed` prop.
+// Some are driven by the lesson's authored `game.pairs` and quiz; the rest are
+// derived from its glossary, quiz bank, film chapters and formulas by
+// src/data/gameContent.ts and src/data/moreGames.ts. Everything the derived half
+// needs is a pure function of (module, seed), which is what lets a duel hand a
+// friend the identical board — see the `seed` prop.
 //
 // A mode is only offered when its board could actually be built. Showing a
 // tenth tab that opens an empty grid would be worse than showing nine.
@@ -23,6 +24,7 @@ import {
   buildSpeedQuiz,
   buildWordSearch,
 } from "@/data/gameContent";
+import { buildBlitz, buildOrder, buildTrueFalse } from "@/data/moreGames";
 import { MatchingGame } from "./MatchingGame";
 import { DragDropGame } from "./DragDropGame";
 import { MemoryGame } from "./MemoryGame";
@@ -33,6 +35,15 @@ import { WordSearchGame } from "./WordSearchGame";
 import { FillBlankGame } from "./FillBlankGame";
 import { SortingGame } from "./SortingGame";
 import { SpeedQuizGame } from "./SpeedQuizGame";
+import { TrueFalseGame } from "./TrueFalseGame";
+import { OrderGame } from "./OrderGame";
+import { BlitzGame } from "./BlitzGame";
+import { ProjectileGame } from "./ProjectileGame";
+import { CoasterGame } from "./CoasterGame";
+import { FolkGame } from "./FolkGame";
+import { FOLK_LESSONS, type FolkKind } from "@/lib/folk";
+import { COASTER_LESSONS } from "@/lib/coasterLevels";
+import { PROJECTILE_LESSONS, buildProjectile } from "@/lib/projectile";
 import { ARENA_LESSONS, ArenaGame } from "@/components/arena/ArenaGame";
 
 export type GameMode =
@@ -46,6 +57,15 @@ export type GameMode =
   | "fillblank"
   | "sorting"
   | "speedquiz"
+  | "truefalse"
+  | "order"
+  | "blitz"
+  | "projectile"
+  | "coaster"
+  | "bow"
+  | "asyq"
+  | "tug"
+  | "rocket"
   | "arena";
 
 export const GAME_LABELS: Record<GameMode, string> = {
@@ -59,6 +79,15 @@ export const GAME_LABELS: Record<GameMode, string> = {
   fillblank: "Бос орынды толтыр",
   sorting: "Сұрыптау",
   speedquiz: "Жылдам жауап",
+  truefalse: "Шын ба, өтірік пе?",
+  order: "Ретке келтір",
+  blitz: "Есеп-блиц",
+  projectile: "Снаряд атысы",
+  coaster: "Роллер-коастер",
+  bow: "Садақ ату",
+  asyq: "Асық ату",
+  tug: "Арқан тарту",
+  rocket: "Байқоңыр: ұшыру",
   arena: "Арена — физикалық футбол",
 };
 
@@ -74,6 +103,15 @@ const GAME_HINTS: Record<GameMode, string> = {
   fillblank: "Анықтамадағы жетіспейтін терминді таңда.",
   sorting: "Әр терминді өз санатына орналастыр.",
   speedquiz: "Уақыт біткенше жауап бер — жылдамдық та ұпай әкеледі.",
+  truefalse: "Сұраққа берілген жауап дұрыс па? Шешім қабылдауға 12 секунд.",
+  order: "Бейнедәрістің оқиғаларын айтылу ретімен орналастыр.",
+  blitz: "Формула бойынша есепті жылдам шығар: 8 есеп, әрқайсысына 40 секунд.",
+  projectile: "Бұрыш пен жылдамдықты таңда: Жерде, Айда, Марста және Юпитерде нысанаға ат. Әр раундта 4 атыс.",
+  coaster: "Роллер-коастер рельсін жаса: энергия биіктіктен жылдамдыққа және жылуға қалай айналатынын көр. Алты деңгей және еркін режим.",
+  bow: "Ұлттық ойын: садақтың серпімділік энергиясы жебенің жылдамдығына айналады. Тарту ұзындығы мен бұрышты таңдап, нысанаға ат.",
+  asyq: "Ұлттық ойын: сақа үйкелістен тоқтайды, d = v²/(2μg). Асықтардың қасына дәл тоқтат.",
+  tug: "Ұлттық ойын: арқанды тарту күші аяқтың үйкелісімен шектеледі, F = μMg. Күштерді теңестір.",
+  rocket: "Байқоңыр: Циолковский формуласы бойынша зымыранның жылдамдығын есепте. Керек болса, екі сатылы жаса.",
   arena: "Боттарға қарсы ойна: әр соқтығыстың импульсі мен энергиясы экранда есептеледі.",
 };
 
@@ -88,11 +126,17 @@ export function GameRouter({
   onScore,
   /** Restrict the picker to one game — a duel is about a single agreed board. */
   only,
+  /** Which tab opens first, if this lesson has it (a deep link from the games hub). */
+  initialMode,
+  /** Called once the result is stored, so a page showing the totals can refresh them. */
+  onSaved,
 }: {
   mod: LessonModule;
   seed?: number;
   onScore?: (score: number) => void;
   only?: GameMode;
+  initialMode?: GameMode;
+  onSaved?: () => void;
 }) {
   const user = useAuthStore((s) => s.user);
   const boardSeed = seed ?? mod.id * 7919;
@@ -106,6 +150,10 @@ export function GameRouter({
       fillblank: buildBlanks(mod, boardSeed),
       sorting: buildSorting(mod, boardSeed),
       speedquiz: buildSpeedQuiz(mod, boardSeed),
+      truefalse: buildTrueFalse(mod, boardSeed),
+      order: buildOrder(mod, boardSeed),
+      blitz: buildBlitz(mod, boardSeed),
+      projectile: PROJECTILE_LESSONS.includes(mod.id) ? buildProjectile(boardSeed) : null,
     }),
     [mod, boardSeed]
   );
@@ -120,12 +168,20 @@ export function GameRouter({
     if (boards.fillblank) list.push("fillblank");
     if (boards.sorting) list.push("sorting");
     if (boards.speedquiz) list.push("speedquiz");
+    if (boards.truefalse) list.push("truefalse");
+    if (boards.order) list.push("order");
+    if (boards.blitz) list.push("blitz");
+    if (boards.projectile) list.push("projectile");
+    if (COASTER_LESSONS.includes(mod.id)) list.push("coaster");
+    for (const k of ["bow", "asyq", "tug", "rocket"] as const) if (FOLK_LESSONS[k].includes(mod.id)) list.push(k);
     // Only where the collisions are the lesson — see ARENA_LESSONS.
     if (ARENA_LESSONS.includes(mod.id)) list.push("arena");
     return only ? list.filter((m) => m === only) : list;
   }, [mod, boards, only]);
 
-  const [mode, setMode] = useState<GameMode>(() => only ?? available[0] ?? "matching");
+  const [mode, setMode] = useState<GameMode>(
+    () => only ?? (initialMode && available.includes(initialMode) ? initialMode : available[0]) ?? "matching"
+  );
   const [lastScore, setLastScore] = useState<number | null>(null);
 
   async function handleComplete(score: number) {
@@ -140,6 +196,7 @@ export function GameRouter({
       score,
       completedAt: new Date().toISOString(),
     });
+    onSaved?.();
   }
 
   // Remounting on every mode or seed change resets each game's internal state.
@@ -201,6 +258,22 @@ export function GameRouter({
       )}
       {mode === "speedquiz" && boards.speedquiz && (
         <SpeedQuizGame key={key} board={boards.speedquiz} onComplete={handleComplete} />
+      )}
+      {mode === "truefalse" && boards.truefalse && (
+        <TrueFalseGame key={key} board={boards.truefalse} onComplete={handleComplete} />
+      )}
+      {mode === "order" && boards.order && (
+        <OrderGame key={key} board={boards.order} onComplete={handleComplete} />
+      )}
+      {mode === "blitz" && boards.blitz && (
+        <BlitzGame key={key} board={boards.blitz} onComplete={handleComplete} />
+      )}
+      {mode === "coaster" && <CoasterGame key={key} onComplete={handleComplete} />}
+      {(mode === "bow" || mode === "asyq" || mode === "tug" || mode === "rocket") && (
+        <FolkGame key={key} kind={mode as FolkKind} seed={boardSeed} onComplete={handleComplete} />
+      )}
+      {mode === "projectile" && boards.projectile && (
+        <ProjectileGame key={key} board={boards.projectile} onComplete={handleComplete} />
       )}
       {mode === "arena" && <ArenaGame key={key} moduleId={mod.id} onComplete={handleComplete} />}
 

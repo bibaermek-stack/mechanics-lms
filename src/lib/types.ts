@@ -97,6 +97,18 @@ export type GameType =
   | "spinwheel"
   | "sorting"
   | "conceptmap"
+  | "speedquiz"
+  | "truefalse"
+  | "order"
+  | "blitz"
+  | "projectile"
+  | "coaster"
+  | "bow"
+  | "asyq"
+  | "tug"
+  | "rocket"
+  | "daily"
+  | "myth"
   | "arena";
 
 export interface GamePair {
@@ -198,6 +210,49 @@ export interface CompetencyAssessment {
   percent: number; // 0-100
   assessedAt: string;
   assessorType: "self" | "ai" | "teacher";
+}
+
+/** `pre` is taken before the course, `post` after it — the same instrument both times. */
+export type DiagnosticPhase = "pre" | "post";
+
+/** One sitting of the diagnostic test. A student has at most one per phase. */
+export interface DiagnosticAttempt {
+  id: string;
+  userId: string;
+  phase: DiagnosticPhase;
+  score: number; // correct answers
+  total: number;
+  answers: { questionId: string; chosenIndex: number; correct: boolean }[];
+  takenAt: string;
+}
+
+/** How sure the student said they were before seeing the measurement: 1 = no idea, 2 = fairly, 3 = certain. */
+export type Confidence = 1 | 2 | 3;
+
+/** One prediction made before looking (src/data/predictions.ts). Append-only, like the diagnostic. */
+export interface PredictionAttempt {
+  id: string;
+  userId: string;
+  itemId: string;
+  optionId: string;
+  correct: boolean;
+  /** The misconception the chosen option expresses; null when it was right. */
+  misconception: string | null;
+  confidence: Confidence;
+  createdAt: string;
+}
+
+export type SensorKind = "rest-g" | "jump" | "pendulum" | "elevator";
+
+/** A measurement made with the phone's own sensors (src/lib/sensors/analysis.ts). */
+export interface SensorResult {
+  id: string;
+  userId: string;
+  kind: SensorKind;
+  value: number;
+  unit: string;
+  details: Record<string, unknown>;
+  createdAt: string;
 }
 
 export interface FinalGradeBreakdown {

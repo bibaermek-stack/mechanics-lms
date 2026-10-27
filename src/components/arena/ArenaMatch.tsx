@@ -177,7 +177,10 @@ export function ArenaMatch({
       ref={shellRef}
       className={clsx(
         fullscreen.active
-          ? "fixed inset-0 z-50 flex h-screen w-screen flex-col gap-2 bg-slate-950 p-3"
+          ? // No h-screen: 100vh is the viewport with the browser bars retracted, so on
+            // iPhone (where this fallback is what "full screen" means) it pushed the
+            // bottom controls off the visible area. inset-0 already fills what is shown.
+            "fixed inset-0 z-50 flex flex-col gap-2 bg-slate-950 p-3"
           : "space-y-3"
       )}
     >

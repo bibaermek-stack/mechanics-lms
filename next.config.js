@@ -29,10 +29,23 @@ if (process.env.NODE_ENV === "production") {
 
 const nextConfig = {
   reactStrictMode: true,
+  async headers() {
+    return [
+      {
+        // A service worker that the browser or a CDN holds on to cannot be
+        // replaced, so the file that controls every other cache must itself
+        // never be cached.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
-      { protocol: "https", hostname: "firebasestorage.googleapis.com" },
     ],
   },
 };

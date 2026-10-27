@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { CheckCircle2, Clock, Orbit, VideoOff } from "lucide-react";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { formatVideoLength, videoSidecars } from "@/data/lessonVideos";
+import { formatVideoLength, videoNeedsCors, videoSidecars } from "@/data/lessonVideos";
 
 /** A lesson counts as watched once this share of the film has played. */
 const WATCHED_AT = 0.9;
@@ -64,6 +64,8 @@ export function VideoPlayer({
             playsInline
             preload="metadata"
             poster={poster}
+            // Needed for the caption track when the films live in a storage bucket on another origin.
+            crossOrigin={videoNeedsCors(src) ? "anonymous" : undefined}
             aria-label={title}
             onTimeUpdate={onTime}
             onEnded={markWatched}

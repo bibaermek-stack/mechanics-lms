@@ -25,6 +25,10 @@ import type { PersonSummary } from "@/lib/types";
 /** Games that make a fair duel: same board, same rules, a score out of 100. */
 const DUEL_GAMES: GameMode[] = [
   "speedquiz",
+  "truefalse",
+  "blitz",
+  "projectile",
+  "order",
   "crossword",
   "wordsearch",
   "fillblank",
@@ -150,7 +154,7 @@ export default function DuelsPage() {
               </Link>
             </p>
           ) : (
-            <form onSubmit={challenge} className="mt-4 grid gap-3 sm:grid-cols-4">
+            <form onSubmit={challenge} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
               <label className="text-micro uppercase tracking-wider text-slate-500 sm:col-span-1">
                 Дос
                 <select

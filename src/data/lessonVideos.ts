@@ -9,9 +9,29 @@
 
 import type { LessonScript } from "@/lib/studio/timeline";
 
+/**
+ * Where the lesson films, their posters and their captions are served from.
+ *
+ * By default that is this site's own /videos (public/videos) — which is how a
+ * clone works with nothing configured, and also why the repository carries 65 MB
+ * of MP4 that every `git clone` has to download. Set NEXT_PUBLIC_VIDEO_BASE_URL
+ * to an https URL (a public Supabase Storage bucket, see `npm run videos:upload`)
+ * and the same files are read from there instead, so they can leave the
+ * repository.
+ *
+ * A malformed value falls back to the default rather than producing a lesson
+ * whose video is a broken link. It is read on every call, not once at import:
+ * Next inlines the `process.env.NEXT_PUBLIC_…` literal at build time either way,
+ * and reading late is what lets a test change it.
+ */
+export function videoBaseUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_VIDEO_BASE_URL?.trim().replace(/\/+$/, "");
+  return raw && /^(\/(?!\/)|https:\/\/)\S+$/.test(raw) ? raw : "/videos";
+}
+
 /** Where a lesson's rendered film is served from (see tools/videos/README.md). */
 export function lessonVideoSrc(moduleId: number): string {
-  return `/videos/lesson-${String(moduleId).padStart(2, "0")}.mp4`;
+  return `${videoBaseUrl()}/lesson-${String(moduleId).padStart(2, "0")}.mp4`;
 }
 
 /** Whole seconds a lesson's film runs; the render tool produces exactly this length. */
@@ -25,9 +45,24 @@ export function lessonVideoSeconds(moduleId: number): number {
  * some other video gets a plain player, with that video's own first frame.
  */
 export function videoSidecars(src: string): { poster?: string; captions?: string } {
-  return /^\/videos\/lesson-\d+\.mp4$/.test(src)
+  const base = videoBaseUrl();
+  return src.startsWith(`${base}/`) && /^\/lesson-\d+\.mp4$/.test(src.slice(base.length))
     ? { poster: src.replace(/\.mp4$/, ".jpg"), captions: src.replace(/\.mp4$/, ".vtt") }
     : {};
+}
+
+/**
+ * True for a film served from another origin that we host ourselves.
+ *
+ * A caption <track> on a cross-origin video is only loaded if the <video> asks
+ * for it with crossorigin="anonymous" — and then the file must answer with CORS
+ * headers, which Supabase Storage does. That is asked only for our own bucket:
+ * for a link a teacher pasted from some other site it would make a video that
+ * plays fine today refuse to load, for want of headers we do not control.
+ */
+export function videoNeedsCors(src: string): boolean {
+  const base = videoBaseUrl();
+  return base.startsWith("https://") && src.startsWith(`${base}/`);
 }
 
 /** "1 мин 29 сек" — lessons are short enough that bare minutes would round them to nothing. */

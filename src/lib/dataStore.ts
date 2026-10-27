@@ -20,6 +20,9 @@ import type {
   GameResult,
   AssignmentSubmission,
   CompetencyAssessment,
+  DiagnosticAttempt,
+  PredictionAttempt,
+  SensorResult,
   Certificate,
   LeaderboardEntry,
   Notification,
@@ -30,7 +33,7 @@ import type {
 
 const LS_PREFIX = "mechanics-lms:";
 
-function lsGet<T>(key: string, fallback: T): T {
+export function lsGet<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
     const raw = window.localStorage.getItem(LS_PREFIX + key);
@@ -40,7 +43,7 @@ function lsGet<T>(key: string, fallback: T): T {
   }
 }
 
-function lsSet<T>(key: string, value: T) {
+export function lsSet<T>(key: string, value: T) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(LS_PREFIX + key, JSON.stringify(value));
 }
@@ -323,6 +326,180 @@ export async function getCompetencyAssessments(userId: string): Promise<Competen
   return lsGet<CompetencyAssessment[]>("competencyAssessments", []).filter(
     (c) => c.userId === userId
   );
+}
+
+// ---------------------------------------------------------------------------
+// Diagnostic (pre/post) attempts
+//
+// One sitting per student per phase, append-only — see migration 0011 for why.
+// The localStorage branch enforces the same two rules the database does, so the
+// demo cannot do something the real thing refuses.
+// ---------------------------------------------------------------------------
+export const DIAGNOSTIC_TAKEN_MESSAGE = "Бұл диагностика бұрын тапсырылған — қайта тапсыруға болмайды.";
+export const DIAGNOSTIC_NEEDS_PRE_MESSAGE =
+  "Қорытынды диагностика бастапқы диагностикадан кейін ғана тапсырылады.";
+
+function rowToDiagnostic(r: any): DiagnosticAttempt {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    phase: r.phase,
+    score: r.score,
+    total: r.total,
+    answers: r.answers ?? [],
+    takenAt: r.taken_at,
+  };
+}
+
+export async function saveDiagnosticAttempt(attempt: DiagnosticAttempt): Promise<void> {
+  if (live()) {
+    const { error } = await supabase!.from("diagnostic_attempts").insert({
+      user_id: attempt.userId,
+      phase: attempt.phase,
+      score: attempt.score,
+      total: attempt.total,
+      answers: attempt.answers,
+    });
+    if (error) {
+      const m = error.message.toLowerCase();
+      if (m.includes("duplicate key")) throw new Error(DIAGNOSTIC_TAKEN_MESSAGE);
+      if (m.includes("row-level security")) throw new Error(DIAGNOSTIC_NEEDS_PRE_MESSAGE);
+      throw new Error(error.message);
+    }
+    return;
+  }
+  const list = lsGet<DiagnosticAttempt[]>("diagnosticAttempts", []);
+  const mine = list.filter((a) => a.userId === attempt.userId);
+  if (mine.some((a) => a.phase === attempt.phase)) throw new Error(DIAGNOSTIC_TAKEN_MESSAGE);
+  if (attempt.phase === "post" && !mine.some((a) => a.phase === "pre")) {
+    throw new Error(DIAGNOSTIC_NEEDS_PRE_MESSAGE);
+  }
+  list.unshift(attempt);
+  lsSet("diagnosticAttempts", list);
+}
+
+/**
+ * With no `userId`: everything the caller may see — their own sittings as a
+ * student, every accepted student's as a teacher (the RLS policy decides).
+ */
+export async function getDiagnosticAttempts(userId?: string): Promise<DiagnosticAttempt[]> {
+  if (live()) {
+    let q = supabase!.from("diagnostic_attempts").select("*").order("taken_at", { ascending: false });
+    if (userId) q = q.eq("user_id", userId);
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(rowToDiagnostic);
+  }
+  const list = lsGet<DiagnosticAttempt[]>("diagnosticAttempts", []);
+  return userId ? list.filter((a) => a.userId === userId) : list;
+}
+
+// ---------------------------------------------------------------------------
+// Predictions ("predict, then look")
+// ---------------------------------------------------------------------------
+function rowToPrediction(r: any): PredictionAttempt {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    itemId: r.item_id,
+    optionId: r.option_id,
+    correct: Boolean(r.correct),
+    misconception: r.misconception ?? null,
+    confidence: r.confidence,
+    createdAt: r.created_at,
+  };
+}
+
+export async function savePrediction(a: PredictionAttempt): Promise<void> {
+  if (live()) {
+    const { error } = await supabase!.from("prediction_attempts").insert({
+      user_id: a.userId,
+      item_id: a.itemId,
+      option_id: a.optionId,
+      correct: a.correct,
+      misconception: a.misconception,
+      confidence: a.confidence,
+    });
+    if (error) throw new Error(error.message);
+    return;
+  }
+  const list = lsGet<PredictionAttempt[]>("predictions", []);
+  list.unshift(a);
+  lsSet("predictions", list);
+}
+
+/**
+ * With no `userId`: everything the caller may see — their own as a student, every
+ * accepted student's as a teacher (the RLS policy decides). Paged, because the
+ * API returns at most a thousand rows a request and says nothing when it cuts one off.
+ */
+export async function getPredictions(userId?: string): Promise<PredictionAttempt[]> {
+  if (live()) {
+    const out: PredictionAttempt[] = [];
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      let q = supabase!.from("prediction_attempts").select("*").order("created_at", { ascending: false }).order("id");
+      if (userId) q = q.eq("user_id", userId);
+      const { data, error } = await q.range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      out.push(...(data ?? []).map(rowToPrediction));
+      if (!data || data.length < PAGE) break;
+    }
+    return out;
+  }
+  const list = lsGet<PredictionAttempt[]>("predictions", []);
+  return userId ? list.filter((a) => a.userId === userId) : list;
+}
+
+// ---------------------------------------------------------------------------
+// Phone-sensor measurements
+// ---------------------------------------------------------------------------
+function rowToSensor(r: any): SensorResult {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    kind: r.kind,
+    value: Number(r.value),
+    unit: r.unit,
+    details: r.details ?? {},
+    createdAt: r.created_at,
+  };
+}
+
+export async function saveSensorResult(r: SensorResult): Promise<void> {
+  if (live()) {
+    const { error } = await supabase!.from("sensor_results").insert({
+      user_id: r.userId,
+      kind: r.kind,
+      value: r.value,
+      unit: r.unit,
+      details: r.details,
+    });
+    if (error) throw new Error(error.message);
+    return;
+  }
+  const list = lsGet<SensorResult[]>("sensorResults", []);
+  list.unshift(r);
+  lsSet("sensorResults", list);
+}
+
+/** With no `userId`: everything the caller may see (a teacher: their accepted students'). */
+export async function getSensorResults(userId?: string): Promise<SensorResult[]> {
+  if (live()) {
+    const out: SensorResult[] = [];
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      let q = supabase!.from("sensor_results").select("*").order("created_at", { ascending: false }).order("id");
+      if (userId) q = q.eq("user_id", userId);
+      const { data, error } = await q.range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      out.push(...(data ?? []).map(rowToSensor));
+      if (!data || data.length < PAGE) break;
+    }
+    return out;
+  }
+  const list = lsGet<SensorResult[]>("sensorResults", []);
+  return userId ? list.filter((a) => a.userId === userId) : list;
 }
 
 // ---------------------------------------------------------------------------

@@ -630,6 +630,40 @@ export const FORMULAS: Formula[] = [
   },
 ];
 
+/**
+ * How a variable's key is written on the board. The keys are plain ASCII so they
+ * can be object properties (`eta`, `Au`, `v0`); students read the symbols in
+ * `expr` (η, Aпайд, v₀), and a form that asked for "eta" next to a formula that
+ * says "η" is a form the student has to translate.
+ */
+const SYMBOLS: Record<string, string> = {
+  v0: "v₀",
+  v1: "v₁",
+  v2: "v₂",
+  S1: "S₁",
+  S2: "S₂",
+  Ff: "Fүйк",
+  Fa: "Fₐ",
+  Ek: "Eₖ",
+  Ep: "Eₚ",
+  Au: "Aпайд",
+  At: "Aтолық",
+  mu: "μ",
+  alpha: "α",
+  eta: "η",
+  omega: "ω",
+  eps: "ε",
+  rho: "ρ",
+  sigma: "σ",
+  dt: "Δt",
+  dp: "Δp",
+  dl: "Δl",
+};
+
+export function displaySymbol(sym: string): string {
+  return SYMBOLS[sym] ?? sym;
+}
+
 export function formulasForModule(moduleId: number): Formula[] {
   return FORMULAS.filter((f) => f.moduleIds.includes(moduleId));
 }

@@ -4,47 +4,75 @@ This guide covers taking the project from the included mock-backend demo to a fu
 
 ## 1. Prerequisites
 
-- Node.js 18.18+ (Node 20 recommended)
-- A Firebase project (free Spark plan is enough for a thesis demo)
-- A Google Cloud project with OAuth consent screen configured (for Google Login / Sheets / Drive / Forms)
-- An OpenAI or Google AI Studio (Gemini) API key
+- Node.js 18.18+ (Node 20 recommended — it is what CI uses)
+- A [Supabase](https://supabase.com) project (the free plan is enough for a thesis demo)
+- Optional: a Google Cloud project with the OAuth consent screen configured (Google sign-in / Sheets / Drive / Forms)
+- Optional: an OpenAI or Google AI Studio (Gemini) API key
 
-## 2. Firebase setup
+Everything optional can be left out: with no keys the site runs in **demo mode**
+(data in the browser's `localStorage`, canned Kazakh AI answers, a labelled
+synthetic class on the teacher analytics page), which is also what a fresh clone
+does.
 
-1. Go to https://console.firebase.google.com → **Add project**.
-2. Enable **Authentication** → Sign-in method → Email/Password and Google.
-3. Enable **Firestore Database** → Start in production mode → choose a region.
-4. Enable **Storage** (for future file uploads of BOZh submissions).
-5. Project Settings → General → "Your apps" → Add a Web app → copy the config values into `.env.local`:
+## 2. Supabase setup
+
+Accounts, roles, the teacher↔student graph, every quiz/game/assignment record,
+the pre/post diagnostic, the weekly league, predictions, sensor results and the
+class gallery and student questions live in Supabase. Firebase is no longer used and nothing
+reads `FIREBASE_*` variables.
+
+1. https://supabase.com → **New project**. Pick a region close to the students.
+2. **SQL Editor** → run the files in `supabase/migrations/` **in order, 0001 to
+   0016**, each one pasted whole and run once. Do not skip one: `0003` fixes Google
+   sign-up, `0008` creates the learning-record tables the teacher pages read, `0011`
+   creates the diagnostic table, and `0012`–`0016` back the league, predictions,
+   phone lab, gallery and student questions (without them those pages cannot
+   save or load their data).
+
+   | File | Adds |
+   |---|---|
+   | 0001–0003 | accounts, roles, teacher↔student links, Google sign-in |
+   | 0004–0006 | classmates (leaderboard), friends, duels |
+   | 0007, 0010 | teacher edits to lessons; own-film video fields |
+   | 0008 | quiz, game, assignment, rubric and certificate records |
+   | 0009 | XP, derived from those records |
+   | 0011 | pre/post diagnostic (append-only, one per student per phase) |
+   | 0012 | weekly group league (`league_week()`) |
+   | 0013 | "predict, then see" attempts (append-only) |
+   | 0014 | phone-lab results (append-only) and the anonymous class jump distribution |
+   | 0015 | home-experiment gallery: text only, pending until a teacher approves |
+   | 0016 | student-written questions, same moderation |
+
+   What each file does and why is in [`supabase/README.md`](supabase/README.md); the
+   tables and who may read them are in [`docs/database-schema.md`](docs/database-schema.md).
+3. **Project Settings → API** → copy into `.env.local` (and into the host, §5):
 
 ```
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-NEXT_PUBLIC_FIREBASE_APP_ID=...
-NEXT_PUBLIC_USE_MOCK_BACKEND=false
+NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
-6. Apply Firestore security rules (see `docs/firestore-schema.md` for the collection list). A minimal starting rule set:
+   Older projects call the second one the *anon* key; `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   is accepted too.
+4. **Authentication → Providers → Email**: for a defence demo it is convenient to
+   switch **Confirm email** off, so a new account can sign in straight away.
+5. **Authentication → URL Configuration**: see "Auth settings for the deployed
+   domain" in §5. Google sign-in additionally needs the Google provider enabled in
+   Supabase (see `supabase/README.md` §3).
 
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /{collection}/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-  }
-}
-```
+Check it worked: in the SQL Editor, `select count(*) from public.diagnostic_attempts;`
+should return `0`, not an error. Then register two accounts (a teacher and a
+student), link them, and open `/teacher/analytics` as the teacher — it should say
+the class has no data yet instead of showing the demo banner.
 
-Tighten these before real production use (teacher-only writes to `courses`/`questions`, etc).
+Gallery posts and student questions are **pending until the author's own teacher
+approves them** (`/teacher/community`), so a student whose teacher has not
+accepted them can post but nobody else will ever see it. Tell teachers to check that
+page. Posts are text only by design.
+
+Row-level security does the access control, not the app: a teacher's queries
+return only their accepted students' rows because the *database* says so. Do not
+disable RLS on any table to "make something work".
 
 ## 3. AI provider setup
 
@@ -65,6 +93,14 @@ GEMINI_MODEL=gemini-2.0-pro
 ```
 
 Leave `NEXT_PUBLIC_AI_PROVIDER=mock` (or omit the key) to keep using the built-in Kazakh mock responses — useful for offline thesis defense demos where you don't want to depend on network/API availability.
+
+> **Know this before putting a real key on a public site.** `POST /api/ai`
+> (`src/app/api/ai/route.ts`) does not check who is calling and does not limit how
+> often: anyone who can reach the site can send it requests, and each one is paid
+> for by your key. Until the route is made to require a signed-in user and to rate
+> limit them, either keep the provider on `mock` for anything public, or put the
+> site behind something that restricts access (Vercel password protection, an
+> allow-list), or use a key with a hard spending cap at the provider.
 
 ## 4. Google Workspace setup
 
@@ -113,6 +149,14 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 A production build without them prints a warning in the Vercel build log (see
 `next.config.js`), so you can catch this before opening the site.
 
+Other `NEXT_PUBLIC_*` values the site reads — all optional, all baked in at build time:
+
+| Variable | Effect |
+|---|---|
+| `NEXT_PUBLIC_VIDEO_BASE_URL` | serve the lesson films from a storage bucket instead of `public/videos` (§6) |
+| `NEXT_PUBLIC_ARENA_SERVER` | `wss://…` of the arena game server (§7) |
+| `NEXT_PUBLIC_AI_PROVIDER` | `openai`, `gemini` or `mock` (§3) |
+
 ### Auth settings for the deployed domain
 
 In Supabase → Authentication → URL Configuration:
@@ -124,17 +168,52 @@ In Supabase → Authentication → URL Configuration:
 Google Cloud Console needs **no** per-domain change: the only redirect URI Google
 ever sees is Supabase's own `https://<project>.supabase.co/auth/v1/callback`.
 
-## 6. Deploying to Firebase Hosting (alternative)
+## 6. Lesson films
 
-```bash
-npm install -g firebase-tools
-firebase login
-firebase init hosting          # choose "Use an existing project", output dir: .next (with the Next.js adapter) or use `next export` for a static subset
-npm run build
-firebase deploy
-```
+The ten lesson films (`public/videos/lesson-NN.mp4`, plus a `.jpg` poster and a
+`.vtt` caption file each) are **64 MB**. By default they ship inside the
+repository and the site serves them itself, which is why a plain clone works with
+nothing configured — and also why every `git clone` downloads 64 MB, and every
+re-render of a film adds its size to the history again.
 
-For full SSR support on Firebase, use **Firebase App Hosting** (supports Next.js natively) instead of static Hosting.
+To serve them from Supabase Storage instead (it streams with range requests, so
+seeking works, and it is served from a CDN):
+
+1. Get the **service role** key: Dashboard → Project Settings → API → `service_role`.
+   It bypasses every security policy. Use it only for this one command, on your own
+   machine; never put it in a `NEXT_PUBLIC_` variable, in the repository, or on the
+   web host.
+2. See what would be uploaded:
+
+   ```bash
+   npm run videos:upload -- --dry-run
+   ```
+3. Upload. This creates a **public** bucket `lesson-videos` if there is none, and
+   uploads with the right content types. It is safe to run again — it replaces the
+   files in the bucket and deletes nothing.
+
+   ```bash
+   SUPABASE_SERVICE_ROLE_KEY=<service role key> npm run videos:upload
+   ```
+
+   It reads `NEXT_PUBLIC_SUPABASE_URL` from `.env.local` (this needs Node 20.6+ for
+   `--env-file`), checks that a file is publicly readable, and prints the value for
+   the next step.
+4. On the web host set `NEXT_PUBLIC_VIDEO_BASE_URL` to the URL it printed
+   (`https://<project>.supabase.co/storage/v1/object/public/lesson-videos`) and
+   **redeploy** — it is read at build time.
+5. Open a lesson: the film should play, seek, and offer its captions.
+6. Only now, if you want the repository smaller: `git rm public/videos/lesson-*.mp4`
+   and commit. The old copies stay in the git **history**, so a fresh clone is not
+   smaller until the history is rewritten (`git filter-repo`), which changes every
+   commit id and is a decision for the repository owner, not a step of this guide.
+
+Leave the variable unset and nothing changes. A value that is not an `https://` URL
+or a `/path` is ignored. When you re-render a film, run the upload again.
+
+The films come from your own bucket, so the site asks the browser for
+`crossorigin="anonymous"` on them (needed for the caption track); a video link a
+teacher pastes from another site is left alone.
 
 ## 7. Arena game server (Railway)
 
@@ -209,12 +288,58 @@ leaves. Nothing to configure — it turns on with the Supabase keys.
 
 Practice against bots still works everywhere, including the demo build.
 
-## 8. Post-deploy checklist
+### The live class quiz (`/teacher/live`, `/live`)
 
-- [ ] Firebase Auth sign-in works (Google + Email)
-- [ ] Firestore rules deployed and tested
-- [ ] AI tutor returns real model responses (not mock) when a key is set
-- [ ] Google Sheets grade sync returns real rows
-- [ ] Certificates QR code resolves to `/verify/[id]` on the deployed domain
-- [ ] Lighthouse PWA check passes (manifest, service worker optional for v1)
+Not part of the arena. The teacher's browser runs the game and the students'
+phones talk to it through Supabase Realtime **Broadcast** (so it needs the
+Supabase keys and Realtime enabled on the project); with no keys the same pages
+run over `BroadcastChannel`, which only connects tabs of one browser — enough for
+a demo on one computer, **not** for a class. Nothing is stored. The room code is
+the only barrier to entry, so treat a room like a classroom door, not a vault. If
+the teacher closes the page the game ends. This path has been tested in-browser
+and in unit tests but not yet against a live Supabase project; try a room with
+two real phones before you rely on it in a lesson.
+
+## 8. Offline use, tests and CI
+
+**Offline / install.** `public/sw.js` is a small service worker, registered in
+production builds only (in `next dev` it would cache the chunks hot reload is
+replacing). It keeps the app's code and every page the user has opened, so those
+pages open with no connection, and shows `/offline.html` for a page never opened.
+It deliberately does not cache `/api/*`, anything from Supabase, or the lesson
+films. Two things follow: a page opened offline shows its shell but **cannot load
+new data** from Supabase, and a film needs a connection. Service workers need
+HTTPS (`localhost` is exempt) — Vercel and Railway provide it. To drop everyone's
+cached pages after a deploy, change `VERSION` at the top of `public/sw.js`. The
+manifest and icons make the site installable ("Add to Home Screen").
+
+**Tests.** `npm test` runs the unit tests (physics, the formula bank, statistics,
+the cohort builder, CSV, the games, sensors, community rules, live quiz);
+`npm run typecheck` runs `tsc`. `npm run smoke:mobile` opens every page at 320
+and 375 px against a running production server and fails if one scrolls sideways
+or throws. `npm run test:db` applies all migrations to an empty **PostgreSQL 15+**
+(standard `PG*` variables) and runs `supabase/tests/*.sql` against the row-level
+security rules — worth running against a scratch database before you change a
+migration.
+
+**CI.** `.github/workflows/ci.yml` runs typecheck, tests and a production build on
+every pull request and on `main`, the database tests against a `postgres:16`
+service, and the mobile smoke test against the built site. It needs no secrets:
+the build runs in demo mode.
+
+## 9. Post-deploy checklist
+
+- [ ] All sixteen migrations ran, in order, with no error
+- [ ] Email sign-up works for a student and a teacher; Google sign-in works if enabled
+- [ ] A student's link request reaches the teacher, and accepting it fills the teacher's roster
+- [ ] `/teacher/analytics` shows **no** demo banner once a student is linked
+- [ ] A student can take the pre-test once and is refused a second sitting
+- [ ] `/league` lists the teacher's students; a student's gallery post appears in `/teacher/community` and reaches classmates only after approval
+- [ ] `/sensors` works on a real phone over HTTPS (iOS asks for motion permission)
+- [ ] A live-quiz room opens from `/teacher/live` and a second device joins with the code
+- [ ] AI tutor returns real model responses (not mock) when a key is set — and see the warning in §3
+- [ ] Google Sheets grade sync returns real rows (if used)
+- [ ] Certificate QR codes resolve to `/verify/[id]` on the deployed domain
+- [ ] Lessons play their film (from `public/videos` or from your bucket, §6)
+- [ ] The site installs from a phone, and a visited page opens in airplane mode
 - [ ] Dark mode toggle persists across reload

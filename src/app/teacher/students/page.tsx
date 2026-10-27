@@ -2,10 +2,11 @@
 
 // Teacher side of the graph.
 //
-// The roster is no longer a fixed cohort constant: it is whoever has actually
-// been accepted into this teacher's group. Progress columns are joined in from
-// the analytics dataset by student id, and any student without a row there
-// shows dashes rather than inventing numbers.
+// The roster is whoever has actually been accepted into this teacher's group.
+// Progress columns are joined in from the same cohort the analytics page uses
+// (real records when a backend is configured, the labelled demo class when not)
+// by student id, and any student without a row there shows dashes rather than
+// inventing numbers.
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -17,7 +18,8 @@ import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { ALL_MODULES } from "@/data/modules";
-import { COHORT, studentAverage, studentProgress, type StudentRow } from "@/data/cohort";
+import { studentAverage, studentProgress, type StudentRow } from "@/data/cohort";
+import { useCohort } from "@/components/analytics/useCohort";
 import { useAuthStore } from "@/lib/authStore";
 import { useLinks } from "@/components/connections/useLinks";
 import { PeopleSearch } from "@/components/connections/PeopleSearch";
@@ -37,7 +39,7 @@ function status(r: RosterRow) {
   const p = studentProgress(r.stats);
   const a = studentAverage(r.stats);
   if (p < 50 && a < 65) return { label: "Қауіп тобы", variant: "danger" as const };
-  if (r.stats.daysSinceActive >= 7) return { label: "Белсенді емес", variant: "warning" as const };
+  if (r.stats.daysSinceActive === null || r.stats.daysSinceActive >= 7) return { label: "Белсенді емес", variant: "warning" as const };
   return { label: "Белсенді", variant: "success" as const };
 }
 
@@ -69,6 +71,7 @@ type Tab = "roster" | "requests" | "search";
 export default function TeacherStudentsPage() {
   const user = useAuthStore((s) => s.user);
   const { accepted, incoming, outgoing, loading, error, reload } = useLinks(user);
+  const { data: cohort } = useCohort(user);
   const [tab, setTab] = useState<Tab>("roster");
   const [removing, setRemoving] = useState<string | null>(null);
 
@@ -76,9 +79,9 @@ export default function TeacherStudentsPage() {
     () =>
       accepted.map((link) => ({
         link,
-        stats: COHORT.find((c) => c.id === link.person.id) ?? null,
+        stats: cohort?.rows.find((c) => c.id === link.person.id) ?? null,
       })),
-    [accepted]
+    [accepted, cohort]
   );
 
   const withStats = roster.filter((r) => r.stats);
@@ -144,7 +147,7 @@ export default function TeacherStudentsPage() {
       header: "Соңғы кіру",
       numeric: true,
       render: (r) =>
-        r.stats
+        r.stats && r.stats.daysSinceActive !== null
           ? r.stats.daysSinceActive === 0
             ? "бүгін"
             : `${r.stats.daysSinceActive} күн`
@@ -206,7 +209,7 @@ export default function TeacherStudentsPage() {
           </p>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Менің студенттерім" value={accepted.length} tone="brand" />
           <StatCard
             label="Жауап күтіп тұрған сұраныс"

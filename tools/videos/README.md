@@ -92,11 +92,24 @@ spoken text of that chapter is too long.
 Alternatively, drop a whole-lesson recording at `tools/videos/narration/lesson-NN.mp3`
 (or `.m4a`, `.wav`) and re-render: the render tool muxes it in.
 
+## Hosting the films outside the repository
+
+`public/videos` is 64 MB, and every re-render adds the same again to the git
+history. `npm run videos:upload` copies the films, posters and captions to a
+public Supabase Storage bucket, and the site reads them from there when
+`NEXT_PUBLIC_VIDEO_BASE_URL` is set. Run `npm run videos:upload -- --dry-run`
+first; the whole procedure — keys, the one-time redeploy, and what removing the
+files from git does and does not achieve — is DEPLOYMENT.md §6.
+
+After re-rendering a lesson, run the upload again: it replaces what is in the
+bucket and deletes nothing.
+
 ## Replacing a film with your own
 
 A teacher can point a lesson at any MP4/WebM in **Оқытушы → Сабақтар → Бейне
 сілтемесі** (a site-relative path or an `https://` URL). The poster and caption
-files exist only for the bundled `/videos/lesson-NN.mp4`.
+files exist only for the bundled `lesson-NN.mp4` (at `/videos/`, or in the bucket
+when `NEXT_PUBLIC_VIDEO_BASE_URL` is set).
 
 ## Troubleshooting
 

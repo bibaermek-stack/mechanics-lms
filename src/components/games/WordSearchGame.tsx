@@ -74,7 +74,7 @@ export function WordSearchGame({
   const remaining = board.words.length - Object.keys(found).length;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[auto,1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[auto,1fr]">
       <div className="overflow-x-auto">
         <div
           className="inline-grid gap-[2px]"

@@ -37,7 +37,12 @@ export const BODY = {
   },
 } as const;
 
-/** Drive force a player can apply, N. Gives a ≈ 11 m/s² and a top speed ≈ 6 m/s. */
+/**
+ * Drive force a player can apply, N. Gives a ≈ 11 m/s² from rest, and a top
+ * speed where the drive balances the damping: F/(m·b) = 780/(72·4,2) ≈ 2,6 m/s,
+ * or ≈ 4,9 m/s while sprinting. (This comment used to say 6 m/s, which the
+ * model has never produced; physics.test.ts now pins the real figure.)
+ */
 export const DRIVE_FORCE = 780;
 /** Impulse delivered by a kick, N·s. Sends a still ball away at about 9 m/s. */
 export const KICK_IMPULSE = 4.0;

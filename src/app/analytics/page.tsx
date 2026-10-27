@@ -117,7 +117,7 @@ export default function AnalyticsPage() {
 
         {stats && stats.hasAnyActivity && (
           <>
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               <Card>
                 <p className="mb-1 text-body text-slate-600 dark:text-slate-400">
                   Есептелген баға
@@ -171,7 +171,7 @@ export default function AnalyticsPage() {
               </Card>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card>
                 <p className="mb-3 flex items-center gap-2 font-semibold">
                   <Sparkles size={18} className="text-brand-600 dark:text-brand-400" />
@@ -209,7 +209,7 @@ export default function AnalyticsPage() {
               </Card>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <Card>
                 <p className="mb-3 font-semibold">Сабақтар бойынша ұпай</p>
                 {stats.attempted > 0 ? (

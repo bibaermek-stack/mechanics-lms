@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useReducedMotion } from "@/lib/useReducedMotion";
 import { ArrowRight, ChevronDown, Play } from "lucide-react";
 import { Magnetic } from "@/components/motion/Magnetic";
 import { StemObject } from "@/components/three/ObjectStage";

@@ -2,17 +2,24 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle2, XCircle, RotateCcw } from "lucide-react";
-import { randomizeQuiz } from "@/data/modules";
+import { drawQuiz } from "@/data/modules";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { useAuthStore } from "@/lib/authStore";
 import { saveQuizAttempt, generateId } from "@/lib/dataStore";
-import type { QuizAttempt } from "@/lib/types";
+import type { LessonModule, QuizAttempt } from "@/lib/types";
 
-export function QuizEngine({ moduleId }: { moduleId: number }) {
+/**
+ * `mod` is the lesson *as this student sees it* — with a teacher's edits laid
+ * over it — and the questions are drawn from that. They used to come from the
+ * static lesson data, which meant a teacher who rewrote the quiz in the lesson
+ * editor changed nothing the students saw.
+ */
+export function QuizEngine({ mod }: { mod: LessonModule }) {
+  const moduleId = mod.id;
   const user = useAuthStore((s) => s.user);
   const [attemptKey, setAttemptKey] = useState(0);
-  const questions = useMemo(() => randomizeQuiz(moduleId), [moduleId, attemptKey]);
+  const questions = useMemo(() => drawQuiz(mod.quiz), [mod.quiz, attemptKey]);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -81,7 +88,7 @@ export function QuizEngine({ moduleId }: { moduleId: number }) {
             <p className="mb-3 font-semibold">
               {idx + 1}. {q.question}
             </p>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {q.options.map((opt, i) => {
                 const selected = chosen === i;
                 let stateClasses = "border-slate-200 dark:border-white/10 hover:border-brand-300";

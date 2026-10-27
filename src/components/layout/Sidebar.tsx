@@ -19,14 +19,32 @@ import {
   UserPlus,
   Users,
   ClipboardList,
+  ClipboardCheck,
   Video,
   Settings,
   Calculator,
+  Puzzle,
+  CalendarCheck,
+  Flag,
+  Sparkles,
+  Eye,
+  Lightbulb,
+  Smartphone,
+  Map as MapIcon,
+  MessagesSquare,
+  Radio,
 } from "lucide-react";
 
 const STUDENT_LINKS = [
   { href: "/dashboard", label: "Басты бет", icon: LayoutDashboard },
+  { href: "/diagnostic", label: "Диагностика", icon: ClipboardCheck },
   { href: "/modules", label: "Сабақтар", icon: BookOpen },
+  { href: "/map", label: "Сапар картасы", icon: MapIcon },
+  { href: "/predict", label: "Болжам", icon: Eye },
+  { href: "/games", label: "Ойындар", icon: Puzzle },
+  { href: "/daily", label: "Күнделікті сынақ", icon: CalendarCheck },
+  { href: "/myths", label: "Миф па, шындық па?", icon: Sparkles },
+  { href: "/sensors", label: "Телефон зертханасы", icon: Smartphone },
   { href: "/labs", label: "Зертханалық жұмыстар", icon: FlaskConical },
   { href: "/problems", label: "Есеп шығару", icon: Calculator },
   { href: "/vr-lab", label: "VR/AR зертхана", icon: Headset },
@@ -37,6 +55,9 @@ const STUDENT_LINKS = [
   { href: "/analytics", label: "Аналитика", icon: BarChart3 },
   { href: "/certificates", label: "Сертификаттар", icon: Award },
   { href: "/leaderboard", label: "Көшбасшылар кестесі", icon: Trophy },
+  { href: "/league", label: "Топтар лигасы", icon: Flag },
+  { href: "/community", label: "Сынып қауымдастығы", icon: MessagesSquare },
+  { href: "/live", label: "Тікелей викторина", icon: Radio },
   { href: "/profile", label: "Профиль", icon: User },
 ];
 
@@ -50,6 +71,9 @@ const TEACHER_LINKS = [
   { href: "/arena", label: "Арена", icon: Gamepad2 },
   { href: "/teacher/assignments", label: "Тапсырмаларды тексеру", icon: ClipboardList },
   { href: "/teacher/analytics", label: "Есептер мен аналитика", icon: BarChart3 },
+  { href: "/teacher/misconceptions", label: "Қате түсініктер", icon: Lightbulb },
+  { href: "/teacher/community", label: "Модерация", icon: MessagesSquare },
+  { href: "/teacher/live", label: "Тікелей викторина", icon: Radio },
   { href: "/profile", label: "Профиль", icon: Settings },
 ];
 

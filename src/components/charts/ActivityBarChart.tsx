@@ -6,7 +6,14 @@ import { useChartTheme } from "./useChartTheme";
 
 const WEEKDAYS = ["Дс", "Сс", "Ср", "Бс", "Жм", "Сб", "Жс"];
 
-export function ActivityBarChart({ values }: { values: number[] }) {
+export function ActivityBarChart({
+  values,
+  unit = "минут",
+}: {
+  values: number[];
+  /** What a bar counts: minutes in the demo cohort, recorded actions in live data. */
+  unit?: string;
+}) {
   const t = useChartTheme();
 
   return (
@@ -16,7 +23,7 @@ export function ActivityBarChart({ values }: { values: number[] }) {
         labels: WEEKDAYS,
         datasets: [
           {
-            label: "Белсенділік (минут)",
+            label: `Белсенділік (${unit})`,
             data: values,
             backgroundColor: values.map((_, i) =>
               // Weekend bars stay muted so the working-week rhythm reads first.
@@ -40,7 +47,7 @@ export function ActivityBarChart({ values }: { values: number[] }) {
             padding: 10,
             cornerRadius: 10,
             displayColors: false,
-            callbacks: { label: (c) => `${c.formattedValue} минут` },
+            callbacks: { label: (c) => `${c.formattedValue} ${unit}` },
           },
         },
         scales: {

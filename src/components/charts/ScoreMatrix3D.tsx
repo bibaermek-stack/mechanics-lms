@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { Environment, Html, OrbitControls } from "@react-three/drei";
-import { COHORT, LESSON_SHORT, type StudentRow } from "@/data/cohort";
+import { LESSON_SHORT, type StudentRow } from "@/data/cohort";
 import { Layers, BarChart3 } from "lucide-react";
 
 const CELL = 0.42; // spacing between bars
@@ -130,15 +130,15 @@ function TerrainMesh({ rows }: { rows: StudentRow[] }) {
   );
 }
 
-export function ScoreMatrix3D({ rows = COHORT }: { rows?: StudentRow[] }) {
+export function ScoreMatrix3D({ rows }: { rows: StudentRow[] }) {
   const [hover, setHover] = useState<{ student: string; lesson: number; score: number } | null>(null);
   const [viewMode, setViewMode] = useState<"bars" | "terrain">("bars");
 
   return (
     <div className="space-y-3">
       {/* Mode Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setViewMode("bars")}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-micro font-medium transition-colors ${
@@ -193,12 +193,17 @@ export function ScoreMatrix3D({ rows = COHORT }: { rows?: StudentRow[] }) {
               <span className="data-num font-bold">{hover.score}%</span>
             </span>
           ) : (
-            <span>Бағанға тінтуірді апарыңыз</span>
+            <span>
+              <span className="[@media(pointer:coarse)]:hidden">Бағанға тінтуірді апарыңыз</span>
+              <span className="hidden [@media(pointer:coarse)]:inline">Бағанды түртіңіз</span>
+            </span>
           )}
         </div>
 
         <div className="pointer-events-none absolute bottom-2.5 right-3 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium text-slate-600 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300">
-          Сүйреу — айналдыру · Дөңгелек — масштаб
+          {/* A phone has no wheel; say what the fingers do (same wording as SimStage). */}
+          <span className="[@media(pointer:coarse)]:hidden">Сүйреу — айналдыру · Дөңгелек — масштаб</span>
+          <span className="hidden [@media(pointer:coarse)]:inline">1 саусақ — бұру · 2 саусақ — масштаб</span>
         </div>
       </div>
 

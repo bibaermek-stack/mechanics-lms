@@ -5,6 +5,7 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { useLessons } from "@/components/providers/LessonsProvider";
 import { formatVideoLength } from "@/data/lessonVideos";
+import { quizLength } from "@/data/modules";
 
 export default function ModulesPage() {
   const { modules } = useLessons();
@@ -18,7 +19,7 @@ export default function ModulesPage() {
           description="Механика курсының 10 сабағы. Әр сабақта дәріс, 3D симуляция, глоссарий, викторина, ойын, БӨЖ тапсырмасы, AI тьютор және құзыреттілік бағалау бар."
         />
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {modules.map((m) => (
             <Link
               key={m.id}
@@ -42,7 +43,7 @@ export default function ModulesPage() {
               <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pl-2 pt-3 dark:border-white/5">
                 {[
                   { label: "Дәріс", value: formatVideoLength(m.videoDurationSeconds) },
-                  { label: "Викторина", value: `${m.quiz.length} сұрақ` },
+                  { label: "Викторина", value: `${quizLength(m.quiz)} сұрақ` },
                   { label: "Глоссарий", value: `${m.glossary.length} термин` },
                 ].map((s) => (
                   <div key={s.label}>

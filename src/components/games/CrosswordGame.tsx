@@ -62,7 +62,7 @@ export function CrosswordGame({
   const down = board.entries.filter((e) => e.direction === "down");
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[auto,1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[auto,1fr]">
       <div className="overflow-x-auto">
         <div
           className="inline-grid gap-[2px]"
@@ -127,7 +127,7 @@ export function CrosswordGame({
         </div>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-1">
         {[
           { title: "Көлденеңінен", list: across },
           { title: "Тігінен", list: down },

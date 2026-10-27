@@ -383,7 +383,7 @@ function LoginForm() {
         )}
 
         <p className="mt-6 text-center text-micro text-slate-500 dark:text-slate-500">
-          <Link href="/" className="hover:text-slate-300">
+          <Link href="/" className="inline-block py-2 hover:text-slate-300">
             ← Басты бетке оралу
           </Link>
         </p>
