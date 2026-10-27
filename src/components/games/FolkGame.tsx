@@ -122,7 +122,7 @@ export function FolkGame({ kind, seed, onComplete }: { kind: FolkKind; seed: num
         <p className="data-num text-micro text-slate-500 dark:text-slate-400">Ұпай: {running}</p>
       </div>
 
-      <FolkScene round={round} last={last} earlier={earlier} progress={progress} />
+      <FolkScene round={round} last={last} earlier={earlier} progress={progress} aim={phase === "aim" ? values : null} />
 
       <p className="text-body text-slate-700 dark:text-slate-300">{round.story}</p>
       <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-2">

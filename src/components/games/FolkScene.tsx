@@ -1,9 +1,17 @@
 "use client";
 
+import { Component, Suspense, lazy, useEffect, useState, type ReactNode } from "react";
 import { trajectory, flightTime } from "@/lib/projectile";
-import { G, type FolkRound, type Judged } from "@/lib/folk";
+import { ASYQ_VIEWS, type AsyqView } from "@/lib/asyqView";
+import { webglAvailable } from "@/lib/webgl";
+import { useReducedMotion } from "@/lib/useReducedMotion";
+import { G, slidePosition, slideStopTime, type FolkRound, type Judged } from "@/lib/folk";
 
 const W = 600, H = 210, GROUND = 178;
+
+// The 3D scene (three.js, and the scanned bone) is a separate chunk that only the asyq game loads.
+const AsyqScene3D = lazy(() => import("./AsyqScene3D"));
+const ASYQ_MODEL_URL = "/models/asyk.glb";
 
 export interface SceneAttempt {
   values: Record<string, number>;
@@ -11,13 +19,6 @@ export interface SceneAttempt {
 }
 
 const fmt = (x: number, d = 0) => x.toFixed(d).replace(".", ",");
-
-/** The sliding sakha's distance after time t: constant deceleration μg until it stops. */
-export const slidePosition = (v: number, mu: number, t: number) => {
-  const tStop = v / (mu * G);
-  const tt = Math.min(t, tStop);
-  return v * tt - 0.5 * mu * G * tt * tt;
-};
 
 function Ground({ color = "#16a34a" }: { color?: string }) {
   return <rect x={0} y={GROUND} width={W} height={H - GROUND} fill={color} opacity={0.5} />;
@@ -63,7 +64,7 @@ function Asyq({ round, last, earlier, progress }: { round: FolkRound; last: Scen
   const reach = Math.max(p.target * 1.3, ...all.map((a) => a.judged.values.d * 1.05), 6);
   const X = (x: number) => 30 + (x / reach) * (W - 60);
   const lane = GROUND - 60;
-  const pos = last ? slidePosition(last.judged.values.v, p.mu, (last.judged.values.v / (p.mu * G)) * progress) : 0;
+  const pos = last ? slidePosition(last.judged.values.v, p.mu, slideStopTime(last.judged.values.v, p.mu) * progress) : 0;
   const shade = p.mu < 0.08 ? "#bae6fd" : p.mu < 0.2 ? "#e0f2fe" : p.mu < 0.35 ? "#d6b88a" : p.mu < 0.5 ? "#86efac" : "#fcd34d";
   return (
     <>
@@ -125,14 +126,91 @@ function Rocket({ round, last, progress }: { round: FolkRound; last: SceneAttemp
   );
 }
 
-/** The picture of a round: what the player is aiming at, and the last attempt playing out. */
-export function FolkScene({ round, last, earlier, progress }: { round: FolkRound; last: SceneAttempt | null; earlier: SceneAttempt[]; progress: number }) {
+function Flat({ round, last, earlier, progress }: FolkSceneProps) {
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full rounded-2xl border border-slate-200/70 bg-sky-50 dark:border-white/10 dark:bg-slate-900" role="img" aria-label={`${round.title}: ${round.facts.map((f) => `${f.label} ${f.value}`).join(", ")}`}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full rounded-2xl border border-slate-200/70 bg-sky-50 dark:border-white/10 dark:bg-slate-900" role="img" aria-label={label(round)}>
       {round.kind === "bow" && <Bow round={round} last={last} earlier={earlier} progress={progress} />}
       {round.kind === "asyq" && <Asyq round={round} last={last} earlier={earlier} progress={progress} />}
       {round.kind === "tug" && <Tug round={round} last={last} progress={progress} />}
       {round.kind === "rocket" && <Rocket round={round} last={last} progress={progress} />}
     </svg>
   );
+}
+
+const label = (round: FolkRound) => `${round.title}: ${round.facts.map((f) => `${f.label} ${f.value}`).join(", ")}`;
+
+/** Falls back to the flat picture if the 3D scene cannot start (no GPU context, model or chunk not fetched). */
+class Guard extends Component<{ onError: () => void; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch() {
+    this.props.onError();
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+function Asyq3D(props: FolkSceneProps) {
+  const { round, aim, last } = props;
+  const reduced = useReducedMotion();
+  // After a throw the sakha stays where it stopped until the slider moves: only then does it go back to the line for the next one.
+  const aiming = !!aim && !(last && aim.speed === last.values.speed);
+  const [mode, setMode] = useState<"checking" | "3d" | "flat">("checking");
+  const [view, setView] = useState<AsyqView>("chase");
+
+  useEffect(() => {
+    setMode(webglAvailable() ? "3d" : "flat");
+    // start fetching the model while the 3D chunk loads: the browser's cache hands it over afterwards
+    fetch(ASYQ_MODEL_URL).catch(() => {});
+  }, []);
+
+  if (mode === "flat") return <Flat {...props} />;
+  const box = "relative isolate aspect-[16/9] w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-sky-100 dark:border-white/10";
+  return (
+    <div>
+      <div className={box} role="img" aria-label={`${label(round)} · 3D көрініс`} data-testid="asyq-3d">
+        {mode === "3d" && (
+          <Guard onError={() => setMode("flat")}>
+            <Suspense fallback={<p className="absolute inset-0 flex items-center justify-center text-sm text-slate-600">3D сахна жүктелуде…</p>}>
+              <AsyqScene3D round={round} last={props.last} earlier={props.earlier} progress={props.progress} aim={aiming ? { speed: aim!.speed } : null} view={view} reduced={reduced} />
+            </Suspense>
+          </Guard>
+        )}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-1.5" role="group" aria-label="Көрініс">
+          {ASYQ_VIEWS.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              aria-pressed={view === v.id}
+              onClick={() => setView(v.id)}
+              className={`min-h-[40px] rounded-full border px-3 text-label font-semibold transition-colors ${view === v.id ? "border-brand-500 bg-brand-500 text-white" : "border-slate-300 text-slate-700 hover:border-brand-400 dark:border-white/20 dark:text-slate-200"}`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+        <p className="max-w-[28ch] text-micro text-slate-500 dark:text-slate-400">Асықтар жол ұзындығына сай ірілетіп көрсетілген. Жасыл белдеу — асықтардың қасы.</p>
+      </div>
+    </div>
+  );
+}
+
+export interface FolkSceneProps {
+  round: FolkRound;
+  last: SceneAttempt | null;
+  earlier: SceneAttempt[];
+  progress: number;
+  /** The slider values while the player is aiming (null while a throw plays or after it): the 3D asyq scene shows the speed as an arrow. */
+  aim?: Record<string, number> | null;
+}
+
+/** The picture of a round: what the player is aiming at, and the last attempt playing out. */
+export function FolkScene(props: FolkSceneProps) {
+  if (props.round.kind === "asyq") return <Asyq3D {...props} />;
+  return <Flat {...props} />;
 }

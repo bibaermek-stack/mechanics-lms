@@ -86,6 +86,15 @@ export const arrowSpeed = (k: number, x: number, m: number, eta: number) => x * 
 /** Distance a body sliding at v stops in on ground with friction μ. */
 export const slideDistance = (v: number, mu: number, g = G) => (v * v) / (2 * mu * g);
 
+/** How long a sakha thrown at v takes to stop: friction slows it by μg every second. */
+export const slideStopTime = (v: number, mu: number, g = G) => v / (mu * g);
+
+/** How far the sakha has slid after t seconds: v·t − ½μg·t² until it stops, and there it stays. */
+export function slidePosition(v: number, mu: number, t: number, g = G): number {
+  const tt = Math.max(0, Math.min(t, slideStopTime(v, mu, g)));
+  return v * tt - 0.5 * mu * g * tt * tt;
+}
+
 /** The most a team of total mass M can pull on a rope: the friction its feet can give. */
 export const maxPull = (mu: number, mass: number, g = G) => mu * mass * g;
 

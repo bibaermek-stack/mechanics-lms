@@ -12,6 +12,8 @@ import {
   propellantFor,
   singleStageLimit,
   slideDistance,
+  slidePosition,
+  slideStopTime,
   solutionFor,
   stageDeltaV,
   type FolkKind,
@@ -36,6 +38,42 @@ describe("the physics", () => {
     expect(slideDistance(9.7, 0.6)).toBeCloseTo(7.992694529, 8);
     // twice as fast, four times as far
     expect(slideDistance(12, 0.4) / slideDistance(6, 0.4)).toBeCloseTo(4, 12);
+  });
+
+  it("asyq: the sakha stops after v/(μg) seconds, and halfway in time it is three quarters of the way", () => {
+    // v, μ, stopping time, distance, position at half the stopping time, at 1 s and at 0,5 s
+    const cases = [
+      [6, 0.4, 1.529051988, 4.587155963, 3.440366972, 4.038, 2.5095],
+      [3.13, 0.05, 6.381243629, 9.986646279, 7.489984709, 2.88475, 1.5036875],
+      [9.7, 0.6, 1.647978253, 7.992694529, 5.994520897, 6.757, 4.11425],
+    ];
+    for (const [v, mu, tStop, d, half, at1, atHalf] of cases) {
+      expect(slideStopTime(v, mu)).toBeCloseTo(tStop, 8);
+      expect(slidePosition(v, mu, tStop)).toBeCloseTo(d, 8);
+      expect(slidePosition(v, mu, tStop / 2)).toBeCloseTo(half, 8);
+      expect(slidePosition(v, mu, 1)).toBeCloseTo(at1, 8);
+      expect(slidePosition(v, mu, 0.5)).toBeCloseTo(atHalf, 8);
+      // after it has stopped it stays; before the throw it has not moved
+      expect(slidePosition(v, mu, tStop * 3)).toBeCloseTo(d, 8);
+      expect(slidePosition(v, mu, -1)).toBe(0);
+      // half the time covers three quarters of the way: constant slowing
+      expect(slidePosition(v, mu, slideStopTime(v, mu) / 2) / slideDistance(v, mu)).toBeCloseTo(0.75, 12);
+    }
+  });
+
+  it("asyq: the slide never goes backwards, and ends exactly where d = v²/(2μg) says", () => {
+    for (const mu of [0.05, 0.1, 0.3, 0.4, 0.6]) {
+      for (const v of [1, 4.7, 14]) {
+        const tStop = slideStopTime(v, mu);
+        let last = -1;
+        for (let i = 0; i <= 40; i++) {
+          const x = slidePosition(v, mu, (tStop * i) / 40);
+          expect(x).toBeGreaterThanOrEqual(last);
+          last = x;
+        }
+        expect(last).toBeCloseTo(slideDistance(v, mu), 10);
+      }
+    }
   });
 
   it("tug: the most a team can pull is μMg", () => {
