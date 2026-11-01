@@ -87,6 +87,25 @@ for (const [role, routes] of [["student", wanted(STUDENT_ROUTES)], ["teacher", w
     await ctx.close();
   }
 }
+// The first-load splash covers the whole screen and takes every click. It has to leave by itself,
+// for a visitor who asked for reduced motion as much as for any other (once it did not: the hook that
+// reads the setting starts out false, so the effect ran twice and the second run walked away).
+if (!ONLY || ONLY.includes("splash")) {
+  for (const reducedMotion of ["no-preference", "reduce"]) {
+    const ctx = await browser.newContext({ viewport: { width: 375, height: HEIGHT }, reducedMotion });
+    const page = await ctx.newPage();
+    const problems = [];
+    try {
+      await page.goto(BASE + "/login", { waitUntil: "load", timeout: 60_000 });
+      await page.waitForSelector('[data-testid="splash"]', { state: "detached", timeout: 8_000 });
+    } catch {
+      problems.push(`the splash screen was still covering the page after 8 s (reduced motion: ${reducedMotion})`);
+    }
+    checked++;
+    if (problems.length) failures.push({ role: "visitor", width: 375, route: "/login", problems });
+    await ctx.close();
+  }
+}
 await browser.close();
 
 console.log(`Checked ${checked} page loads (${WIDTHS.join(", ")} px).`);

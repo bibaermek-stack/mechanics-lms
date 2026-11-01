@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
@@ -17,37 +17,65 @@ export function LoadingScreen() {
   const reduced = useReducedMotion();
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
+  // Where the splash is in its life. The effect below runs again whenever `reduced` changes, and
+  // `useReducedMotion` starts false and only then reads the real setting, so for a visitor who asked
+  // for reduced motion it runs twice on the very first load. The session flag alone cannot tell "a
+  // splash I am already showing" from "one shown earlier": it would find the flag set by the first
+  // run, walk away, and leave the overlay up for ever, over every control on the page.
+  const life = useRef<"new" | "showing" | "done">("new");
 
   useEffect(() => {
-    if (sessionStorage.getItem("stem:seen-intro")) return;
-    sessionStorage.setItem("stem:seen-intro", "1");
-    setVisible(true);
+    if (life.current === "new") {
+      let seen = false;
+      try {
+        seen = !!sessionStorage.getItem("stem:seen-intro");
+        sessionStorage.setItem("stem:seen-intro", "1");
+      } catch {
+        // storage blocked: show it, once per page load
+      }
+      if (seen) {
+        life.current = "done";
+        return;
+      }
+      life.current = "showing";
+      setVisible(true);
+    }
+    if (life.current !== "showing") return;
+    const finish = () => {
+      life.current = "done";
+      setVisible(false);
+    };
 
     if (reduced) {
       setProgress(100);
-      const t = setTimeout(() => setVisible(false), 220);
+      const t = setTimeout(finish, 220);
       return () => clearTimeout(t);
     }
 
     // Ease toward 100 rather than stepping linearly, so it decelerates like a
     // real load instead of ticking like a timer.
     let raf = 0;
+    let hide: ReturnType<typeof setTimeout> | undefined;
     const start = performance.now();
     const DURATION = 1250;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / DURATION);
       setProgress(Math.round((1 - Math.pow(1 - t, 3)) * 100));
       if (t < 1) raf = requestAnimationFrame(tick);
-      else setTimeout(() => setVisible(false), 260);
+      else hide = setTimeout(finish, 260);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(hide);
+    };
   }, [reduced]);
 
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
+          data-testid="splash"
           className="fixed inset-0 z-[200] flex items-center justify-center bg-[#05070f]"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, filter: "blur(14px)", scale: 1.04 }}
