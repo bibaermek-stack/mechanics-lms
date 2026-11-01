@@ -98,6 +98,15 @@ const STEPS_PER_SLICE = 96;
 
 function* runAttempt(setup: ThrowSetup, hz: number, limit: number): Generator<void, Attempt> {
   const w = AsyqWorld.createReady({ surface: setup.surface, hz });
+  // the engine's memory is not the garbage collector's: free the world whatever happens in between
+  try {
+    return yield* playAttempt(w, setup, hz, limit);
+  } finally {
+    w.dispose();
+  }
+}
+
+function* playAttempt(w: AsyqWorld, setup: ThrowSetup, hz: number, limit: number): Generator<void, Attempt> {
   for (const b of setup.bodies) w.addBody(b);
   w.launch(setup.launch.id, setup.launch.velocity, setup.launch.angular);
 
@@ -145,7 +154,6 @@ function* runAttempt(setup: ThrowSetup, hz: number, limit: number): Generator<vo
   if (frames.length === 0 || w.steps % frameEvery !== 0) record();
   const duration = w.time;
   const final = w.poses().map((p) => (p.face === undefined ? { ...p, face: classifyFace(p.rotation).face } : p));
-  w.dispose();
   const valid = !reason && maxOverlap <= limit;
   return {
     report: { hz, maxOverlap, valid, ...(reason ? { reason } : maxOverlap > limit ? { reason: `overlap ${(maxOverlap * 1000).toFixed(2)} mm` } : {}) },

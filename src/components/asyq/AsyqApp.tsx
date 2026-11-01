@@ -194,12 +194,15 @@ function Play({ config, onRestart, onRules }: { config: RuleConfig; onRestart: (
       </Panel>
     );
   }
-  if (error) {
+  if (error || game?.failure) {
     return (
-      <Panel className="space-y-3" role="alert">
-        <p className="text-label font-semibold text-slate-900 dark:text-white">Физика қозғалтқышы жүктелмеді</p>
-        <p className="text-micro text-slate-600 dark:text-slate-400">{error}</p>
-        <button onClick={onRestart} className="btn-primary">Қайталау</button>
+      <Panel className="space-y-3" role="alert" data-testid="asyq-failure">
+        <p className="text-label font-semibold text-slate-900 dark:text-white">{error ? "Физика қозғалтқышы жүктелмеді" : "Лақтыруды есептеу сәтсіз аяқталды"}</p>
+        <p className="text-micro text-slate-600 dark:text-slate-400">{error ?? game?.failure}</p>
+        <div className="flex flex-wrap gap-3">
+          <button onClick={onRestart} className="btn-primary min-h-[44px]">{error ? "Қайталау" : "Ойынды қайта бастау"}</button>
+          <button onClick={onRules} className="btn-secondary min-h-[44px]">Ережені өзгерту</button>
+        </div>
       </Panel>
     );
   }
@@ -366,7 +369,7 @@ function Play({ config, onRestart, onRules }: { config: RuleConfig; onRestart: (
               ? state.winners.length === 1
                 ? `${state.players[state.winners[0]].name} жеңді!`
                 : `Тең: ${state.winners.map((i) => state.players[i].name).join(", ")}`
-              : "Ешкім асық ұтқан жоқ"}
+              : "Ешкім ұпай жинаған жоқ"}
           </p>
           <p className="text-body text-slate-700 dark:text-slate-300">Ойын аяқталды: {state.endReason}.</p>
           <div className="flex flex-wrap gap-3">

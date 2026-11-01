@@ -257,8 +257,11 @@ export function reduce(state: GameState, event: GameEvent): Reduced {
     case "NEXT": {
       const d = state.decision!;
       if (d.over) {
+        // the most points wins, even when the rules have penalties and the best total is below zero;
+        // only a game in which no throw earned or cost anything has no winner (not an arbitrary one)
         const top = Math.max(...state.players.map((p) => p.points));
-        const winners = top > 0 ? state.players.map((p, i) => (p.points === top ? i : -1)).filter((i) => i >= 0) : [];
+        const anyScored = state.history.some((h) => h.points !== 0);
+        const winners = anyScored ? state.players.map((p, i) => (p.points === top ? i : -1)).filter((i) => i >= 0) : [];
         return { state: { ...state, phase: "finished", winners, endReason: d.reason } };
       }
       let { field, nextId } = state;

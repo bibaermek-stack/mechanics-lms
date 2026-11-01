@@ -371,6 +371,36 @@ describe("when it ends", () => {
     expect(s.winners).toEqual([0, 1]);
   });
 
+  it("with penalties the best total can be below zero and still wins: the fewest lost points", () => {
+    // every won asyq costs a point (1 for the asyq, −2 for the side it lies on)
+    let s = toAiming(config({ targetCount: 6, pointsPerAsyq: 1, faceBonus: { ...FACE_ZERO, alshy: -2 }, end: { kind: "throws", perPlayer: 1 }, turnRule: "pass" }));
+    s = play(s, { a1: [2, 0], a2: [2.1, 0] }); // player 0 loses two points
+    s = run(s, { type: "NEXT" }, { type: "CHOOSE" });
+    s = play(s, { a3: [2, 0] }); // player 1 loses one
+    s = run(s, { type: "NEXT" });
+    expect(s.players.map((p) => p.points)).toEqual([-2, -1]);
+    expect(s.winners).toEqual([1]);
+  });
+
+  it("players tied below zero share it, and a game of throws that scored nothing at all has no winner", () => {
+    let s = toAiming(config({ targetCount: 6, pointsPerAsyq: 1, faceBonus: { ...FACE_ZERO, alshy: -2 }, end: { kind: "throws", perPlayer: 1 }, turnRule: "pass" }));
+    s = play(s, { a1: [2, 0] });
+    s = run(s, { type: "NEXT" }, { type: "CHOOSE" });
+    s = play(s, { a2: [2, 0] });
+    s = run(s, { type: "NEXT" });
+    expect(s.players.map((p) => p.points)).toEqual([-1, -1]);
+    expect(s.winners).toEqual([0, 1]);
+
+    // asyqs knocked out for nothing (0 points each, no bonus): still nobody has anything
+    let z = toAiming(config({ targetCount: 6, pointsPerAsyq: 0, end: { kind: "throws", perPlayer: 1 }, turnRule: "pass" }));
+    z = play(z, { a1: [2, 0] });
+    z = run(z, { type: "NEXT" }, { type: "CHOOSE" });
+    z = play(z, { a2: [2, 0] });
+    z = run(z, { type: "NEXT" });
+    expect(z.players.map((p) => p.points)).toEqual([0, 0]);
+    expect(z.winners).toEqual([]);
+  });
+
   it("never runs on for ever: a game stops after 120 throws whatever the rules", () => {
     let s = toAiming(config({ targetCount: 12, end: { kind: "points", target: 500 }, refillWhenCleared: true, pointsPerAsyq: 0, turnRule: "pass" }));
     // with 0 points a "points" game normalises to "cleared"; force the long game by hand

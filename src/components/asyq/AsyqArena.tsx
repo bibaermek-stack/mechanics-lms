@@ -180,6 +180,11 @@ function World({ game, version, aim, onAimYaw, view, reduced, onReady }: ArenaPr
   const invalidate = useThree((s) => s.invalidate);
   const aspect = size.width / Math.max(1, size.height);
 
+  // the game changed (a phase, a throw begun or worked out): make sure it gets drawn
+  useEffect(() => {
+    invalidate();
+  }, [version, invalidate]);
+
   const bodies = useRef(new Map<string, THREE.Group>());
   const shadows = useRef(new Map<string, THREE.Group>());
   const dragging = useRef(false);
@@ -196,7 +201,9 @@ function World({ game, version, aim, onAimYaw, view, reduced, onReady }: ArenaPr
   const scoredIds = new Set(scored.map((s) => s.id));
 
   useFrame((_, dt) => {
-    game.tick(Math.min(dt, 0.05));
+    // real time on a slow screen too (a throw takes as long on every device); the cap only stops one huge
+    // step after the tab was hidden from skipping the whole throw
+    game.tick(Math.min(dt, 0.25));
     const trayQuat = TRAY_QUAT;
     const trayHeight = TRAY_HEIGHT;
     const t = Math.min(1, game.phaseTime / (PACE.scoring ?? 1.4));
@@ -221,7 +228,10 @@ function World({ game, version, aim, onAimYaw, view, reduced, onReady }: ArenaPr
       if (sh) sh.position.set(x * S, 0.004, z * S);
     }
     const phase = game.state.phase;
-    if (phase !== "aiming" && phase !== "setup" && phase !== "finished") invalidate();
+    // While a throw is being worked out the picture is a still one (the sakha in the hand). Drawing it
+    // again every frame only takes the processor from the very calculation everyone is waiting for;
+    // the effect above starts the drawing again the moment the game says the throw is ready.
+    if (phase !== "aiming" && phase !== "setup" && phase !== "finished" && !game.isComputing) invalidate();
   });
 
   const onPoint = (e: ThreeEvent<PointerEvent>) => {

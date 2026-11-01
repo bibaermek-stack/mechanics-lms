@@ -46,6 +46,8 @@ export class AsyqGame {
   private readonly listeners = new Set<() => void>();
   /** Reasons the game refused an event, newest last (for tests and the log). */
   readonly refusals: string[] = [];
+  /** Set when a throw could not be worked out. The game cannot go on from there; the page says so and offers a new one. */
+  failure: string | null = null;
 
   private constructor(config: RuleConfig, private readonly watched: boolean) {
     this.s = createGame(config);
@@ -144,7 +146,12 @@ export class AsyqGame {
   throwSakha(raw: ThrowParams): boolean {
     const prepared = this.prepareThrow(raw);
     if (!prepared) return false;
-    this.finishThrow(simulateThrow(prepared.setup), prepared.no);
+    try {
+      this.finishThrow(simulateThrow(prepared.setup), prepared.no);
+    } catch (e) {
+      this.fail(e);
+      return false;
+    }
     return true;
   }
 
@@ -156,11 +163,21 @@ export class AsyqGame {
     this.emit();
     try {
       this.finishThrow(await simulateThrowAsync(prepared.setup), prepared.no);
+    } catch (e) {
+      this.fail(e);
+      return false;
     } finally {
       this.computing = false;
       this.emit();
     }
     return true;
+  }
+
+  /** The physics broke on this throw (out of memory, a body the engine refused): stop here rather than play on with no result. */
+  private fail(e: unknown): void {
+    this.failure = e instanceof Error ? e.message : String(e);
+    this.playback = null;
+    this.refusals.push(`лақтыру есептелмеді: ${this.failure}`);
   }
 
   private prepareThrow(raw: ThrowParams) {
