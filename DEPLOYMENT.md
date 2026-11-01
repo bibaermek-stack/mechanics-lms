@@ -250,8 +250,19 @@ cheapest way to do that.
 4. **Networking → Generate Domain.** A fresh service is marked *Unexposed*: it
    builds and runs, but nothing outside Railway can reach it, and the browser
    needs a public host to open a socket to.
-5. Deploy. Railway passes the port in `PORT`, which the server already reads,
-   and binds on every interface — nothing else to configure.
+5. Deploy. The server reads the port from `PORT` (and listens on 8080 when there is none) and
+   binds on every interface — nothing else to configure. **The domain must point at that same
+   port.** When Railway asks for the port while you generate the domain (or under
+   *Networking* later), enter the number the deploy log prints:
+
+   ```
+   [arena] listening on :8080
+   ```
+
+   A wrong port does not fail the deployment — the health check and the build still pass and it
+   shows *Success* — but every request to the public domain answers 502, and nothing in the
+   service's own log says why. (This is how this project's domain pointed at 8091 for weeks while
+   the server listened on 8080.) If the page does not open, compare the two numbers first.
 6. Check it: `https://<your-domain>/health` should answer
    `{"ok":true,"rooms":0}`.
 
